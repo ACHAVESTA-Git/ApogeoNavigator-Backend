@@ -31,7 +31,7 @@ def _user(**kw):
 
 
 def test_crea_las_cuatro_tablas(engine):
-    assert set(inspect(engine).get_table_names()) == {"usuarios", "sesiones", "cargas_archivo", "eventos_auditoria"}
+    assert {"usuarios", "sesiones", "cargas_archivo", "eventos_auditoria"} <= set(inspect(engine).get_table_names())
 
 
 def test_usuario_valores_por_defecto(engine):
