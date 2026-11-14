@@ -251,3 +251,26 @@ ROUTE_HEALTH = "/api/health"
 ROUTE_SITES = "/api/sites"
 ROUTER_TAG = "datos"
 HEALTH_OK = {"status": "ok"}
+
+# ---------------------------------------------------------------- lectura (endpoints de consulta)
+ROUTER_TAG_LECTURA = "lectura"
+EFEMERIDES_FILENAME = "efemerides_{site_id}.csv"
+METRICS_FILENAME = "metricas.csv"
+QUERY_MAX_RANGE_DAYS = 35
+MAX_COMPARE_SITES = 3
+ORIGEN_CALCULADO = "calculado"
+SEMAFORO_VERDE_MIN = 70.0          # provisional hasta que el PO confirme los umbrales
+SEMAFORO_AMARILLO_MIN = 40.0
+SEMAFORO_VERDE, SEMAFORO_AMARILLO, SEMAFORO_ROJO = "verde", "amarillo", "rojo"
+METRICS_DEG_TOL = 0.001
+HTTP_UNPROCESSABLE = 422
+MSG_SITE_NOT_IN_CATALOG = "El sitio no existe en sites.csv"
+MSG_NO_EPHEMERIS = "El sitio no tiene efemérides cargadas"
+MSG_EPHEM_INVALID = "El archivo de efemérides no cumple el estándar de CSV"
+MSG_RANGE_ORDER = "'hasta' debe ser posterior a 'desde'"
+MSG_QUERY_RANGE = "El rango máximo es de {max} días (se pidieron {days:.1f})"
+MSG_OUT_OF_DATA = "'{param}' está fuera del rango de datos disponible"
+MSG_COMPARE_COUNT = "Se pueden consultar de 1 a {max} sitios"
+MSG_SITE_ID_REQUIRED = "Indica al menos un site_id"
+MSG_NO_ROWS_IN_RANGE = "No hay datos en el rango pedido"
+MSG_METRICS_INVALID = "metricas.csv no cumple el estándar de CSV"
