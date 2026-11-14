@@ -33,6 +33,7 @@ from app.db import session as db_session
 from app.db.enums import AccionAuditoria, TipoCarga
 from app.db.models import CargaArchivo, EventoAuditoria
 from app.security.pqc import ErrorClavesPQC, canonicalizar
+from app.utils.dates import as_utc
 from app.utils.text import clean_text
 
 log = logging.getLogger("apogeo.auditoria")
@@ -314,6 +315,7 @@ def consultar(usuario: uuid.UUID | str | None = None, desde: datetime | None = N
               db: Session | None = None) -> tuple[list[EventoAuditoria], int]:
     """Eventos más recientes primero. `usuario` puede ser un UUID (usuario_id) o un texto (actor)."""
     limite = max(1, min(limite, c.AUDIT_PAGE_MAX))
+    desde, hasta = (as_utc(d) if d else None for d in (desde, hasta))
 
     def work(session: Session):
         conds = []
