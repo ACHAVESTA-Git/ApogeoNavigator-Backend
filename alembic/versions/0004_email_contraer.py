@@ -3,12 +3,15 @@
 Antes de borrar `email` comprueba, fila a fila, que `descifrar_email(email_cifrado)` coincide con el email en claro y que
 `email_hash` es el HMAC actual o uno de los anteriores. Si algo no cuadra, aborta sin tocar nada. Después deja
 `email_cifrado` y `email_hash` como NOT NULL, con CHECK de longitud, y elimina `email`.
-El downgrade vuelve a crear `email` descifrando los blobs (hacen falta las mismas claves).
+El downgrade vuelve a crear `email` descifrando los blobs (hacen falta las mismas claves). Aviso: el email restituido
+es el normalizado (minúsculas y sin espacios), no necesariamente el texto original; el cifrado solo guardó esa forma.
 
 Revision ID: 0004_email_contraer
 Revises: 0003_email_cifrado
 Create Date: 2026-11-14
 """
+import os
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -23,8 +26,21 @@ def _usuarios() -> sa.Table:
                     sa.column("email_cifrado", sa.LargeBinary()), sa.column("email_hash", sa.String()))
 
 
+SERVER_KEYS = ("PQC_KEM_PRIVATE_KEY", "EMAIL_HASH_KEY")
+
+
+def _require_server_keys(bind, reason: str) -> None:
+    """Aborta ANTES de tocar nada si hay usuarios y falta alguna clave del servidor (ver la migración 0003)."""
+    if not bind.execute(sa.select(sa.func.count()).select_from(_usuarios())).scalar():
+        return
+    missing = [name for name in SERVER_KEYS if not os.getenv(name)]
+    if missing:
+        raise RuntimeError(f"Hay usuarios y faltan {', '.join(missing)}: {reason}. No se ha modificado nada.")
+
+
 def upgrade() -> None:
     bind, usuarios = op.get_bind(), _usuarios()
+    _require_server_keys(bind, "no se puede verificar el cifrado antes de borrar el email en claro")
     rows = bind.execute(sa.select(usuarios.c.id, usuarios.c.email, usuarios.c.email_cifrado, usuarios.c.email_hash)).all()
     if rows:
         from app.security import gestor_claves as gk
@@ -43,8 +59,9 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.add_column("usuarios", sa.Column("email", sa.String(320), nullable=True))
     bind, usuarios = op.get_bind(), _usuarios()
+    _require_server_keys(bind, "no se pueden descifrar los emails para restituirlos")
+    op.add_column("usuarios", sa.Column("email", sa.String(320), nullable=True))
     rows = bind.execute(sa.select(usuarios.c.id, usuarios.c.email_cifrado)).all()
     if rows:
         from app.security import gestor_claves as gk
