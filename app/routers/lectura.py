@@ -1,27 +1,14 @@
 """Endpoints de lectura para el frontend: efemérides, métricas recalculadas y puestas."""
-from typing import Annotated, Callable
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
 
 from app.core import config as c
+from app.routers.comun import RESPONSES, run_service
 from app.schemas.lectura import EphemerisOut, MetricsOut, SunsetsOut
 from app.services import lectura
 
 router = APIRouter(prefix=c.API_PREFIX, tags=[c.ROUTER_TAG_LECTURA])
-
-RESPONSES = {
-    c.HTTP_NOT_FOUND: {"description": c.DESC_NOT_FOUND},
-    c.HTTP_UNPROCESSABLE: {"description": c.DESC_UNPROCESSABLE},
-    c.HTTP_UNAVAILABLE: {"description": c.DESC_UNAVAILABLE},
-}
-
-
-def run_service(fn: Callable, *args):
-    try:
-        return fn(*args)
-    except lectura.LecturaError as exc:
-        raise HTTPException(status_code=exc.status, detail=exc.detail) from None
-
 
 @router.get(c.ROUTE_EFEMERIDES, response_model=EphemerisOut, responses=RESPONSES)
 def efemerides(site_id: str, desde: str | None = None, hasta: str | None = None):
