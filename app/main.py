@@ -4,6 +4,7 @@ from fastapi import Depends, FastAPI, HTTPException
 
 from app.core import config
 from app.core.cors import add_cors
+from app.core.errors import register_handlers
 from app.core.limits import upload_guard
 from app.db.session import db_enabled
 from app.routers import admin_claves, auditoria, datos, lectura, seguridad
@@ -22,6 +23,7 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title=config.API_TITLE, version=config.API_VERSION, lifespan=lifespan)
 app.middleware("http")(upload_guard)
 add_cors(app)      # el último en añadirse es el más externo
+register_handlers(app)
 app.include_router(datos.router)
 app.include_router(lectura.router, dependencies=[Depends(datastore.refresh_if_stale)])
 app.include_router(auditoria.router)
