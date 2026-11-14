@@ -7,6 +7,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
+# Migraciones: se ejecutan como paso previo al despliegue (`alembic upgrade head`), no al arrancar.
+COPY alembic.ini ./
+COPY alembic ./alembic
 
 # Cloud Run inyecta $PORT; 8080 por defecto en local.
 ENV PORT=8080
