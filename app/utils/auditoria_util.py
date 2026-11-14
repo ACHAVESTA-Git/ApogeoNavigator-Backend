@@ -17,6 +17,8 @@ import hmac
 import json
 import logging
 import uuid
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Protocol
@@ -213,6 +215,19 @@ def _run(work, db: Session | None, estricto: bool):
 
 
 # ------------------------------------------------------------------ API pública
+@contextmanager
+def unidad_de_trabajo() -> Iterator[Session | None]:
+    """Sesión de BD con commit al salir (o None si la base no está configurada).
+
+    Permite registrar la auditoría ANTES de escribir un archivo y deshacerla si el guardado falla.
+    """
+    if not db_session.db_enabled():
+        yield None
+        return
+    with db_session.session_scope() as session:
+        yield session
+
+
 def registrar_evento(accion: AccionAuditoria, actor: str, recurso: str | None = None, detalle: dict | None = None,
                      request: Any = None, usuario_id: uuid.UUID | None = None, db: Session | None = None,
                      estricto: bool = False) -> EventoAuditoria | None:
