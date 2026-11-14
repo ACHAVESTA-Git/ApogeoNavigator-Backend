@@ -91,14 +91,29 @@ def test_nunca_hay_credenciales(monkeypatch):
     assert config.CORS_ALLOW_CREDENTIALS is False
 
 
-def test_las_respuestas_401_y_413_del_guardia_llevan_cabeceras_cors(monkeypatch):
-    c = build(monkeypatch)
-    r = c.post("/api/datos/sites", headers={"Origin": LOCAL})                       # sin API key
+def test_la_respuesta_401_del_guardia_lleva_cabeceras_cors(monkeypatch):
+    monkeypatch.setenv("UPLOAD_API_KEY", API_KEY)
+    r = build(monkeypatch).post("/api/datos/sites", headers={"Origin": LOCAL})            # sin API key
     assert r.status_code == 401 and r.headers["access-control-allow-origin"] == LOCAL
+
+
+def test_la_respuesta_413_del_guardia_lleva_cabeceras_cors(monkeypatch):
+    """Con UPLOAD_API_KEY definida y la clave correcta, el guardia mira Content-Length y responde 413 con CORS."""
+    monkeypatch.setenv("UPLOAD_API_KEY", API_KEY)
+    c = build(monkeypatch)
     grande = c.post("/api/datos/sites", headers={"Origin": LOCAL, "X-API-Key": API_KEY},
                     files={"file": ("sites.csv", b"a" * (config.MAX_FILE_BYTES + config.MULTIPART_OVERHEAD_BYTES + 10))})
-    # sin UPLOAD_API_KEY configurada el guardia responde 401 antes de mirar el tamaño: ambos llevan CORS
-    assert grande.status_code in (401, 413) and grande.headers["access-control-allow-origin"] == LOCAL
+    assert grande.status_code == 413
+    assert grande.json()["codigo"] == "E_TAMANO"
+    assert grande.headers["access-control-allow-origin"] == LOCAL
+
+
+def test_un_archivo_dentro_del_limite_no_recibe_413(monkeypatch):
+    monkeypatch.setenv("UPLOAD_API_KEY", API_KEY)
+    c = build(monkeypatch)
+    ok = c.post("/api/datos/sites", headers={"Origin": LOCAL, "X-API-Key": API_KEY},
+                files={"file": ("sites.csv", b"a" * 1024)})
+    assert ok.status_code == 200 and ok.headers["access-control-allow-origin"] == LOCAL
 
 
 def test_la_aplicacion_real_tiene_cors(monkeypatch):
