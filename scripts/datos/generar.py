@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Descarga efemérides de JPL Horizons y genera sites.csv, efemerides_*.csv y metricas.csv.
-Uso: python3 generar.py [data_dir]  (por defecto ../../data)\nRango: 2026-12-01 a 2027-06-01, paso 1 h; metricas.csv: una fila por sitio y mes."""
+Uso: python3 generar.py [data_dir]  (por defecto ../../data)
+Rango: 2026-12-01 a 2027-06-01, paso 1 h; metricas.csv: una fila por sitio y mes."""
 from pathlib import Path as _P
 DATA_DIR = str(_P(__file__).resolve().parents[2] / "data")
 import csv, re, sys, time, urllib.parse, urllib.request
@@ -11,11 +12,13 @@ from sitios import SITES
 API = "https://ssd.jpl.nasa.gov/api/horizons.api"
 INICIO, FIN = datetime(2026,12,1,tzinfo=timezone.utc), datetime(2027,6,1,tzinfo=timezone.utc)
 FMT = "%Y-%m-%dT%H:%MZ"
+STEP_HOURS = 1                # paso de las efemérides (estándar: de 10 min a 24 h)
+METRICS_MAX_DAYS = 35         # máximo de días de una fila de metricas.csv (estándar §4)
 
 def horizons(cuerpo, lat, lon):
     p = {"format":"text","COMMAND":f"'{cuerpo}'","OBJ_DATA":"'NO'","MAKE_EPHEM":"'YES'","EPHEM_TYPE":"'OBSERVER'",
          "CENTER":"'coord@301'","COORD_TYPE":"'GEODETIC'","SITE_COORD":f"'{lon},{lat},0'",
-         "START_TIME":f"'{INICIO:%Y-%m-%d %H:%M}'","STOP_TIME":f"'{FIN:%Y-%m-%d %H:%M}'","STEP_SIZE":"'1 h'",
+         "START_TIME":f"'{INICIO:%Y-%m-%d %H:%M}'","STOP_TIME":f"'{FIN:%Y-%m-%d %H:%M}'","STEP_SIZE":f"'{STEP_HOURS} h'",
          "QUANTITIES":"'4'","CSV_FORMAT":"'YES'","CAL_FORMAT":"'CAL'"}
     url = API + "?" + urllib.parse.urlencode(p, quote_via=urllib.parse.quote)
     for i in range(3):
@@ -39,6 +42,7 @@ def meses():
     ini = INICIO
     while ini < FIN:
         fin = datetime(ini.year + ini.month // 12, ini.month % 12 + 1, 1, tzinfo=timezone.utc)
+        assert (min(fin, FIN) - ini).days <= METRICS_MAX_DAYS, "una fila de métricas supera el máximo del estándar"
         yield ini, min(fin, FIN)
         ini = fin
 
@@ -51,7 +55,7 @@ def main(data):
         for s in SITES:
             w.writerow([s[0],s[1],s[2],s[3],s[4],s[5],s[6],"",s[7].replace(" ","%20"),s[8]])
     met = []
-    horas_rango = int((FIN-INICIO).total_seconds()/3600)
+    horas_rango = int((FIN-INICIO).total_seconds()/3600/STEP_HOURS)
     for s in SITES:
         sid, lat, lon = s[0], s[5], s[6]
         sol, _ = horizons("10", lat, lon); tie, _ = horizons("399", lat, lon)
