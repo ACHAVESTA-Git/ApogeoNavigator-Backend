@@ -1,0 +1,2 @@
+site_id,inicio_utc,fin_utc,horas_sol,pct_sol,sol_el_max_deg,sol_el_media_deg,horas_tierra_visible,pct_tierra
+sitio_uno,2026-12-01T00:00Z,2026-12-03T00:00Z,0,0,3,0.5,48,100

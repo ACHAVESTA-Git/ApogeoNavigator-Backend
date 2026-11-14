@@ -13,7 +13,7 @@ def validate_enum(value: str, choices: Sequence[str]) -> str:
 
 
 def validate_regex(value: str, pattern: re.Pattern) -> str:
-    if not pattern.match(value):
+    if not pattern.fullmatch(value):
         raise CellError(config.E_FORMATO, f"No cumple el formato {pattern.pattern}")
     return value
 

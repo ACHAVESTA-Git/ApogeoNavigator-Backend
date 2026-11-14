@@ -1,13 +1,11 @@
-import csv
-import os
-from pathlib import Path
-
 from fastapi import FastAPI, HTTPException
 
-# En Docker: DATA_DIR=/data (volumen). En local sin Docker: ./data dentro del repo backend.
-DATA_DIR = Path(os.getenv("DATA_DIR", Path(__file__).resolve().parents[1] / "data"))
+from app.routers import datos
+from app.schemas.sites import Site
+from app.services import storage
 
-app = FastAPI(title="Apogeo API", version="0.1.0")
+app = FastAPI(title="Apogeo API", version="0.2.0")
+app.include_router(datos.router)
 
 
 @app.get("/api/health")
@@ -15,10 +13,11 @@ def health() -> dict:
     return {"status": "ok"}
 
 
-@app.get("/api/sites")
+@app.get("/api/sites", response_model=list[Site])
 def sites() -> list[dict]:
-    path = DATA_DIR / "sites.csv"
-    if not path.is_file():
-        raise HTTPException(status_code=503, detail=f"No se encontró {path.name}")
-    with path.open(newline="", encoding="utf-8") as f:
-        return list(csv.DictReader(f))
+    result = storage.read_sites()
+    if result is None:
+        raise HTTPException(status_code=503, detail="No se encontró sites.csv")
+    if not result.report.valido:
+        raise HTTPException(status_code=503, detail="sites.csv no cumple el estándar de CSV")
+    return [r.values for r in result.records]

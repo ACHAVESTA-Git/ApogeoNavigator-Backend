@@ -1,8 +1,8 @@
 from app.core import config
 
 
-class CellError(Exception):
-    """Error de validación de un valor (celda) o de una regla de archivo."""
+class ValidationError(Exception):
+    """Base común de los errores de validación."""
 
     def __init__(self, code: str, message: str):
         super().__init__(message)
@@ -10,8 +10,12 @@ class CellError(Exception):
         self.message = message
 
 
-class FileError(CellError):
-    """Error que impide seguir leyendo el archivo (se devuelve de inmediato)."""
+class CellError(ValidationError):
+    """Error de un valor (celda) o de una regla de coherencia; se acumula y se sigue."""
+
+
+class FileError(ValidationError):
+    """Error que impide seguir leyendo el archivo; se devuelve de inmediato."""
 
     @property
     def http_status(self) -> int:

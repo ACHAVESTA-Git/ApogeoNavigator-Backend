@@ -1,0 +1,5 @@
+site_id,nombre,categoria,mision,agencia,lat_deg,lon_este_deg,alt_km,fuente_url,notas
+Mayusculas,Sitio de prueba uno,apolo,Apollo 11,NASA,0.674,23.473,,https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html,
+ab,Sitio de prueba uno,apolo,Apollo 11,NASA,0.674,23.473,,https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html,
+sitio_http,Sitio de prueba uno,apolo,Apollo 11,NASA,0.674,23.473,,http://nssdc.gsfc.nasa.gov/x.html,
+sitio_espacio,Sitio de prueba uno,apolo,Apollo 11,NASA,0.674,23.473,,https://nssdc.gsfc.nasa.gov/con espacio,

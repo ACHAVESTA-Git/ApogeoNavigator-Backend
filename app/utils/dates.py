@@ -6,7 +6,7 @@ from app.utils.errors import CellError
 
 
 def parse_utc(value: str) -> datetime:
-    if not config.UTC_RE.match(value):
+    if not config.UTC_RE.fullmatch(value):
         raise CellError(config.E_FORMATO, "Formato esperado: YYYY-MM-DDTHH:MMZ (UTC)")
     try:
         return datetime.strptime(value, config.UTC_FORMAT).replace(tzinfo=timezone.utc)
