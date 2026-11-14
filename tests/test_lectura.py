@@ -41,6 +41,12 @@ def test_shackleton_sol_continuo_y_tierra_parcial(api):
     assert item["pct_tierra"] == 39.11 and item["horas_tierra_visible"] == 291
     assert item["semaforo"] == {"energia": "verde", "comunicacion": "rojo", "global": "rojo"}
     assert item["origen"] == "calculado"
+    assert [a["codigo"] for a in item["avisos"]] == ["sensible_al_relieve"]       # el Sol polar nunca pasa de unos 1,5°
+
+
+def test_apollo11_con_sol_alto_no_tiene_aviso_de_relieve(api):
+    item = metrics(api, "apollo11", **FULL).json()["resultados"][0]
+    assert item["sol_el_max_deg"] > 3 and item["avisos"] == []
 
 
 @pytest.mark.parametrize("site_id", ["change4", "change6"])

@@ -287,8 +287,19 @@ METRICS_FILENAME = "metricas.csv"
 QUERY_MAX_RANGE_DAYS = 35
 MAX_COMPARE_SITES = 3
 ORIGEN_CALCULADO = "calculado"
-SEMAFORO_VERDE_MIN = 70.0          # provisional hasta que el PO confirme los umbrales
-SEMAFORO_AMARILLO_MIN = 40.0
+# Umbrales del semáforo, fijados por el usuario (% de tiempo con el astro sobre el horizonte).
+# Energía (Sol): verde >= 45, amarillo de 25 a < 45, rojo < 25. Comunicación (Tierra): verde >= 70, amarillo de 40 a < 70.
+SEMAFORO_ENERGIA_VERDE_MIN = 45.0
+SEMAFORO_ENERGIA_AMARILLO_MIN = 25.0
+SEMAFORO_COMUNICACION_VERDE_MIN = 70.0
+SEMAFORO_COMUNICACION_AMARILLO_MIN = 40.0
+RELIEF_WARNING_MAX_SUN_EL_DEG = 3.0   # Sol siempre por debajo de esto: el relieve real puede taparlo
+AVISO_RELIEVE = "sensible_al_relieve"
+MSG_AVISO_RELIEVE = ("Sensible al relieve: el Sol no supera {deg:g}° sobre el horizonte ideal, "
+                     "así que una colina puede taparlo y las horas de sol reales ser menores")
+KEY_AVISOS = "avisos"
+KEY_CODIGO = "codigo"
+KEY_MENSAJE = "mensaje"
 SEMAFORO_VERDE, SEMAFORO_AMARILLO, SEMAFORO_ROJO = "verde", "amarillo", "rojo"
 METRICS_DEG_TOL = 0.001
 MSG_SITE_NOT_IN_CATALOG = "El sitio no existe en sites.csv"
