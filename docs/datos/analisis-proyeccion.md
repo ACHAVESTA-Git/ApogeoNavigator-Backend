@@ -1,5 +1,18 @@
 # Análisis con Polars y proyección del cielo lunar
 
+## Executive summary (English; the full report is in Spanish below)
+
+We analysed six months (Dec 2026 – May 2027, hourly) of real NASA/JPL Horizons ephemerides for 10 lunar sites with a Polars pipeline and an FFT, projected the next 12 months with a harmonic model, and validated the projection against the 12 months that Horizons itself computes for that period.
+
+- **The lunar sky is a clock.** A lunar day lasts 29.53 days: at the 9 non-polar sites the Sun stays up for about 14.4–14.8 days and then down for as long. The Earth is above the horizon all the time at the 7 near-side sites and never at the two far-side sites (Chang'e 4 and 6).
+- **Shackleton has seasons.** Because of the 1.54° axial tilt, the Sun shines continuously from August to December 2027 and is almost absent from March to July 2027 (ideal horizon). The Earth wobbles (libration): its azimuth ranges 11–38° and its elevation 10–20° depending on the site.
+- **Projection skill, measured honestly.** Against a naive "repeat the last cycle" baseline, the mean error drops from 1.84° to 1.19° for the Sun's elevation and from 3.41° to 0.62° for the Earth's azimuth. The projected viability traffic light matches the real one in 118 of 120 site-months.
+- **Where it fails.** Near the zenith (Apollo 11: solar azimuth RMSE 10.6°) and for sunrise/sunset times at the pole, where the Sun grazes the horizon.
+- **What it is not.** It does not replace physical ephemerides: Horizons stays the source of truth. It is meant to explore trends and animate the sky beyond the data range, and the API (`GET /api/simulacion/{site_id}`) labels every point as `datos` or `proyeccion` with its measured uncertainty.
+- **Caveats.** Model variants were discarded after looking at the validation error, so the figures are not a strict blind test. Elevations assume an ideal horizon (no terrain). Data: NASA/JPL Horizons; NASA does not endorse this project.
+
+---
+
 Seis meses de efemérides reales de Horizons (2026-12-01 → 2027-06-01, 10 sitios, paso de 1 h) se analizan con un pipeline de Polars y se proyectan 12 meses más (2027-06 → 2028-06) con un modelo armónico. La proyección se **valida contra los 12 meses reales** que Horizons calcula para ese periodo (la verdad de terreno).
 
 > **En una frase.** La rotación lunar es determinista y Horizons ya la calcula, así que la proyección **no sustituye a las efemérides físicas**. Su valor es poder explorar tendencias y animar el cielo más allá del rango de datos con un error conocido, y por eso la API devuelve la incertidumbre medida en la validación.
