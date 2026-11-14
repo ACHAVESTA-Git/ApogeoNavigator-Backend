@@ -69,7 +69,3 @@ def parse_rows(text: str) -> tuple[list[str], list[Row]]:
         raise FileError(config.E_NUM_COLUMNAS, f"Máximo {config.MAX_COLUMNS} columnas")
     return header, rows[1:]
 
-
-def read_csv_bytes(filename: str | None, raw: bytes) -> tuple[list[str], list[Row]]:
-    check_raw(filename, raw)
-    return parse_rows(decode(raw))
