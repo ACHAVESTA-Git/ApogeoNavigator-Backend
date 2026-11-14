@@ -59,7 +59,11 @@ def clear_cache() -> None:
 
 def _records(tipo: str, ctx_factory: Callable[[], Context], bad_msg: str) -> Callable[[Path], list[Row]]:
     def loader(path: Path) -> list[Row]:
-        result = validate_csv(tipo, path.name, path.read_bytes(), ctx_factory())
+        try:
+            raw = path.read_bytes()
+        except OSError:                       # directorio, permisos, etc.
+            raise LecturaError(c.HTTP_UNAVAILABLE, bad_msg) from None
+        result = validate_csv(tipo, path.name, raw, ctx_factory())
         if not result.report.valido:
             raise LecturaError(c.HTTP_UNAVAILABLE, bad_msg)
         return [r.values for r in result.records]
@@ -92,9 +96,13 @@ def ephemeris(site_id: str) -> list[Row]:
 
 
 def _reference_metrics() -> list[Row]:
+    """Filas de metricas.csv. Es solo una referencia opcional: si falta o no es válido, no bloquea."""
     path = c.get_data_dir() / c.METRICS_FILENAME
     ctx = lambda: Context(known_site_ids=set(_sites()))     # noqa: E731
-    return _cached(path, _records(c.TIPO_METRICAS, ctx, c.MSG_METRICS_INVALID)) or []
+    try:
+        return _cached(path, _records(c.TIPO_METRICAS, ctx, c.MSG_METRICS_INVALID)) or []
+    except LecturaError:
+        return []
 
 
 # ---------------------------------------------------------------- fechas y rangos

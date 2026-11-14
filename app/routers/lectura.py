@@ -31,8 +31,12 @@ def efemerides(site_id: str, desde: str | None = None, hasta: str | None = None)
 
 @router.get("/metricas", response_model=MetricsOut, responses=RESPONSES)
 def metricas(site_id: Annotated[list[str], Query()] = [], desde: str | None = None, hasta: str | None = None):
-    """Métricas recalculadas desde las efemérides ([desde, hasta)), con semáforo provisional y
-    comparación con `metricas.csv` si existe una fila para ese rango. Siempre `{"resultados": [...]}`."""
+    """Métricas recalculadas desde las efemérides, con semáforo provisional y comparación con
+    `metricas.csv` si existe una fila para ese rango. Siempre `{"resultados": [...]}`.
+
+    Intervalo semiabierto [desde, hasta), como `metricas.csv`; las efemérides usan [desde, hasta] cerrado.
+    Un `desde` fuera de la rejilla de 1 h (p. ej. 00:30) se acepta, pero entonces `referencia` es null.
+    Un `metricas.csv` ausente o inválido no bloquea: `referencia` es null."""
     return _run(lectura.metrics, site_id, desde, hasta)
 
 
