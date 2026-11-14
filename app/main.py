@@ -1,15 +1,28 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException
 
 from app.core import config
 from app.core.limits import upload_guard
-from app.routers import datos, lectura
+from app.db.session import db_enabled
+from app.routers import auditoria, datos, lectura, seguridad
 from app.schemas.sites import Site
 from app.services import storage
 
-app = FastAPI(title=config.API_TITLE, version=config.API_VERSION)
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    """En producción, con base de datos, la sal del HMAC de la IP es obligatoria."""
+    if config.is_production() and db_enabled() and not config.get_ip_hash_salt():
+        raise RuntimeError(config.MSG_AUDIT_SALT_REQUIRED)
+    yield
+
+
+app = FastAPI(title=config.API_TITLE, version=config.API_VERSION, lifespan=lifespan)
 app.middleware("http")(upload_guard)
 app.include_router(datos.router)
 app.include_router(lectura.router)
+app.include_router(auditoria.router)
+app.include_router(seguridad.router)
 
 
 @app.get(config.ROUTE_HEALTH)

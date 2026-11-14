@@ -2,6 +2,8 @@
 
 Base de datos: **PostgreSQL 16** (la misma versión mayor en local con Docker y en producción con Cloud SQL). Acceso con **SQLAlchemy 2.0** (modelos tipados con `Mapped[]`) y migraciones con **Alembic**. La conexión se configura solo con `DATABASE_URL`; sin ella la base de datos queda desactivada y la API de CSV sigue funcionando (sin auditoría).
 
+Añadir una acción de auditoría, un rol o un tipo de carga exige una migración manual con `ALTER TYPE … ADD VALUE` (los enums son tipos nativos de PostgreSQL), además de cambiar `app/db/enums.py`; `tests/test_modelo_bd.py` comprueba que ambos coinciden.
+
 Los CSV de `data/` **no** viven en la base de datos: la base guarda usuarios, sesiones y la auditoría de las cargas.
 
 ## Diagrama ER
@@ -10,7 +12,6 @@ Los CSV de `data/` **no** viven en la base de datos: la base guarda usuarios, se
 erDiagram
     usuarios ||--o{ sesiones : "tiene"
     usuarios ||--o{ cargas_archivo : "sube"
-    usuarios ||--o{ eventos_auditoria : "origina"
 
     usuarios {
         uuid id PK
@@ -48,11 +49,13 @@ erDiagram
         timestamptz creado_utc
         bytea firma_pqc
         varchar algoritmo_firma
+        varchar huella_clave
     }
     eventos_auditoria {
         bigserial id PK
+        bigint secuencia UK "1, 2, 3..."
         timestamptz ts_utc
-        uuid usuario_id FK "nullable"
+        uuid usuario_id "sin FK"
         varchar actor
         accion_auditoria accion
         varchar recurso
@@ -63,6 +66,7 @@ erDiagram
         varchar hash_actual UK
         bytea firma_pqc
         varchar algoritmo_firma
+        varchar huella_clave
     }
 ```
 
@@ -73,29 +77,41 @@ erDiagram
 | `usuarios` | Cuentas. El login OAuth aún no se implementa; el modelo ya está listo. | `email` único; `(proveedor_oauth, sub_oauth)` único |
 | `sesiones` | Sesiones emitidas tras el login. Se borran con el usuario. | `usuario_id`, `expira_utc` |
 | `cargas_archivo` | Una fila por validación o carga de CSV, con su huella SHA3-256 y firma. Si se borra el usuario, `usuario_id` pasa a `NULL` y se conserva `actor`. | `creado_utc`, `sha3_256`, `usuario_id` |
-| `eventos_auditoria` | Registro encadenado e infalsificable de acciones. Solo se inserta. | `ts_utc`, `usuario_id`, `accion`; `hash_prev` y `hash_actual` únicos |
+| `eventos_auditoria` | Registro encadenado con manipulación detectable. Solo se inserta (trigger en PostgreSQL). Sin FK a usuarios. | `ts_utc`, `usuario_id`, `accion`; `secuencia`, `hash_prev` y `hash_actual` únicos; CHECK de firma y longitud de hashes |
 
 Acciones de auditoría: `LOGIN`, `LOGIN_FALLIDO`, `LOGOUT`, `CARGA_VALIDADA`, `CARGA_GUARDADA`, `CARGA_RECHAZADA`, `CAMBIO_ROL`, `CAMBIO_DATOS`.
 
-## Cadena de hashes y firma
-Cada evento enlaza con el anterior:
+## Cadena de hashes y firma (manipulación detectable)
+Cada evento enlaza con el anterior y lleva un número de secuencia (1, 2, 3…):
 
 ```
-evento_canonico = JSON ordenado y compacto de {ts_utc, usuario_id, actor, accion, recurso, detalle, ip_hash, user_agent}
+evento_canonico = JSON canónico (claves ordenadas, sin espacios, UTF-8) de
+                  {secuencia, ts_utc, usuario_id, actor, accion, recurso, detalle, ip_hash, user_agent,
+                   algoritmo_firma, huella_clave}
 hash_actual     = SHA3-256( hash_prev + evento_canonico )
-firma_pqc       = ML-DSA-65( hash_actual, contexto="auditoria" )      # app/security/pqc.py
+documento_firmado = {v, secuencia, hash_prev, hash_actual, ts_utc, usuario_id, accion, algoritmo_firma, huella_clave}
+firma_pqc       = ML-DSA-65( JSON canónico de documento_firmado, contexto="auditoria" )   # app/security/pqc.py
 ```
-- El primer evento usa `hash_prev = "0" × 64`.
-- `hash_prev` es único: dos eventos no pueden colgar del mismo anterior, así que la cadena no se bifurca. Ante una colisión concurrente, el registro se reintenta.
-- Alterar, borrar o reordenar un evento rompe `hash_actual` del siguiente. `verificar_cadena()` lo detecta recalculando los hashes y comprobando las firmas.
-- La cadena **detecta** la manipulación; no la impide. Quien tenga acceso de escritura a la base puede recalcular los hashes, pero no firmar sin la clave privada PQC (que no está en la base).
-- Los eventos no se actualizan ni se borran. El usuario de la aplicación en producción solo debe tener `INSERT` y `SELECT` sobre `eventos_auditoria`.
+- Una sola función (`canonical_event` en `app/utils/auditoria_util.py`) define el evento canónico y la usan tanto la inserción como la verificación. El JSON canónico es el de `pqc.canonicalizar`.
+- El primer evento usa `hash_prev = "0" × 64` y `secuencia = 1`.
+- **Qué entra en el hash:** la secuencia, el algoritmo y la huella de la clave forman parte del evento, así que un evento «NINGUNO» (sin firma) no se puede hacer pasar por uno firmado ni reordenarse con un eslabón ausente sin romper el hash.
+- **Concurrencia:** en PostgreSQL cada escritura toma `pg_advisory_xact_lock` (constante `AUDIT_ADVISORY_LOCK_KEY`) antes de leer la cabeza de la cadena, incluso con la tabla vacía; `secuencia` y `hash_prev` son únicos como red de seguridad y la escritura se reintenta si colisionan. Probado con 16 hilos contra PostgreSQL 16 (`tests/test_postgres.py`).
+- **Firma:** el CHECK `(firma_pqc IS NULL) = (algoritmo_firma = 'NINGUNO')` impide filas medio firmadas. En producción (`K_SERVICE` o `ENVIRONMENT=production`) o con `AUDIT_REQUIRE_SIGNATURE=1`, si no se puede firmar el evento **no se escribe** y la API responde 503; lo mismo si no hay base de datos configurada. En desarrollo se guarda con algoritmo `NINGUNO` y `verificar_cadena()` lo da por **no válido**.
+
+### Qué detecta y qué no
+- `verificar_cadena()` (y `GET /api/auditoria/verificar`) comprueba génesis, secuencia consecutiva, enlaces, hashes recalculados, algoritmo, huella de la clave y firma de cada evento. Devuelve también `n_eventos`, `hash_cabeza`, `ultima_secuencia` y `primer_hash_prev_es_genesis`.
+- **Detecta** cambiar, borrar o reordenar un evento intermedio y rehacer hashes sin la clave privada (no se puede firmar).
+- **No detecta, por sí sola:** borrar los últimos N eventos, ni vaciar la tabla y empezar de cero desde el génesis (el génesis es público). Para eso hay un **ancla**: cada escritura confirmada emite una línea de log `auditoria cabeza secuencia=N hash=…` (solo tras el *commit*, nunca si hay rollback). Compara `hash_cabeza` y `ultima_secuencia` con la última línea del log. El ancla vive solo en logs, con la retención limitada de Cloud Logging; si hace falta más garantía, publica periódicamente la cabeza firmada en un objeto de Cloud Storage (trabajo futuro). No hay un evento génesis firmado explícito (trabajo futuro).
+- **Inmutabilidad en PostgreSQL:** la migración crea un trigger que lanza una excepción en `UPDATE`, `DELETE` y `TRUNCATE` de `eventos_auditoria`. El propietario de la tabla podría quitar el trigger, por eso la aplicación **no** debe ser propietaria (ver «Usuarios con mínimo privilegio»). La cadena sigue detectando lo que el trigger no impida.
+- `eventos_auditoria.usuario_id` **no tiene clave foránea**: borrar un usuario no debe tocar la auditoría. Los usuarios se desactivan (`activo = false`) en lugar de borrarse.
+- `detalle` solo admite `str`, `int`, `bool`, `None`, listas y dicts con claves de texto (sin floats ni fechas) y hasta 4 KB; `actor`, `recurso`, `nombre_archivo` y `user_agent` se limpian de caracteres de control y se recortan.
 
 ## Privacidad
-- **Nunca se guarda la IP en claro.** `ip_hash = HMAC-SHA256(IP_HASH_SALT, ip)` en hexadecimal. Sin `IP_HASH_SALT` no se guarda ningún hash de IP (queda `NULL`).
-- La sal vive en una variable de entorno (en producción, en Secret Manager) y no se versiona. Cambiar la sal impide correlacionar con hashes anteriores.
+- **Nunca se guarda la IP en claro.** `ip_hash = HMAC-SHA256(IP_HASH_SALT, ip)` en hexadecimal. Sin `IP_HASH_SALT` no se guarda ningún hash de IP (queda `NULL`). En producción, con base de datos, el arranque **falla** si falta la sal.
+- Es **seudonimización**, no anonimización: con una sal fija, un hash de IPv4 se puede invertir probando los 2^32 valores si alguien obtiene la sal. Guarda la sal en Secret Manager y trata `ip_hash` como dato personal.
+- Detrás de Firebase Hosting y Cloud Run la IP del cliente llega en `X-Forwarded-For`; se toma el primer valor. Es un dato informativo (puede falsearse), no una prueba de identidad. Los logs no contienen la IP.
 - `user_agent` se recorta a 200 caracteres. `detalle` no debe contener datos personales ni contenido de los CSV.
-- Detrás de Firebase Hosting y Cloud Run la IP del cliente llega en `X-Forwarded-For`; se toma el primer valor. Es un dato informativo (puede falsearse), no una prueba de identidad.
+- **Retención (trabajo futuro):** `ip_hash` y `user_agent` entran en una cadena inmutable y no se pueden borrar; hace falta definir un plazo y una política (p. ej. dejar de guardarlos pasado un tiempo) antes de abrir el servicio al público. Tampoco hay aún limpieza de sesiones expiradas.
 
 ## Migraciones (Alembic)
 ```bash
@@ -117,7 +133,7 @@ alembic revision --autogenerate -m "descripción"     # tras cambiar app/db/mode
 
 Formatos de `DATABASE_URL`:
 - Local (Docker): `postgresql+psycopg://apogeo:apogeo_dev@postgres:5432/apogeo`
-- Cloud Run + Cloud SQL (socket Unix): `postgresql+psycopg://APP_USER:CLAVE@/apogeo?host=/cloudsql/PROYECTO:REGION:INSTANCIA` (si la clave tiene caracteres especiales, codifícala como URL).
+- Cloud Run + Cloud SQL (socket Unix): `postgresql+psycopg://APP_USER:CLAVE@/apogeo?host=/cloudsql/PROYECTO:REGION:INSTANCIA` (si la clave tiene caracteres especiales, codifícala como URL). Por **IP pública** (no recomendado) exige TLS añadiendo `?sslmode=verify-full&sslrootcert=…`; por el socket Unix del proxy el tráfico ya va cifrado.
 
 ## Producción en Cloud SQL
 Decisión del usuario: PostgreSQL 16 en **Cloud SQL para PostgreSQL**, pagado con el crédito del proyecto «Apogeo». Esta sección es referencia: **no se ha creado ningún recurso**. Los comandos crean recursos con coste: ejecútalos solo con confirmación del usuario y con `PROYECTO`, `REGION` e `INSTANCIA` sustituidos.
@@ -165,9 +181,10 @@ GRANT CONNECT ON DATABASE apogeo TO apogeo_app;
 GRANT USAGE ON SCHEMA public TO apogeo_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON usuarios, sesiones, cargas_archivo TO apogeo_app;
 GRANT SELECT, INSERT ON eventos_auditoria TO apogeo_app;      -- la auditoría solo se añade
+REVOKE UPDATE, DELETE, TRUNCATE ON eventos_auditoria FROM apogeo_app;
 GRANT USAGE, SELECT ON SEQUENCE eventos_auditoria_id_seq TO apogeo_app;
 ```
-Los permisos se aplican después de la primera migración (y tras cada migración que cree tablas). Las migraciones usan `apogeo_migrator`; la aplicación usa `apogeo_app`. Cuando exista OAuth, valora la autenticación IAM de Cloud SQL para no manejar contraseñas.
+`apogeo_app` **no** debe ser propietaria de las tablas (el propietario puede quitar el trigger y vaciar la auditoría); las crea `apogeo_migrator`. Los permisos se aplican después de la primera migración (y tras cada migración que cree tablas). Las migraciones usan `apogeo_migrator`; la aplicación usa `apogeo_app`. Cuando exista OAuth, valora la autenticación IAM de Cloud SQL para no manejar contraseñas.
 
 ### Secretos (Secret Manager)
 `DATABASE_URL`, `IP_HASH_SALT`, `UPLOAD_API_KEY` y las claves PQC (`PQC_PRIVATE_KEY`, `PQC_PUBLIC_KEY`) van en **Secret Manager** y se inyectan con `--set-secrets`; nunca en el repositorio, en la imagen ni en `--set-env-vars`.
@@ -191,4 +208,4 @@ Solo después se despliega la nueva revisión del servicio.
 Cloud Run puede levantar muchas instancias y Cloud SQL limita las conexiones simultáneas según el tamaño de la máquina. Por eso el pool es pequeño: `pool_size=2`, `max_overflow=2`, `pool_pre_ping=True` y reciclado a los 30 min (constantes `DB_POOL_*` en `app/core/config.py`). Limita también `--max-instances` en Cloud Run (el manual usa 3).
 
 ## Pruebas
-`pytest` usa SQLite (en memoria o en un archivo temporal): es lo más simple y no necesita Docker. Los tipos son portables (`JSONB` y `BIGSERIAL` en PostgreSQL, `JSON` e `INTEGER` en SQLite). La migración se ha comprobado además contra PostgreSQL 16 real con `docker compose up`.
+`pytest` usa SQLite (en memoria o en un archivo temporal): es lo más simple y no necesita Docker. Los tipos son portables (`JSONB` y `BIGSERIAL` en PostgreSQL, `JSON` e `INTEGER` en SQLite). `tests/test_postgres.py` (omitido sin `TEST_DATABASE_URL`) ejecuta contra PostgreSQL 16 real el trigger, los CHECK, los tipos, la concurrencia con bloqueo consultivo y la subida y bajada de la migración; se ejecutó con éxito con el servicio `postgres` de `docker-compose.yml`.

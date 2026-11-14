@@ -36,6 +36,13 @@ def clip_value(value, max_chars: int = config.MAX_VALUE_CHARS) -> str | None:
     return None if value is None else str(value)[:max_chars]
 
 
+def clean_text(value: str | None, max_chars: int) -> str | None:
+    """Texto del usuario apto para guardar: sin caracteres de control y recortado a `max_chars`."""
+    if value is None:
+        return None
+    return "".join(ch for ch in str(value) if ord(ch) > config.CONTROL_CHAR_MAX)[:max_chars]
+
+
 def sanitize_filename(name: str | None) -> str:
     """Nombre apto para el informe: sin caracteres de control y con longitud limitada."""
     cleaned = "".join(ch for ch in (name or "") if ord(ch) > config.CONTROL_CHAR_MAX)

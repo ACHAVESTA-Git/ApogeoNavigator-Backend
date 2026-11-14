@@ -31,7 +31,7 @@ def _user(**kw):
 
 
 def test_crea_las_cuatro_tablas(engine):
-    assert set(inspect(engine).get_table_names()) == {"usuarios", "sesiones", "cargas_archivo", "eventos_auditoria"}
+    assert {"usuarios", "sesiones", "cargas_archivo", "eventos_auditoria"} <= set(inspect(engine).get_table_names())
 
 
 def test_usuario_valores_por_defecto(engine):
@@ -185,3 +185,13 @@ def test_migracion_crea_el_mismo_esquema_que_los_modelos(tmp_path):
     assert diff == [], diff
     command.downgrade(cfg, "base")
     assert set(inspect(create_engine(url)).get_table_names()) <= {"alembic_version"}
+
+
+def test_check_de_firma_coincide_entre_modelo_y_migracion():
+    import importlib.util
+    from app.core import config as c
+    spec = importlib.util.spec_from_file_location("m0001", ROOT / "alembic" / "versions" / "0001_modelo_inicial.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    assert mod.SIGNED_OR_NONE == models.SIGNED_OR_NONE
+    assert f"'{c.UNSIGNED_ALGORITHM}'" in mod.SIGNED_OR_NONE

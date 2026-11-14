@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from app.core import config
+from app.security import pqc
 from app.validation.coherence import Context
 from app.validation.engine import ValidationResult, validate_csv
 
@@ -32,11 +33,18 @@ def build_context() -> Context:
 
 
 def save_atomic(filename: str, content: bytes) -> Path | None:
-    """Escribe a un temporal y renombra. Devuelve la ruta de la copia previa, si había."""
+    """Guarda `content` como `filename` y regenera el manifiesto firmado. Devuelve la copia previa, si había.
+
+    Orden dentro de la sección crítica: 1) firmar el manifiesto con el contenido nuevo (si falla, p. ej.
+    ErrorClavesPQC, no se escribe nada); 2) copia al historial; 3) os.replace del CSV; 4) escribir manifest.json.
+    Entre 3 y 4 hay una ventana mínima en la que el manifiesto vigente aún describe la versión anterior del CSV:
+    quien verifique en ese instante verá una discrepancia transitoria.
+    """
     data_dir = config.get_data_dir()
     target = data_dir / filename
     with _write_lock:
         data_dir.mkdir(parents=True, exist_ok=True)
+        manifest = pqc.generar_manifiesto(data_dir, contenidos_nuevos={filename: content})
         backup = None
         if target.is_file():
             history = data_dir / config.HISTORY_DIRNAME
@@ -59,4 +67,5 @@ def save_atomic(filename: str, content: bytes) -> Path | None:
         except BaseException:
             Path(tmp_name).unlink(missing_ok=True)
             raise
+        pqc.escribir_manifiesto(data_dir, manifest)
     return backup
