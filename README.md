@@ -160,4 +160,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) (in Spanish): branch flow, commit convent
 - **Arrancar:** `pip install -r requirements-dev.txt` y `DATA_DIR=data uvicorn app.main:app --port 8080`; documentación en `/docs`. Con Docker: `docker build -t apogeo-backend .` y `docker run --rm -p 8080:8080 apogeo-backend`.
 - **Limitaciones:** horizonte ideal (sin relieve), seis meses de datos, diez sitios, umbrales del semáforo propios del proyecto, aún sin desplegar en producción.
 - **Pruebas:** `pytest` (más de 650). **Licencia:** MIT. La NASA no respalda este proyecto.
-- Más documentación (en español): `docs/datos/informe-fuentes.md`, `docs/bd/modelo-datos.md` y `CONTRIBUTING.md`.
+- Más documentación: `docs/datos/informe-fuentes.md` (en inglés, con el original en español) y, solo en español, `docs/bd/modelo-datos.md` y `CONTRIBUTING.md`.
