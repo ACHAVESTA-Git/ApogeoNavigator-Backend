@@ -14,7 +14,7 @@ for s in sites:
     assert -90 <= float(s["lat_deg"]) <= 90 and -180 <= float(s["lon_este_deg"]) <= 180
     r = list(csv.DictReader(open(d/f"efemerides_{s['site_id']}.csv", encoding="utf-8")))
     t = [datetime.strptime(x["utc"], "%Y-%m-%dT%H:%MZ") for x in r]
-    assert len(r) == 745 and all(b-a == timedelta(hours=1) for a, b in zip(t, t[1:])), s["site_id"]
+    assert len(r) == 4369 and all(b-a == timedelta(hours=1) for a, b in zip(t, t[1:])), s["site_id"]
     for k in ("sol_el_deg", "tierra_el_deg"):
         v = [float(x[k]) for x in r]
         m = max(abs(b-a) for a, b in zip(v, v[1:]))
@@ -22,5 +22,9 @@ for s in sites:
     for k in ("sol_az_deg", "tierra_az_deg"):
         assert all(0 <= float(x[k]) < 360 for x in r)
 for m in csv.DictReader(open(d/"metricas.csv", encoding="utf-8")):
-    assert m["site_id"] in ids and abs(float(m["pct_sol"]) - float(m["horas_sol"])/744*100) <= .5
+    f = "%Y-%m-%dT%H:%MZ"
+    horas = (datetime.strptime(m["fin_utc"], f) - datetime.strptime(m["inicio_utc"], f)).total_seconds() / 3600
+    assert m["site_id"] in ids and 0 < horas <= 35 * 24
+    assert abs(float(m["pct_sol"]) - float(m["horas_sol"])/horas*100) <= .5
+    assert abs(float(m["pct_tierra"]) - float(m["horas_tierra_visible"])/horas*100) <= .5
 print("ERRORES:", err or "ninguno")

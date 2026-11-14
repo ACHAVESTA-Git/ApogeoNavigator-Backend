@@ -1,6 +1,6 @@
 # Informe de fuentes de datos NASA · T5 · 14/11/2026
 
-Datos reales para el rango 2026-12-01T00:00Z → 2027-01-01T00:00Z (31 días, paso de 1 h). Dictamen del revisor (Opus): **APROBADO** (segunda revisión).
+Datos reales para el rango 2026-12-01T00:00Z → 2027-06-01T00:00Z (6 meses, 4369 filas por sitio, paso de 1 h). `metricas.csv` tiene una fila por sitio y mes (60 filas). Dictamen del revisor (Opus): ver el final de este informe.
 
 ## 1. Qué aporta cada fuente y qué tomamos
 
@@ -38,12 +38,14 @@ Scripts en `scripts/datos/` (`sitios.py`, `generar.py`, `validar.py`). Para cada
 ```
 https://ssd.jpl.nasa.gov/api/horizons.api?format=text&COMMAND='10'&OBJ_DATA='NO'&MAKE_EPHEM='YES'
  &EPHEM_TYPE='OBSERVER'&CENTER='coord@301'&COORD_TYPE='GEODETIC'&SITE_COORD='<lon>,<lat>,0'
- &START_TIME='2026-12-01 00:00'&STOP_TIME='2027-01-01 00:00'&STEP_SIZE='1 h'&QUANTITIES='4'&CSV_FORMAT='YES'
+ &START_TIME='2026-12-01 00:00'&STOP_TIME='2027-06-01 00:00'&STEP_SIZE='1 h'&QUANTITIES='4'&CSV_FORMAT='YES'
 ```
 
-Orden de `SITE_COORD`: **lon, lat, alt** (Este +). Las dos series se unen por `utc`. Cada efeméride tiene 745 filas. Las métricas usan las 744 primeras (intervalo [inicio, fin)): `horas_sol` y `horas_tierra_visible` cuentan muestras con elevación > 0; `sol_el_media_deg` es la media solo de las horas con Sol arriba.
+Orden de `SITE_COORD`: **lon, lat, alt** (Este +). Las dos series se unen por `utc`. Cada efeméride tiene 4369 filas. Cada fila de métricas cubre un mes natural, intervalo [inicio, fin) (≤ 35 días): `horas_sol` y `horas_tierra_visible` cuentan muestras con elevación > 0; `sol_el_media_deg` es la media solo de las horas con Sol arriba.
 
 ## 4. Resultados y hallazgos para el pitch
+
+Tabla de diciembre de 2026 (la primera fila mensual de `metricas.csv`; los demás meses están en el CSV).
 
 | Sitio | % Sol | Sol el. máx. | % Tierra |
 |---|---|---|---|
@@ -64,6 +66,8 @@ Orden de `SITE_COORD`: **lon, lat, alt** (Este +). Las dos series se unen por `u
 - **Tierra nunca visible:** Chang'e 4 y Chang'e 6 (cara oculta) tienen 0 h de Tierra; para comunicarse hace falta un satélite de relevo (Queqiao).
 - **Misma luz, comunicación distinta:** Chang'e 4 y Apolo 15 tienen casi el mismo % de Sol (≈49 %) pero uno ve la Tierra todo el tiempo y el otro nunca.
 - **Polo sur y Tierra:** en Shackleton la Tierra es visible solo el 39 % del mes (oscila entre −7° y 6°); en IM-1 (80° S) lo es siempre, pero con ≈10° de altura.
+- **Cambio estacional en Shackleton (horizonte ideal):** el Sol pasa de 100 % en diciembre a 92,7 % en enero, 53,3 % en febrero y 0 % de marzo a mayo (elevación máxima −0,43° a −1,17°). Con un horizonte ideal, el punto se queda sin Sol; el Sol vuelve a ser rasante según la estación lunar. Es la base de HU-08 (mismo sitio en distintas fechas).
+- **Chang'e 4:** la Tierra sigue en 0 % los 6 meses y el Sol se mantiene entre 47 y 52 %.
 - **Ciclo de día lunar:** los sitios ecuatoriales y medios rondan el 48–50 % de Sol en 31 días; es la mitad del día lunar de 29,5 días.
 
 ## 5. Limitaciones
@@ -71,6 +75,10 @@ Orden de `SITE_COORD`: **lon, lat, alt** (Este +). Las dos series se unen por `u
 - **Horizonte ideal:** Horizons no modela relieve. Shackleton sale con 100 % de Sol, pero su fondo está en sombra permanente; el dato real corresponde a crestas cercanas. En IM-1 y Chandrayaan-3, con Sol bajo, el relieve local cambia mucho las horas reales. Hay que mostrar este aviso junto a la métrica y validar con PGDA 69/90 o QuickMap (HU-12).
 - **Posiciones:** Blue Ghost 1 es el centro de la región de aterrizaje (±0,01°), no el punto de contacto. Shackleton es el centro del cráter, no un sitio elegido. La longitud de Chang'e 6 se convirtió de 206,0148° E.
 - **Chandrayaan-3:** se usa la posición medida por LROC (−69,3741; 32,32). El objetivo planificado por ISRO es −69,367621; 32,348126 (folleto LVM3-M4); la diferencia es de unos centenares de metros.
-- **Rango:** un solo mes (diciembre 2026). Las métricas no son anuales.
+- **Rango:** seis meses (dic 2026 a may 2027), no un año completo.
+- **Predicción de la Tierra:** la cabecera de Horizons indica que los parámetros de orientación de la Tierra (EOP) son predicciones desde febrero de 2027; para un observador en la Luna el efecto es menor que 1 s y no cambia los datos a 6 decimales.
 - **Trazabilidad:** no se guardaron las cabeceras crudas de Horizons; son reproducibles con `generar.py`.
 - Citar «Fuente: NASA/JPL Horizons» sin sugerir respaldo de NASA al proyecto.
+
+## 6. Dictamen del revisor (Opus)
+**APROBADO** para los 10 sitios con 6 meses (4369 filas por sitio) y 60 filas mensuales de métricas. Las efemérides coinciden con una descarga independiente de Horizons con diferencia máxima 0 en las 4369 filas, y las 60 filas de `metricas.csv` salen iguales al recalcularlas. Los meses tienen 672, 720 o 744 h: compara por porcentaje, no por horas.
