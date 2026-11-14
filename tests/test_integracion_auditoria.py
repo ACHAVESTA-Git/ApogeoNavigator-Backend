@@ -116,6 +116,16 @@ def test_produccion_sin_claves_responde_503_y_no_guarda(api, data_dir, monkeypat
     assert upload(api, "sites", "sites_limites.csv", "sites.csv").status_code == 503      # el dry-run también falla cerrado
 
 
+def test_produccion_sin_base_de_datos_responde_503_en_la_carga(api, data_dir, monkeypatch):
+    monkeypatch.setenv("K_SERVICE", "apogeo-backend")
+    db_session.configure(None)
+    antes = (data_dir / "sites.csv").read_bytes()
+    r = upload(api, "sites", "sites_limites.csv", "sites.csv", dry_run=False)
+    assert r.status_code == 503 and r.json()["detail"] == c.MSG_AUDIT_UNAVAILABLE
+    assert (data_dir / "sites.csv").read_bytes() == antes
+    assert upload(api, "sites", "sites_limites.csv", "sites.csv").status_code == 503
+
+
 def test_arranque_en_produccion_sin_sal_falla(bd, data_dir, monkeypatch):
     monkeypatch.setenv("K_SERVICE", "apogeo-backend")
     monkeypatch.delenv("IP_HASH_SALT", raising=False)

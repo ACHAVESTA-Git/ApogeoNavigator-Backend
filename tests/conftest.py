@@ -92,7 +92,20 @@ def bd():
     from app.db import models  # noqa: F401
     from app.utils import auditoria_util
 
+    from sqlalchemy import event
+
     engine = create_engine("sqlite://", poolclass=StaticPool, connect_args={"check_same_thread": False})
+
+    # pysqlite no maneja bien SAVEPOINT ni rollback por defecto: receta oficial de SQLAlchemy para que
+    # las transacciones de SQLite se comporten como las de PostgreSQL en estas pruebas.
+    @event.listens_for(engine, "connect")
+    def _sin_autotransaccion(dbapi_connection, _):
+        dbapi_connection.isolation_level = None
+
+    @event.listens_for(engine, "begin")
+    def _begin_explicito(conn):
+        conn.exec_driver_sql("BEGIN")
+
     Base.metadata.create_all(engine)
     db_session.configure(engine)
     yield engine

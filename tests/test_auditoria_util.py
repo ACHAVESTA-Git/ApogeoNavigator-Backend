@@ -12,6 +12,7 @@ from app.core import config as c
 from app.db import session as db_session
 from app.db.enums import AccionAuditoria as A
 from app.db.models import CargaArchivo, EventoAuditoria
+from app.security.pqc import ErrorClavesPQC
 from app.utils import auditoria_util as au
 
 STUB_KEY = b"clave-de-prueba"
@@ -147,7 +148,7 @@ def test_quitar_la_firma_se_detecta_aunque_se_declare_NINGUNO():
     assert r.valida is False and r.motivo == c.MSG_AUDIT_BAD_HASH      # el algoritmo entra en el hash
 
 
-def test_vaciar_y_reescribir_desde_el_genesis_es_valido_pero_el_ancla_lo_delata():
+def test_truncar_la_cola_no_se_detecta_sin_ancla_externa():
     """Limitación documentada: sin ancla externa un truncado de cola no se detecta."""
     _events(3)
     ancla = au.verificar_cadena().hash_cabeza
@@ -202,11 +203,20 @@ def test_produccion_con_firma_que_falla_no_registra(monkeypatch):
 
     class Roto(StubFirmante):
         def firmar(self, datos, *, contexto=b""):
-            raise RuntimeError("sin clave privada")
+            raise ErrorClavesPQC("sin clave privada")
     au.set_firmante(Roto())
     with pytest.raises(au.ErrorAuditoria):
         au.registrar_evento(A.LOGIN, "ana")
     assert _all() == []
+
+
+def test_un_error_de_programacion_en_la_firma_no_se_degrada_en_silencio():
+    class Bug(StubFirmante):
+        def firmar(self, datos, *, contexto=b""):
+            raise TypeError("bug")
+    au.set_firmante(Bug())
+    with pytest.raises(TypeError):
+        au.registrar_evento(A.LOGIN, "ana")
 
 
 def test_firma_obligatoria_por_variable_en_desarrollo(monkeypatch):
@@ -364,3 +374,55 @@ def test_rotar_la_clave_real_invalida_la_verificacion(pqc_real, monkeypatch):
     monkeypatch.setenv("PQC_PUBLIC_KEY", publica)
     pqc_real.reiniciar()
     assert au.verificar_cadena().motivo == c.MSG_AUDIT_KEY_MISMATCH
+
+
+# ------------------------------------------------------------------ saneo, tipos, ancla y producción sin base
+def test_actor_recurso_y_nombre_se_sanean_y_recortan():
+    ev = au.registrar_evento(A.CAMBIO_DATOS, "a\x00" + "x" * 300, recurso="r\x07" + "y" * 500)
+    assert "\x00" not in ev.actor and len(ev.actor) == c.DB_ACTOR_MAX
+    assert "\x07" not in ev.recurso and len(ev.recurso) == c.DB_RESOURCE_MAX
+    reg = au.registrar_carga("sites", "n\x01" + "z" * 400 + ".csv", b"x", 1, True, 0, A.CARGA_GUARDADA, actor="q" * 200)
+    assert len(reg.carga.nombre_archivo) == c.DB_FILENAME_MAX and len(reg.carga.actor) == c.DB_ACTOR_MAX
+
+
+def test_motivo_de_login_fallido_se_recorta():
+    ev = au.registrar_login_fallido("x", motivo="m" * 1000)
+    assert len(ev.detalle["motivo"]) == c.DB_RESOURCE_MAX
+
+
+@pytest.mark.parametrize("detalle", [{"x": 1.5}, {"x": object()}, {"x": {1: "a"}}, {"x": [datetime.now()]}, {"x": b"bytes"}])
+def test_detalle_con_tipos_no_permitidos_se_rechaza(detalle):
+    with pytest.raises(au.ErrorAuditoria):
+        au.registrar_evento(A.CAMBIO_DATOS, "ana", detalle=detalle, estricto=True)
+
+
+def test_detalle_con_tipos_validos_anidados():
+    ev = au.registrar_evento(A.CAMBIO_DATOS, "ana", detalle={"a": [1, "b", True, None, {"c": "d"}]})
+    assert au.verificar_cadena().valida and ev.detalle["a"][4] == {"c": "d"}
+
+
+def test_el_ancla_se_emite_al_confirmar_y_no_si_hay_rollback(caplog):
+    with caplog.at_level(logging.INFO, logger="apogeo.auditoria"):
+        with pytest.raises(RuntimeError):
+            with db_session.session_scope() as s:
+                au.registrar_evento(A.LOGIN, "ana", db=s)
+                raise RuntimeError("deshacer")
+        assert "auditoria cabeza" not in caplog.text and _all() == []
+        ev = au.registrar_evento(A.LOGIN, "ana")
+    assert f"secuencia=1 hash={ev.hash_actual}" in caplog.text           # tras el rollback, la secuencia 1 se reutiliza
+
+
+def test_el_log_no_contiene_la_ip(caplog):
+    with caplog.at_level(logging.DEBUG, logger="apogeo.auditoria"):
+        au.registrar_evento(A.LOGIN, "ana", request=FakeRequest(ip="203.0.113.77"))
+    assert "203.0.113.77" not in caplog.text
+
+
+def test_produccion_sin_base_de_datos_configurada_lanza(monkeypatch):
+    monkeypatch.setenv("K_SERVICE", "x")
+    db_session.configure(None)
+    with pytest.raises(au.ErrorAuditoria):
+        au.registrar_evento(A.LOGIN, "ana")
+    with pytest.raises(au.ErrorAuditoria):
+        with au.unidad_de_trabajo():
+            pass
