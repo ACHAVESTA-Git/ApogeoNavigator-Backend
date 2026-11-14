@@ -11,6 +11,7 @@ from pathlib import Path
 # ---------------------------------------------------------------- entorno
 ENV_DATA_DIR = "DATA_DIR"
 ENV_UPLOAD_API_KEY = "UPLOAD_API_KEY"
+ENV_ADMIN_API_KEY = "ADMIN_API_KEY"
 ENV_DATABASE_URL = "DATABASE_URL"
 ENV_IP_HASH_SALT = "IP_HASH_SALT"
 ENV_AUDIT_REQUIRE_SIGNATURE = "AUDIT_REQUIRE_SIGNATURE"
@@ -57,6 +58,11 @@ def audit_requires_signature() -> bool:
 
 def get_upload_api_key() -> str:
     return os.getenv(ENV_UPLOAD_API_KEY, "")
+
+
+def get_admin_api_key() -> str:
+    """Clave del gestor de claves (X-API-Key). Debe ser distinta de UPLOAD_API_KEY; vacía = gestor cerrado."""
+    return os.getenv(ENV_ADMIN_API_KEY, "")
 
 
 TRUE_VALUES = ("1", "true", "yes", "si")
@@ -218,6 +224,8 @@ HTTP_UNAUTHORIZED = 401
 HTTP_OK = 200
 HTTP_NOT_FOUND = 404
 HTTP_UNAVAILABLE = 503
+HTTP_CREATED = 201
+HTTP_CONFLICT = 409
 
 # ---------------------------------------------------------------- mensajes (plantillas str.format)
 MSG_CONTROL_CHAR = "Contiene un caracter de control"
@@ -409,6 +417,90 @@ MSG_AUDIT_UNSIGNED = "El evento no está firmado (algoritmo NINGUNO): la cadena 
 MSG_AUDIT_KEY_MISMATCH = "El evento se firmó con otra clave (huella distinta de la configurada)"
 MSG_AUDIT_CANNOT_VERIFY = "Hay eventos firmados pero no hay verificador de firmas disponible"
 MSG_AUDIT_SIGNATURE_REQUIRED = "No se pudo firmar el evento y la firma es obligatoria"
+
+
+# ---------------------------------------------------------------- gestor de claves PQC (app/security/gestor_claves.py)
+# Por usuario: un par ML-KEM-1024 (FIPS 203) y un par ML-DSA-65 (FIPS 204). La privada no se guarda nunca.
+ALG_KEM = "ML-KEM-1024"
+ALG_FIRMA = "ML-DSA-65"
+TIPO_KEM = "kem"
+TIPO_FIRMA = "firma"
+ALGORITMO_POR_TIPO = {TIPO_KEM: ALG_KEM, TIPO_FIRMA: ALG_FIRMA}
+# Tamaños según FIPS 203 (ML-KEM-1024) y FIPS 204 (ML-DSA-65). La privada se entrega como semilla (64 y 32 bytes).
+TAMANO_PUBLICA = {TIPO_KEM: 1568, TIPO_FIRMA: 1952}
+TAMANO_PRIVADA_ENTREGADA = {TIPO_KEM: 64, TIPO_FIRMA: 32}
+TAMANO_PRIVADA_FIPS = {TIPO_KEM: 3168, TIPO_FIRMA: 4032}
+KEM_CIPHERTEXT_BYTES = 1568
+KEM_SEED_BYTES = 64
+SHARED_SECRET_BYTES = 32
+
+KEM_DEM_VERSION = b"\x02"
+KEM_DEM_NONCE_BYTES = 12
+KEY_ID_BYTES = 8
+KEM_DEM_TAG_BYTES = 16
+KEM_DEM_HEADER_BYTES = 1 + KEY_ID_BYTES + KEM_CIPHERTEXT_BYTES + KEM_DEM_NONCE_BYTES
+KEM_DEM_INFO = b"apogeo-kem-dem-v1"
+EMAIL_AAD = b"usuarios.email"
+
+ENV_KEM_PRIVATE = "PQC_KEM_PRIVATE_KEY"
+ENV_KEM_PUBLIC = "PQC_KEM_PUBLIC_KEY"
+ENV_EMAIL_HASH_KEY = "EMAIL_HASH_KEY"
+ENV_KEM_PREVIOUS = "PQC_KEM_PRIVATE_KEY_ANTERIORES"      # semillas anteriores, separadas por comas
+ENV_EMAIL_HASH_PREVIOUS = "EMAIL_HASH_KEY_ANTERIORES"     # claves de hash anteriores, separadas por comas
+LIST_SEPARATOR = ","
+DEV_SERVER_KEYS_FILENAME = "claves_servidor.json"
+EMAIL_HASH_KEY_BYTES = 32
+
+MSG_TIPO_DESCONOCIDO = "Tipo de clave desconocido: {tipo!r}."
+MSG_NO_SERVER_KEYS = (
+    f"Faltan {ENV_KEM_PRIVATE} o {ENV_EMAIL_HASH_KEY} y el entorno es de producción: "
+    "no se generan claves del servidor automáticamente."
+)
+MSG_SERVER_KEYS_DEV = "Claves del servidor (KEM y hash de email) de DESARROLLO en {ruta}; no valen para producción."
+MSG_BAD_BLOB = "Dato cifrado inválido o manipulado."
+MSG_UNKNOWN_KEY = "El dato está cifrado con una clave del servidor que ya no está configurada."
+MSG_BAD_KEY = "{nombre} inválida: {detalle}."
+
+
+# ---------------------------------------------------------------- admin de claves (app/routers/admin_claves.py)
+KEYS_ROUTE_PREFIX = "/api/admin/claves"
+KEYS_ROUTER_TAG = "admin-claves"
+ACTOR_ADMIN = "admin-api-key"
+KEYS_PAGE_DEFAULT = 50
+KEYS_PAGE_MAX = 200
+KEYS_Q_MAX = 100
+KEYS_MOTIVE_MIN = 3
+KEYS_MOTIVE_MAX = 200
+KEYS_ALGORITHM_MAX = 20
+KEYS_MOTIVE_ROTATION = "rotación"
+LIKE_ESCAPE = "\\"
+NO_STORE_HEADERS = {"Cache-Control": "no-store", "Pragma": "no-cache"}
+PEM_MEDIA_TYPE = "application/x-pem-file"
+KEYS_FORMAT_PEM = "pem"
+KEYS_FORMAT_JSON = "json"
+KEYS_FORMAT_PATTERN = f"^({KEYS_FORMAT_JSON}|{KEYS_FORMAT_PEM})$"
+KEYS_FILE_FINGERPRINT_CHARS = 12
+KEYS_PRIVATE_FILENAME = "{tipo}-{huella}.privada.pem"
+KEYS_PUBLIC_FILENAME = "{tipo}-{huella}.publica.pem"
+KEYS_AUDIT_RESOURCE = "clave/{id}"
+KEYS_LOGGER = "apogeo.claves"
+OP_KEY_GENERATED = "clave_generada"
+OP_KEY_REVOKED = "clave_revocada"
+OP_KEY_ROTATED = "clave_rotada"
+OP_KEY_READ = "lectura"
+MSG_KEYS_ADMIN_KEY = "Clave de administración inválida o ausente"
+MSG_KEYS_NO_USER = "El usuario no existe"
+MSG_KEYS_INACTIVE_USER = "El usuario está desactivado; no se le pueden emitir claves"
+MSG_KEYS_NO_KEY = "La clave no existe"
+MSG_KEYS_ALREADY_ACTIVE = "El usuario ya tiene una clave activa de tipo {tipo}; usa rotar para reemitirla"
+MSG_KEYS_ALREADY_ACTIVE_GENERIC = "Ya hay una clave activa para ese usuario y tipo"
+MSG_KEYS_ALREADY_REVOKED = "La clave ya está revocada"
+MSG_KEYS_AUDIT_FAILED = "No se pudo registrar la auditoría; no se hizo ningún cambio"
+MSG_KEYS_WARNING = ("Guarda la clave privada ahora: se muestra UNA sola vez y no se puede recuperar. "
+                    "Si se pierde, hay que revocar el par y emitir uno nuevo.")
+MSG_KEYS_DELIVERY_COUNT_FAILED = "no se pudo contar la entrega de la clave (%s)"
+MSG_KEYS_SAME_KEY_LOG = "ADMIN_API_KEY es igual a UPLOAD_API_KEY: el gestor de claves queda cerrado"
+MSG_KEYS_READ_LOG = "lectura de admin: operacion=%s filtros=%s resultados=%s"
 
 # ---------------------------------------------------------------- CORS
 ENV_CORS_ORIGINS = "CORS_ORIGINS"                 # lista separada por comas

@@ -4,6 +4,7 @@ Uso (desde ApogeoNavigator-Backend/):
 
     python scripts/pqc/generar_claves.py              # imprime PQC_PRIVATE_KEY y PQC_PUBLIC_KEY
     python scripts/pqc/generar_claves.py --solo-publica   # deriva la pública de PQC_PRIVATE_KEY
+    python scripts/pqc/generar_claves.py --servidor       # PQC_KEM_PRIVATE_KEY y EMAIL_HASH_KEY (datos personales)
 
 Las claves se imprimen por la salida estándar y NUNCA se escriben en disco. Redirígelas
 directamente al gestor de secretos; no las pegues en el repositorio, en commits, en chats
@@ -24,7 +25,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from app.security import pqc  # noqa: E402
+from app.core import config  # noqa: E402
+from app.security import gestor_claves, pqc  # noqa: E402
 
 EXIT_OK = 0
 EXIT_ERROR = 1
@@ -40,11 +42,19 @@ def _parse(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--solo-publica", action="store_true",
                         help=f"deriva la clave pública a partir de {pqc.ENV_PRIVATE_KEY}")
+    parser.add_argument("--servidor", action="store_true",
+                        help="genera PQC_KEM_PRIVATE_KEY y EMAIL_HASH_KEY (cifrado de datos personales)")
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
     args = _parse(argv)
+    if args.servidor:
+        semilla, clave_hash = gestor_claves.generar_claves_servidor()
+        print(f"{config.ENV_KEM_PRIVATE}={semilla}")
+        print(f"{config.ENV_EMAIL_HASH_KEY}={clave_hash}")
+        print(MSG_WARNING, file=sys.stderr)
+        return EXIT_OK
     if args.solo_publica:
         privada = os.getenv(pqc.ENV_PRIVATE_KEY, "").strip()
         if not privada:

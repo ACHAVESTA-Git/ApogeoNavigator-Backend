@@ -6,7 +6,7 @@ from app.core import config
 from app.core.cors import add_cors
 from app.core.limits import upload_guard
 from app.db.session import db_enabled
-from app.routers import auditoria, datos, lectura, seguridad
+from app.routers import admin_claves, auditoria, datos, lectura, seguridad
 from app.schemas.sites import Site
 from app.services import storage
 
@@ -25,6 +25,7 @@ app.include_router(datos.router)
 app.include_router(lectura.router)
 app.include_router(auditoria.router)
 app.include_router(seguridad.router)
+app.include_router(admin_claves.router)
 
 
 @app.get(config.ROUTE_HEALTH)
