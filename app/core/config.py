@@ -364,7 +364,7 @@ DB_POOL_SIZE = 2                      # pequeño: Cloud Run escala instancias y 
 DB_MAX_OVERFLOW = 2
 DB_POOL_TIMEOUT_SECONDS = 10
 DB_SQLITE_PREFIX = "sqlite"
-DB_PSYCOPG_PREFIX = "postgresql+psycopg"
+DB_PSYCOPG_PREFIX = "postgresql+psycopg://"      # no casa con psycopg2, que no admite prepare_threshold
 DB_EMAIL_MAX = 320
 DB_NAME_MAX = 120
 DB_PROVIDER_MAX = 40
@@ -432,6 +432,9 @@ DEFAULT_DATA_REFRESH_SECONDS = 30.0
 BUCKET_HISTORY_PREFIX = f"{HISTORY_DIRNAME}/"
 NEW_OBJECT_GENERATION = 0               # if_generation_match=0: solo crear si el objeto no existe
 MANIFEST_NAME = "manifest.json"
+BUCKET_PATH_SEP = "/"
+LOGGER_DATASTORE = "apogeo.datastore"
+MSG_REPLICA_RESET_FAILED = "No se pudo restablecer la réplica local desde el bucket (%s)"
 SEED_SUFFIX = ".csv"
 MSG_PROD_NEEDS_BUCKET = ("En producción hay que configurar DATA_BUCKET: el disco de Cloud Run es efímero y los datos "
                          "cargados se perderían. Define DATA_BUCKET (y dale al servicio permiso sobre el bucket)")

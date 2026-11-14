@@ -4,6 +4,8 @@ La autenticación usa las credenciales por defecto del entorno (cuenta de servic
 """
 from typing import NamedTuple, Protocol
 
+from app.core import config
+
 
 class BlobInfo(NamedTuple):
     name: str
@@ -48,7 +50,7 @@ class GcsStore:
 
     def list(self) -> list[BlobInfo]:
         blobs = self._guard(lambda: list(self._client.list_blobs(self._bucket, prefix=self._prefix)))
-        return [BlobInfo(b.name.removeprefix(self._prefix), b.generation) for b in blobs if not b.name.endswith("/")]
+        return [BlobInfo(b.name.removeprefix(self._prefix), b.generation) for b in blobs if not b.name.endswith(config.BUCKET_PATH_SEP)]
 
     def download(self, name: str) -> bytes:
         return self._guard(lambda: self._bucket.blob(self._prefix + name).download_as_bytes())

@@ -24,7 +24,7 @@ from app.security import pqc
 from app.services import storage
 from app.services.blobstore import BlobStore, GcsStore, StoreConflict, StoreError
 
-log = logging.getLogger("apogeo.datastore")
+log = logging.getLogger(c.LOGGER_DATASTORE)
 
 
 class DataConflict(Exception):
@@ -80,7 +80,7 @@ def _write_local(name: str, data: bytes) -> None:
 
 
 def _is_data_object(name: str) -> bool:
-    return "/" not in name and (name.endswith(c.SEED_SUFFIX) or name == c.MANIFEST_NAME)
+    return c.BUCKET_PATH_SEP not in name and (name.endswith(c.SEED_SUFFIX) or name == c.MANIFEST_NAME)
 
 
 def _seed_files() -> dict[str, bytes]:
@@ -107,7 +107,7 @@ def pull(force: bool = False) -> None:
             (folder / name).unlink(missing_ok=True)
             _generations.pop(name, None)
         if folder.is_dir():
-            for path in folder.glob(f"*{c.SEED_SUFFIX}"):
+            for path in (*folder.glob(f"*{c.SEED_SUFFIX}"), folder / c.MANIFEST_NAME):   # incluye un manifiesto local huérfano
                 if path.name not in remote:
                     path.unlink(missing_ok=True)
         global _last_check
@@ -151,8 +151,11 @@ def _seed_local_if_empty() -> None:
 def _seed_bucket(store: BlobStore) -> None:
     """Bucket vacío: sube la semilla y, si se puede, su manifiesto firmado."""
     seed = _seed_files()
-    for name, data in seed.items():
-        store.upload(name, data, if_generation_match=c.NEW_OBJECT_GENERATION)
+    try:
+        for name, data in seed.items():
+            store.upload(name, data, if_generation_match=c.NEW_OBJECT_GENERATION)
+    except StoreConflict:
+        return                                              # otra instancia arrancó a la vez y ya sembró: sus datos mandan
     if not seed:
         return
     try:
@@ -162,7 +165,10 @@ def _seed_bucket(store: BlobStore) -> None:
             raise                                           # producción: sin firma no se publican datos
         log.warning(c.MSG_SEED_MANIFEST_SKIPPED, type(exc).__name__)
         return
-    store.upload(c.MANIFEST_NAME, _manifest_bytes(manifest), if_generation_match=c.NEW_OBJECT_GENERATION)
+    try:
+        store.upload(c.MANIFEST_NAME, _manifest_bytes(manifest), if_generation_match=c.NEW_OBJECT_GENERATION)
+    except StoreConflict:
+        return
 
 
 def _manifest_bytes(manifest: dict) -> bytes:
@@ -188,5 +194,21 @@ def guardar(filename: str, content: bytes) -> Path | None:
                                                   if_generation_match=_generations.get(name, c.NEW_OBJECT_GENERATION))
             return backup
         except StoreConflict as exc:
-            pull(force=True)                                    # descartar lo local: manda el bucket
+            _reset_replica()                                    # descartar lo local: manda el bucket
             raise DataConflict(c.MSG_DATA_CONFLICT) from exc
+        except StoreError:
+            _reset_replica()                                    # la subida falló tras escribir en local: deshacerlo
+            raise
+
+
+def _reset_replica() -> None:
+    """Vuelve a descargar todo del bucket para que la réplica local no sirva datos que el bucket no tiene.
+
+    Mejor esfuerzo: si el bucket sigue caído se anota y se mantiene el error original. Límite: si la subida falla justo
+    entre el CSV y el manifiesto, el bucket puede quedar con un CSV más nuevo que su manifiesto (el verificador del
+    manifiesto lo detecta); repetir la carga lo corrige.
+    """
+    try:
+        pull(force=True)
+    except StoreError as exc:
+        log.error(c.MSG_REPLICA_RESET_FAILED, type(exc).__name__)
