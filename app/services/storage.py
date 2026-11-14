@@ -10,7 +10,6 @@ from app.validation.coherence import Context
 from app.validation.engine import ValidationResult, validate_csv
 
 _write_lock = threading.Lock()
-HISTORY_STAMP = "%Y%m%dT%H%M%SZ"
 
 
 def read_sites() -> ValidationResult | None:
@@ -42,7 +41,7 @@ def save_atomic(filename: str, content: bytes) -> Path | None:
         if target.is_file():
             history = data_dir / config.HISTORY_DIRNAME
             history.mkdir(exist_ok=True)
-            stamp = datetime.now(timezone.utc).strftime(HISTORY_STAMP)
+            stamp = datetime.now(timezone.utc).strftime(config.HISTORY_STAMP)
             backup = history / f"{target.stem}_{stamp}{target.suffix}"
             backup.write_bytes(target.read_bytes())
         fd, tmp_name = tempfile.mkstemp(dir=data_dir, prefix=".tmp_", suffix=".csv")

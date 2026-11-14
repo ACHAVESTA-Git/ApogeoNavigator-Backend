@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 
+from app.core import config
 from app.routers import datos
 from app.schemas.sites import Site
 from app.services import storage
@@ -17,7 +18,7 @@ def health() -> dict:
 def sites() -> list[dict]:
     result = storage.read_sites()
     if result is None:
-        raise HTTPException(status_code=503, detail="No se encontró sites.csv")
+        raise HTTPException(status_code=503, detail=config.MSG_NO_SITES)
     if not result.report.valido:
-        raise HTTPException(status_code=503, detail="sites.csv no cumple el estándar de CSV")
+        raise HTTPException(status_code=503, detail=config.MSG_SITES_INVALID)
     return [r.values for r in result.records]

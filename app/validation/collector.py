@@ -1,5 +1,6 @@
 from app.core import config
 from app.schemas.report import Issue
+from app.utils.text import clip_value
 
 
 class Collector:
@@ -12,8 +13,7 @@ class Collector:
 
     @staticmethod
     def _issue(fila, columna, codigo, mensaje, valor) -> Issue:
-        shown = None if valor is None else str(valor)[: config.MAX_VALUE_CHARS]
-        return Issue(fila=fila, columna=columna, codigo=codigo, mensaje=mensaje, valor=shown)
+        return Issue(fila=fila, columna=columna, codigo=codigo, mensaje=mensaje, valor=clip_value(valor))
 
     def error(self, fila: int, columna: str | None, codigo: str, mensaje: str, valor=None) -> None:
         self.total_errors += 1

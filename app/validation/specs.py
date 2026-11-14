@@ -37,15 +37,15 @@ def _date(name) -> ColumnSpec:
 
 SITES_SCHEMA = [
     ColumnSpec("site_id", REGEX, pattern=c.SITE_ID_RE, unique=True),
-    _text("nombre", 3, 120),
+    _text("nombre", *c.LEN_NOMBRE),
     ColumnSpec("categoria", ENUM, choices=c.SITE_CATEGORIAS),
-    _text("mision", 2, 80),
-    _text("agencia", 2, 40),
+    _text("mision", *c.LEN_MISION),
+    _text("agencia", *c.LEN_AGENCIA),
     _dec("lat_deg", c.LAT_MIN, c.LAT_MAX),
     _dec("lon_este_deg", c.LON_MIN, c.LON_MAX),
-    _dec("alt_km", c.ALT_KM_MIN, c.ALT_KM_MAX, required=False, default=0.0),
-    ColumnSpec("fuente_url", URL, min_len=10, max_len=300),
-    _text("notas", 0, 500, required=False),
+    _dec("alt_km", c.ALT_KM_MIN, c.ALT_KM_MAX, required=False, default=c.ALT_KM_DEFAULT),
+    ColumnSpec("fuente_url", URL, min_len=c.LEN_URL[0], max_len=c.LEN_URL[1]),
+    _text("notas", *c.LEN_NOTAS, required=False),
 ]
 
 EFEMERIDES_SCHEMA = [
@@ -57,7 +57,7 @@ EFEMERIDES_SCHEMA = [
 ]
 
 # Las horas se acotan contra el rango real en la coherencia; aquí solo el mínimo.
-_HOURS_CAP = c.METRICS_MAX_RANGE_DAYS * 24.0
+_HOURS_CAP = float(c.METRICS_MAX_RANGE_DAYS * c.HOURS_PER_DAY)
 
 METRICAS_SCHEMA = [
     ColumnSpec("site_id", REGEX, pattern=c.SITE_ID_RE),
@@ -76,3 +76,8 @@ SCHEMAS = {
     c.TIPO_EFEMERIDES: EFEMERIDES_SCHEMA,
     c.TIPO_METRICAS: METRICAS_SCHEMA,
 }
+
+# Los esquemas deben coincidir con las columnas declaradas en config (estándar §2-§4).
+for _schema, _columns in ((SITES_SCHEMA, c.SITES_COLUMNS), (EFEMERIDES_SCHEMA, c.EPHEM_COLUMNS),
+                          (METRICAS_SCHEMA, c.METRICS_COLUMNS)):
+    assert tuple(spec.name for spec in _schema) == _columns, _columns

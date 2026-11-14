@@ -21,7 +21,7 @@ RESPONSES = {
 
 def _check_tipo(tipo: str) -> None:
     if tipo not in config.TIPOS_ARCHIVO:
-        raise HTTPException(status_code=404, detail=f"Tipo desconocido; usa uno de {list(config.TIPOS_ARCHIVO)}")
+        raise HTTPException(status_code=404, detail=config.MSG_UNKNOWN_TIPO.format(tipos=list(config.TIPOS_ARCHIVO)))
 
 
 async def _validate(tipo: str, file: UploadFile) -> ValidationResult:
@@ -47,6 +47,6 @@ async def guardar(tipo: str, file: UploadFile):
     result = await _validate(tipo, file)
     if not result.report.valido:
         return _fail(result)
-    backup = storage.save_atomic(result.report.archivo, result.content)
+    backup = storage.save_atomic(result.target_filename, result.content)
     return SaveResult(**result.report.model_dump(), guardado=True,
                       copia_historial=backup.name if backup else None)

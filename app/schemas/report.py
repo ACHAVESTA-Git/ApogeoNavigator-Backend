@@ -1,9 +1,15 @@
 """Modelos Pydantic del informe de validación (formato del §5 del estándar)."""
+from typing import Literal
+
 from pydantic import BaseModel, Field
+
+from app.core import config
+
+TipoArchivo = Literal[*config.TIPOS_ARCHIVO]
 
 
 class Issue(BaseModel):
-    fila: int
+    fila: int          # los errores de archivo (sin fila propia) usan HEADER_ROW (1)
     columna: str | None = None
     codigo: str
     mensaje: str
@@ -12,7 +18,7 @@ class Issue(BaseModel):
 
 class Report(BaseModel):
     archivo: str
-    tipo: str
+    tipo: TipoArchivo
     valido: bool
     total_filas: int = 0
     total_errores: int = 0
