@@ -139,3 +139,86 @@ def test_el_primer_evento_con_la_tabla_vacia_tambien_se_serializa(pg):
         list(pool.map(lambda i: au.registrar_evento(A.LOGIN, f"u{i}", estricto=True), range(8)))
     r = au.verificar_cadena()
     assert r.valida and r.n_eventos == 8 and r.primer_hash_prev_es_genesis is True
+
+
+# ------------------------------------------------------------------ RLS para Supabase (migración 0003)
+TABLAS = ("usuarios", "sesiones", "cargas_archivo", "eventos_auditoria", "claves_usuario")
+
+
+@pytest.fixture
+def roles_supabase(pg):
+    """Crea los roles anon y authenticated (existen en Supabase, no en PostgreSQL normal) y los quita al terminar."""
+    engine, cfg = pg
+    with engine.begin() as conn:
+        for rol in ("anon", "authenticated"):
+            conn.execute(text(f"DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '{rol}') "
+                              f"THEN CREATE ROLE {rol} NOLOGIN; END IF; END $$"))
+            conn.execute(text(f"GRANT USAGE ON SCHEMA public TO {rol}"))
+    yield engine, cfg
+    with engine.begin() as conn:
+        conn.execute(text("DROP SCHEMA public CASCADE"))
+        conn.execute(text("CREATE SCHEMA public"))
+        for rol in ("anon", "authenticated"):
+            conn.execute(text(f"DROP OWNED BY {rol}"))
+            conn.execute(text(f"DROP ROLE IF EXISTS {rol}"))
+
+
+def test_rls_activado_en_todas_las_tablas_sin_politicas(pg):
+    engine, _ = pg
+    with engine.connect() as conn:
+        activadas = {r[0] for r in conn.execute(text(
+            "SELECT relname FROM pg_class WHERE relrowsecurity AND relnamespace = 'public'::regnamespace"))}
+        assert set(TABLAS) <= activadas
+        assert conn.execute(text("SELECT count(*) FROM pg_policies WHERE schemaname = 'public'")).scalar() == 0
+
+
+def test_migrar_sin_los_roles_de_supabase_funciona(pg):
+    engine, _ = pg                                     # PostgreSQL normal: no existen anon ni authenticated
+    with engine.connect() as conn:
+        assert conn.execute(text("SELECT count(*) FROM pg_roles WHERE rolname IN ('anon', 'authenticated')")).scalar() == 0
+
+
+def test_anon_y_authenticated_no_pueden_leer_ni_escribir(roles_supabase):
+    engine, cfg = roles_supabase
+    command.downgrade(cfg, "base")
+    command.upgrade(cfg, "head")                       # ahora los roles existen: se aplica el REVOKE
+    with engine.connect() as conn:
+        for rol in ("anon", "authenticated"):
+            for tabla in TABLAS:
+                for privilegio in ("SELECT", "INSERT", "UPDATE", "DELETE"):
+                    assert conn.execute(text("SELECT has_table_privilege(:r, :t, :p)"),
+                                        {"r": rol, "t": tabla, "p": privilegio}).scalar() is False
+            assert conn.execute(text("SELECT has_sequence_privilege(:r, 'eventos_auditoria_id_seq', 'USAGE')"),
+                                {"r": rol}).scalar() is False
+
+
+def test_anon_recibe_permiso_denegado_y_el_propietario_sigue_leyendo(roles_supabase):
+    engine, cfg = roles_supabase
+    command.downgrade(cfg, "base")
+    command.upgrade(cfg, "head")
+    with engine.begin() as conn:
+        conn.execute(text("INSERT INTO usuarios (id, email, nombre, rol, activo, creado_utc) "
+                          "VALUES (gen_random_uuid(), 'a@x.org', 'Ana', 'analista', true, now())"))
+        assert conn.execute(text("SELECT count(*) FROM usuarios")).scalar() == 1          # propietario: ve su dato
+    with pytest.raises(DBAPIError, match="permission denied"):
+        with engine.begin() as conn:
+            conn.execute(text("SET LOCAL ROLE anon"))
+            conn.execute(text("SELECT * FROM usuarios"))
+
+
+def test_las_tablas_creadas_despues_tampoco_quedan_expuestas(roles_supabase):
+    engine, cfg = roles_supabase
+    command.downgrade(cfg, "base")
+    command.upgrade(cfg, "head")
+    with engine.begin() as conn:
+        conn.execute(text("CREATE TABLE futura (id int)"))        # el propietario de la migración la crea después
+        assert conn.execute(text("SELECT has_table_privilege('anon', 'futura', 'SELECT')")).scalar() is False
+
+
+def test_el_downgrade_desactiva_rls(pg):
+    engine, cfg = pg
+    command.downgrade(cfg, "0002_claves")
+    with engine.connect() as conn:
+        activadas = {r[0] for r in conn.execute(text(
+            "SELECT relname FROM pg_class WHERE relrowsecurity AND relnamespace = 'public'::regnamespace"))}
+        assert not (set(TABLAS) & activadas)
