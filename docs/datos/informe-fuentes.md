@@ -33,7 +33,7 @@ Datos reales para el rango 2026-12-01T00:00Z → 2027-01-01T00:00Z (31 días, pa
 
 ## 3. Cómo se extrajo (consultas exactas)
 
-Scripts en `docs/datos/scripts/` (`sitios.py`, `generar.py`, `validar.py`). Para cada sitio y cuerpo (Sol `'10'`, Tierra `'399'`):
+Scripts en `scripts/datos/` (`sitios.py`, `generar.py`, `validar.py`). Para cada sitio y cuerpo (Sol `'10'`, Tierra `'399'`):
 
 ```
 https://ssd.jpl.nasa.gov/api/horizons.api?format=text&COMMAND='10'&OBJ_DATA='NO'&MAKE_EPHEM='YES'
@@ -74,4 +74,3 @@ Orden de `SITE_COORD`: **lon, lat, alt** (Este +). Las dos series se unen por `u
 - **Rango:** un solo mes (diciembre 2026). Las métricas no son anuales.
 - **Trazabilidad:** no se guardaron las cabeceras crudas de Horizons; son reproducibles con `generar.py`.
 - Citar «Fuente: NASA/JPL Horizons» sin sugerir respaldo de NASA al proyecto.
-- `docs/datos/` no está dentro de ningún repositorio git (los repos son solo Backend y Frontend), por eso el informe y los scripts quedan sin commit; hay que decidir dónde versionarlos.
