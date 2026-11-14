@@ -129,7 +129,7 @@ def test_kem_dem_ida_y_vuelta_y_manipulacion():
     privada = serialization.load_pem_private_key(bytes(par.privada_pem), None)
     manipulado = bytearray(blob)
     manipulado[-1] ^= 1
-    for malo in (bytes(manipulado), blob[:-1], blob[:10], b"", b"\x02" + blob[1:]):
+    for malo in (bytes(manipulado), blob[:-1], blob[:10], b"", b"\x01" + blob[1:]):
         with pytest.raises(gk.ErrorGestorClaves):
             gk.kem_dem_descifrar(privada, malo, b"ctx")
     with pytest.raises(gk.ErrorGestorClaves):
@@ -502,3 +502,63 @@ def test_script_genera_las_claves_del_servidor(monkeypatch):
     monkeypatch.setenv(gk.ENV_EMAIL_HASH_KEY, valores[gk.ENV_EMAIL_HASH_KEY])
     gk.reiniciar()
     assert gk.descifrar_email(gk.cifrar_email("ana@example.org")) == "ana@example.org"
+
+
+# ------------------------------------------------------------------ rotación de claves del servidor
+def _configurar(monkeypatch, semilla, clave_hash, previas="", hash_previas=""):
+    monkeypatch.setenv(gk.ENV_KEM_PRIVATE, semilla)
+    monkeypatch.setenv(gk.ENV_EMAIL_HASH_KEY, clave_hash)
+    for nombre, valor in ((gk.ENV_KEM_PREVIOUS, previas), (gk.ENV_EMAIL_HASH_PREVIOUS, hash_previas)):
+        monkeypatch.setenv(nombre, valor) if valor else monkeypatch.delenv(nombre, raising=False)
+    gk.reiniciar()
+
+
+def test_el_blob_lleva_el_id_de_la_clave_que_lo_cifro():
+    par = gk.generar_par("kem")
+    blob = gk.kem_dem_cifrar(par.publica, b"x")
+    assert gk.id_del_blob(blob) == gk.id_de_clave(par.publica) and len(gk.id_de_clave(par.publica)) == 8
+    assert len(blob) == gk.KEM_DEM_HEADER_BYTES + 1 + 16
+
+
+def test_rotar_la_clave_kem_sin_perder_los_emails_ya_cifrados(monkeypatch):
+    vieja_kem, vieja_hash = gk.generar_claves_servidor()
+    nueva_kem, nueva_hash = gk.generar_claves_servidor()
+    _configurar(monkeypatch, vieja_kem, vieja_hash)
+    antiguo = gk.cifrar_email("ana@example.org")
+    assert not gk.necesita_reencriptar(antiguo)
+    # Rotación: la nueva es la actual y la vieja pasa a «anteriores»
+    _configurar(monkeypatch, nueva_kem, vieja_hash, previas=vieja_kem)
+    assert gk.descifrar_email(antiguo) == "ana@example.org"          # sigue accesible
+    assert gk.necesita_reencriptar(antiguo)
+    nuevo = gk.reencriptar_email(antiguo)
+    assert not gk.necesita_reencriptar(nuevo) and gk.id_del_blob(nuevo) != gk.id_del_blob(antiguo)
+    assert gk.descifrar_email(nuevo) == "ana@example.org"
+    assert gk.id_del_blob(gk.cifrar_email("otra@example.org")) == gk.id_del_blob(nuevo)   # cifra con la actual
+    # Cuando ya no queda nada cifrado con la vieja, se retira de «anteriores»
+    _configurar(monkeypatch, nueva_kem, vieja_hash)
+    assert gk.descifrar_email(nuevo) == "ana@example.org"
+    with pytest.raises(gk.ErrorGestorClaves, match="ya no está configurada"):
+        gk.descifrar_email(antiguo)
+
+
+def test_rotar_la_clave_de_hash_con_busqueda_en_la_transicion(monkeypatch):
+    kem, vieja = gk.generar_claves_servidor()
+    _, nueva = gk.generar_claves_servidor()
+    _configurar(monkeypatch, kem, vieja)
+    guardado = gk.email_hash("ana@example.org")
+    _configurar(monkeypatch, kem, nueva, hash_previas=vieja)
+    candidatos = gk.email_hash_candidatos(" ANA@example.org")
+    assert candidatos[0] == gk.email_hash("ana@example.org") != guardado     # la actual va primero
+    assert guardado in candidatos and len(candidatos) == 2                   # la búsqueda aún encuentra el viejo
+    _configurar(monkeypatch, kem, nueva)
+    assert guardado not in gk.email_hash_candidatos("ana@example.org")
+
+
+@pytest.mark.parametrize("variable", [gk.ENV_KEM_PREVIOUS, gk.ENV_EMAIL_HASH_PREVIOUS])
+def test_claves_anteriores_invalidas(monkeypatch, variable):
+    semilla, clave_hash = gk.generar_claves_servidor()
+    _configurar(monkeypatch, semilla, clave_hash)
+    monkeypatch.setenv(variable, "no es base64,AAAA")
+    gk.reiniciar()
+    with pytest.raises(gk.ErrorGestorClaves):
+        gk.email_hash("a@b.c")
