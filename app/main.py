@@ -4,8 +4,8 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 
-# En Docker: DATA_DIR=/data (volumen). En local sin Docker: ../data junto al proyecto.
-DATA_DIR = Path(os.getenv("DATA_DIR", Path(__file__).resolve().parents[2] / "data"))
+# En Docker: DATA_DIR=/data (volumen). En local sin Docker: ./data dentro del repo backend.
+DATA_DIR = Path(os.getenv("DATA_DIR", Path(__file__).resolve().parents[1] / "data"))
 
 app = FastAPI(title="Apogeo API", version="0.1.0")
 
