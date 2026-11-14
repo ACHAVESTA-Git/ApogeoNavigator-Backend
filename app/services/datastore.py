@@ -204,11 +204,16 @@ def guardar(filename: str, content: bytes) -> Path | None:
 def _reset_replica() -> None:
     """Vuelve a descargar todo del bucket para que la réplica local no sirva datos que el bucket no tiene.
 
-    Mejor esfuerzo: si el bucket sigue caído se anota y se mantiene el error original. Límite: si la subida falla justo
+    Mejor esfuerzo: si el bucket sigue caído se anota, se mantiene el error original y se olvidan las generaciones
+    conocidas para que refresh_if_stale() vuelva a descargarlo todo en cuanto el bucket responda. Límite: si la subida falla justo
     entre el CSV y el manifiesto, el bucket puede quedar con un CSV más nuevo que su manifiesto (el verificador del
     manifiesto lo detecta); repetir la carga lo corrige.
     """
+    global _last_check
     try:
         pull(force=True)
     except StoreError as exc:
         log.error(c.MSG_REPLICA_RESET_FAILED, type(exc).__name__)
+        with _lock:                       # con el bucket caído la réplica sigue sucia: que el próximo refresh la rehaga entera
+            _generations.clear()
+            _last_check = float("-inf")
