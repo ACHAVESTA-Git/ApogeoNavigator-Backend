@@ -29,26 +29,30 @@ class LecturaError(Exception):
 
 
 # ---------------------------------------------------------------- caché por mtime
-_cache: dict[Path, tuple[tuple[int, int], Any]] = {}
+_cache: dict[tuple[Path, str], tuple[tuple[int, int], Any]] = {}
 _lock = threading.Lock()
 
 
-def cached_by_mtime(path: Path, loader: Callable[[Path], Any]) -> Any | None:
-    """Resultado de `loader(path)`; se recalcula si el archivo cambió. None si no existe."""
+def cached_by_mtime(path: Path, loader: Callable[[Path], Any], kind: str = "") -> Any | None:
+    """Resultado de `loader(path)`; se recalcula si el archivo cambió. None si no existe.
+
+    `kind` permite guardar varios resultados derivados del mismo archivo (filas, modelo ajustado...).
+    """
+    slot = (path, kind)
     try:
         stat = path.stat()
     except FileNotFoundError:
         with _lock:
-            _cache.pop(path, None)
+            _cache.pop(slot, None)
         return None
     key = (stat.st_mtime_ns, stat.st_size)
     with _lock:
-        hit = _cache.get(path)
+        hit = _cache.get(slot)
         if hit and hit[0] == key:
             return hit[1]
     value = loader(path)
     with _lock:
-        _cache[path] = (key, value)
+        _cache[slot] = (key, value)
     return value
 
 
