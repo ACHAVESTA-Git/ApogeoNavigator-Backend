@@ -127,12 +127,12 @@ def step_hours(rows: list[Row]) -> float:
 def resolve_range(rows: list[Row], desde: str | None, hasta: str | None) -> tuple[datetime, datetime]:
     """Rango [desde, hasta] dentro de los datos y de como máximo QUERY_MAX_RANGE_DAYS días."""
     first, last = rows[0][c.COL_UTC], rows[-1][c.COL_UTC]
-    start = _instant("desde", desde) or first
-    end = _instant("hasta", hasta) or min(start + timedelta(days=c.QUERY_MAX_RANGE_DAYS), last)
+    start = _instant(c.PARAM_DESDE, desde) or first
+    end = _instant(c.PARAM_HASTA, hasta) or min(start + timedelta(days=c.QUERY_MAX_RANGE_DAYS), last)
     if not first <= start <= last:
-        raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_OUT_OF_DATA.format(param="desde"))
+        raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_OUT_OF_DATA.format(param=c.PARAM_DESDE))
     if end > last:
-        raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_OUT_OF_DATA.format(param="hasta"))
+        raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_OUT_OF_DATA.format(param=c.PARAM_HASTA))
     if end <= start:
         raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_RANGE_ORDER)
     days = (end - start).total_seconds() / (c.SECONDS_PER_HOUR * c.HOURS_PER_DAY)
@@ -147,8 +147,8 @@ def ephemeris_range(site_id: str, desde: str | None, hasta: str | None) -> dict:
     start, end = resolve_range(rows, desde, hasta)
     chosen = [r for r in rows if start <= r[c.COL_UTC] <= end]
     return {
-        "site_id": site_id, "inicio_utc": fmt(start), "fin_utc": fmt(end), "paso_horas": step_hours(rows),
-        "filas": [{**r, c.COL_UTC: fmt(r[c.COL_UTC])} for r in chosen],
+        c.COL_SITE_ID: site_id, c.COL_INICIO: fmt(start), c.COL_FIN: fmt(end), c.KEY_PASO_HORAS: step_hours(rows),
+        c.KEY_FILAS: [{**r, c.COL_UTC: fmt(r[c.COL_UTC])} for r in chosen],
     }
 
 
@@ -163,7 +163,7 @@ def traffic_light(pct_sol: float, pct_tierra: float) -> dict[str, str]:
     """Semáforo provisional: energía por % de Sol, comunicación por % de Tierra, global = el peor."""
     energy, comms = _level(pct_sol), _level(pct_tierra)
     order = (c.SEMAFORO_ROJO, c.SEMAFORO_AMARILLO, c.SEMAFORO_VERDE)
-    return {"energia": energy, "comunicacion": comms, "global": min(energy, comms, key=order.index)}
+    return {c.KEY_ENERGIA: energy, c.KEY_COMUNICACION: comms, c.KEY_GLOBAL: min(energy, comms, key=order.index)}
 
 
 def compute_metrics(site_id: str, rows: list[Row], step_h: float, start: datetime, end: datetime) -> dict:
@@ -176,14 +176,14 @@ def compute_metrics(site_id: str, rows: list[Row], step_h: float, start: datetim
     sun_up = [e for e in sun if e > 0]
     total = len(sample) * step_h
     hours_sun, hours_earth = len(sun_up) * step_h, sum(1 for e in earth if e > 0) * step_h
-    pct_sun = round(hours_sun / total * c.PCT_FULL_SCALE, 2)
-    pct_earth = round(hours_earth / total * c.PCT_FULL_SCALE, 2)
+    pct_sun = round(hours_sun / total * c.PCT_FULL_SCALE, c.ROUND_PCT)
+    pct_earth = round(hours_earth / total * c.PCT_FULL_SCALE, c.ROUND_PCT)
     return {
-        "site_id": site_id, "inicio_utc": fmt(start), "fin_utc": fmt(end),
-        "horas_sol": hours_sun, "pct_sol": pct_sun, "sol_el_max_deg": round(max(sun), 4),
-        "sol_el_media_deg": round(sum(sun_up) / len(sun_up), 4) if sun_up else None,
-        "horas_tierra_visible": hours_earth, "pct_tierra": pct_earth,
-        "semaforo": traffic_light(pct_sun, pct_earth), "origen": c.ORIGEN_CALCULADO,
+        c.COL_SITE_ID: site_id, c.COL_INICIO: fmt(start), c.COL_FIN: fmt(end),
+        c.COL_HORAS_SOL: hours_sun, c.COL_PCT_SOL: pct_sun, c.COL_SOL_EL_MAX: round(max(sun), c.ROUND_DEG),
+        c.COL_SOL_EL_MEDIA: round(sum(sun_up) / len(sun_up), c.ROUND_DEG) if sun_up else None,
+        c.COL_HORAS_TIERRA: hours_earth, c.COL_PCT_TIERRA: pct_earth,
+        c.KEY_SEMAFORO: traffic_light(pct_sun, pct_earth), c.KEY_ORIGEN: c.ORIGEN_CALCULADO,
     }
 
 
@@ -196,18 +196,18 @@ def _same(computed: Any, reference: Any, tol: float) -> bool:
 def _reference_for(result: dict, start: datetime, end: datetime) -> dict | None:
     """Fila de metricas.csv con el mismo sitio y rango, más si coincide con lo recalculado."""
     for ref in _reference_metrics():
-        if (ref[c.COL_SITE_ID], ref[c.COL_INICIO], ref[c.COL_FIN]) == (result["site_id"], start, end):
+        if (ref[c.COL_SITE_ID], ref[c.COL_INICIO], ref[c.COL_FIN]) == (result[c.COL_SITE_ID], start, end):
             checks = (
-                _same(result["horas_sol"], ref[c.COL_HORAS_SOL], c.HOURS_TOL),
-                _same(result["horas_tierra_visible"], ref[c.COL_HORAS_TIERRA], c.HOURS_TOL),
-                _same(result["pct_sol"], ref[c.COL_PCT_SOL], c.METRICS_PCT_TOL),
-                _same(result["pct_tierra"], ref[c.COL_PCT_TIERRA], c.METRICS_PCT_TOL),
-                _same(result["sol_el_max_deg"], ref[c.COL_SOL_EL_MAX], c.METRICS_DEG_TOL),
-                _same(result["sol_el_media_deg"], ref[c.COL_SOL_EL_MEDIA], c.METRICS_DEG_TOL),
+                _same(result[c.COL_HORAS_SOL], ref[c.COL_HORAS_SOL], c.HOURS_TOL),
+                _same(result[c.COL_HORAS_TIERRA], ref[c.COL_HORAS_TIERRA], c.HOURS_TOL),
+                _same(result[c.COL_PCT_SOL], ref[c.COL_PCT_SOL], c.METRICS_PCT_TOL),
+                _same(result[c.COL_PCT_TIERRA], ref[c.COL_PCT_TIERRA], c.METRICS_PCT_TOL),
+                _same(result[c.COL_SOL_EL_MAX], ref[c.COL_SOL_EL_MAX], c.METRICS_DEG_TOL),
+                _same(result[c.COL_SOL_EL_MEDIA], ref[c.COL_SOL_EL_MEDIA], c.METRICS_DEG_TOL),
             )
             values = {k: ref[k] for k in (c.COL_HORAS_SOL, c.COL_PCT_SOL, c.COL_SOL_EL_MAX, c.COL_SOL_EL_MEDIA,
                                           c.COL_HORAS_TIERRA, c.COL_PCT_TIERRA)}
-            return {**values, "coincide": all(checks)}
+            return {**values, c.KEY_COINCIDE: all(checks)}
     return None
 
 
@@ -222,9 +222,9 @@ def metrics(site_ids: list[str], desde: str | None, hasta: str | None) -> dict:
         rows = ephemeris(site_id)
         start, end = resolve_range(rows, desde, hasta)
         result = compute_metrics(site_id, rows, step_hours(rows), start, end)
-        result["referencia"] = _reference_for(result, start, end)
+        result[c.KEY_REFERENCIA] = _reference_for(result, start, end)
         results.append(result)
-    return {"resultados": results}
+    return {c.KEY_RESULTADOS: results}
 
 
 # ---------------------------------------------------------------- puestas
@@ -243,23 +243,23 @@ def _events(rows: list[Row], idx: int, key: str, moment: datetime) -> dict:
             if sunset and sunrise:
                 break
     nxt = sunset if visible else sunrise
-    hours = round((nxt - moment).total_seconds() / c.SECONDS_PER_HOUR, 2) if nxt else None
+    hours = round((nxt - moment).total_seconds() / c.SECONDS_PER_HOUR, c.ROUND_HOURS) if nxt else None
     return {
-        "visible": visible,
-        "proxima_puesta_utc": fmt(sunset) if sunset else None,
-        "proxima_salida_utc": fmt(sunrise) if sunrise else None,
-        "horas_restantes": hours,
+        c.KEY_VISIBLE: visible,
+        c.KEY_PUESTA: fmt(sunset) if sunset else None,
+        c.KEY_SALIDA: fmt(sunrise) if sunrise else None,
+        c.KEY_HORAS_RESTANTES: hours,
     }
 
 
 def sunsets(site_id: str, desde: str | None) -> dict:
     rows = ephemeris(site_id)
-    moment = _instant("desde", desde) or rows[0][c.COL_UTC]
+    moment = _instant(c.PARAM_DESDE, desde) or rows[0][c.COL_UTC]
     if not rows[0][c.COL_UTC] <= moment <= rows[-1][c.COL_UTC]:
-        raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_OUT_OF_DATA.format(param="desde"))
+        raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_OUT_OF_DATA.format(param=c.PARAM_DESDE))
     idx = max(i for i, r in enumerate(rows) if r[c.COL_UTC] <= moment)
     return {
-        "site_id": site_id, "desde_utc": fmt(moment),
-        "sol": _events(rows, idx, c.COL_SOL_EL, moment),
-        "tierra": _events(rows, idx, c.COL_TIERRA_EL, moment),
+        c.COL_SITE_ID: site_id, c.KEY_DESDE_UTC: fmt(moment),
+        c.KEY_SOL: _events(rows, idx, c.COL_SOL_EL, moment),
+        c.KEY_TIERRA: _events(rows, idx, c.COL_TIERRA_EL, moment),
     }
