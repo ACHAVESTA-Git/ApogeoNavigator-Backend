@@ -10,13 +10,25 @@ FIXTURES = Path(__file__).parent / "fixtures"
 API_KEY = "clave-de-prueba"
 
 
+@pytest.fixture(scope="session")
+def pqc_keys() -> tuple[str, str]:
+    """Par de claves ML-DSA-65 de prueba (se genera una sola vez por sesión)."""
+    from app.security import pqc
+    return pqc.generar_par()
+
+
 @pytest.fixture
-def data_dir(tmp_path, monkeypatch) -> Path:
-    """Carpeta de datos temporal con un sites.csv válido (sitio_uno, sitio_dos, sitio_tres)."""
+def data_dir(tmp_path, monkeypatch, pqc_keys) -> Path:
+    """Carpeta de datos temporal con un sites.csv válido (sitio_uno, sitio_dos, sitio_tres) y claves PQC de prueba."""
+    from app.security import pqc
     shutil.copy(FIXTURES / "sites_valido.csv", tmp_path / "sites.csv")
     monkeypatch.setenv("DATA_DIR", str(tmp_path))
     monkeypatch.setenv("UPLOAD_API_KEY", API_KEY)
-    return tmp_path
+    monkeypatch.setenv("PQC_PRIVATE_KEY", pqc_keys[0])
+    monkeypatch.setenv("PQC_PUBLIC_KEY", pqc_keys[1])
+    pqc.reiniciar()
+    yield tmp_path
+    pqc.reiniciar()
 
 
 @pytest.fixture
