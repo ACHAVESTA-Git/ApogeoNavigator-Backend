@@ -398,3 +398,29 @@ MSG_AUDIT_UNSIGNED = "El evento no está firmado (algoritmo NINGUNO): la cadena 
 MSG_AUDIT_KEY_MISMATCH = "El evento se firmó con otra clave (huella distinta de la configurada)"
 MSG_AUDIT_CANNOT_VERIFY = "Hay eventos firmados pero no hay verificador de firmas disponible"
 MSG_AUDIT_SIGNATURE_REQUIRED = "No se pudo firmar el evento y la firma es obligatoria"
+
+# ---------------------------------------------------------------- CORS
+ENV_CORS_ORIGINS = "CORS_ORIGINS"                 # lista separada por comas
+ENV_CORS_ORIGIN_REGEX = "CORS_ORIGIN_REGEX"       # p. ej. ^https://([a-z0-9-]+\.)?mi-proyecto\.pages\.dev$
+CORS_DEFAULT_ORIGINS = ("http://localhost:5173", "http://127.0.0.1:5173")
+CORS_ALLOW_METHODS = ("GET", "POST", "OPTIONS")
+CORS_ALLOW_HEADERS = (API_KEY_HEADER, "Content-Type")
+CORS_ALLOW_CREDENTIALS = False                    # nunca credenciales con orígenes comodín
+CORS_MAX_AGE_SECONDS = 600
+CORS_WILDCARD = "*"
+MSG_CORS_WILDCARD = "CORS_ORIGINS no admite «*»: lista los orígenes permitidos"
+
+
+def get_cors_origins() -> list[str]:
+    """Orígenes permitidos: CORS_ORIGINS (separados por comas) o, sin definir, los de desarrollo local."""
+    raw = os.getenv(ENV_CORS_ORIGINS)
+    if raw is None:
+        return list(CORS_DEFAULT_ORIGINS)
+    origins = [o.strip().rstrip("/") for o in raw.split(",") if o.strip()]
+    if CORS_WILDCARD in origins:
+        raise ValueError(MSG_CORS_WILDCARD)
+    return origins
+
+
+def get_cors_origin_regex() -> str | None:
+    return os.getenv(ENV_CORS_ORIGIN_REGEX) or None
