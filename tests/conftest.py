@@ -17,6 +17,61 @@ def pqc_keys() -> tuple[str, str]:
     return pqc.generar_par()
 
 
+class MemoryStore:
+    """Almacén de objetos en memoria con generaciones y precondiciones, como Cloud Storage."""
+
+    def __init__(self, objects: dict[str, bytes] | None = None):
+        self.objects: dict[str, tuple[bytes, int]] = {}
+        self._next = 0
+        self.list_calls = self.upload_calls = 0
+        self.fail = None                     # excepción a lanzar en la próxima operación (simula caídas)
+        for name, data in (objects or {}).items():
+            self._put(name, data)
+
+    def _put(self, name, data):
+        self._next += 1
+        self.objects[name] = (data, self._next)
+        return self._next
+
+    def _maybe_fail(self):
+        if self.fail:
+            exc, self.fail = self.fail, None
+            raise exc
+
+    def list(self):
+        from app.services.blobstore import BlobInfo
+        self._maybe_fail()
+        self.list_calls += 1
+        return [BlobInfo(n, g) for n, (_, g) in self.objects.items()]
+
+    def download(self, name):
+        self._maybe_fail()
+        return self.objects[name][0]
+
+    def upload(self, name, data, *, if_generation_match=None):
+        from app.services.blobstore import StoreConflict
+        self._maybe_fail()
+        current = self.objects.get(name, (None, 0))[1]
+        if if_generation_match is not None and if_generation_match != current:
+            raise StoreConflict(name)
+        self.upload_calls += 1
+        return self._put(name, data)
+
+    def names(self):
+        return sorted(self.objects)
+
+
+@pytest.fixture(autouse=True)
+def sin_bucket(monkeypatch):
+    """Ninguna prueba toca Cloud Storage: sin almacén salvo que la prueba lo inyecte."""
+    from app.services import datastore
+    for var in ("DATA_BUCKET", "DATA_BUCKET_PREFIX", "DATA_SEED_DIR", "DATA_REFRESH_SECONDS"):
+        monkeypatch.delenv(var, raising=False)
+    datastore.set_store(None)
+    yield
+    datastore.reset()
+
+
 @pytest.fixture
 def data_dir(tmp_path, monkeypatch, pqc_keys) -> Path:
     """Carpeta de datos temporal con un sites.csv válido (sitio_uno, sitio_dos, sitio_tres) y claves PQC de prueba."""
