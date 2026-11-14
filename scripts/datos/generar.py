@@ -15,10 +15,10 @@ FMT = "%Y-%m-%dT%H:%MZ"
 STEP_HOURS = 1                # paso de las efemérides (estándar: de 10 min a 24 h)
 METRICS_MAX_DAYS = 35         # máximo de días de una fila de metricas.csv (estándar §4)
 
-def horizons(cuerpo, lat, lon):
+def horizons(cuerpo, lat, lon, inicio=INICIO, fin=FIN):
     p = {"format":"text","COMMAND":f"'{cuerpo}'","OBJ_DATA":"'NO'","MAKE_EPHEM":"'YES'","EPHEM_TYPE":"'OBSERVER'",
          "CENTER":"'coord@301'","COORD_TYPE":"'GEODETIC'","SITE_COORD":f"'{lon},{lat},0'",
-         "START_TIME":f"'{INICIO:%Y-%m-%d %H:%M}'","STOP_TIME":f"'{FIN:%Y-%m-%d %H:%M}'","STEP_SIZE":f"'{STEP_HOURS} h'",
+         "START_TIME":f"'{inicio:%Y-%m-%d %H:%M}'","STOP_TIME":f"'{fin:%Y-%m-%d %H:%M}'","STEP_SIZE":f"'{STEP_HOURS} h'",
          "QUANTITIES":"'4'","CSV_FORMAT":"'YES'","CAL_FORMAT":"'CAL'"}
     url = API + "?" + urllib.parse.urlencode(p, quote_via=urllib.parse.quote)
     for i in range(3):
