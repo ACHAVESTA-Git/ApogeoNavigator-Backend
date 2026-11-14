@@ -1,5 +1,6 @@
 """Serie de Sol y Tierra para animar el cielo: datos reales dentro del rango y proyección fuera de él."""
 import json
+import math
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -12,7 +13,6 @@ from app.services.lectura import LecturaError
 
 SECONDS_PER_DAY = c.SECONDS_PER_HOUR * c.HOURS_PER_DAY
 VARIABLES = (c.COL_SOL_AZ, c.COL_SOL_EL, c.COL_TIERRA_AZ, c.COL_TIERRA_EL)
-MODEL_KIND, ERRORS_KIND = "proyeccion", "errores"
 
 
 def _model(site_id: str, rows: list[lectura.Row]) -> projection.SiteProjection:
@@ -23,29 +23,54 @@ def _model(site_id: str, rows: list[lectura.Row]) -> projection.SiteProjection:
             return projection.fit_projection(frames.from_rows(rows))
         except ValueError as exc:
             raise LecturaError(c.HTTP_UNPROCESSABLE, str(exc)) from None
-    return lectura.cached_by_mtime(path, loader, MODEL_KIND)
+    return lectura.cached_by_mtime(path, loader, c.CACHE_KIND_PROJECTION)
+
+
+def _is_number(value) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+
+
+def _check_errors_table(data) -> dict:
+    """Valida la forma de la tabla de errores; cualquier otra cosa es un 503 con {"detail"}, nunca un KeyError."""
+    sites = data.get(c.KEY_SITES) if isinstance(data, dict) else None
+    if not isinstance(sites, dict) or data.get(c.KEY_VERSION) != c.ERRORS_VERSION:
+        raise LecturaError(c.HTTP_UNAVAILABLE, c.MSG_SIM_ERRORS_INVALID)
+    for table in sites.values():
+        for column in VARIABLES:
+            entry = table.get(column) if isinstance(table, dict) else None
+            months = entry.get(c.KEY_RMSE_MONTHS) if isinstance(entry, dict) else None
+            if (not isinstance(months, list) or len(months) != c.PROJECTION_MONTHS_AHEAD
+                    or not all(m is None or _is_number(m) for m in months) or not _is_number(entry.get(c.KEY_RMSE_DEG))):
+                raise LecturaError(c.HTTP_UNAVAILABLE, c.MSG_SIM_ERRORS_INVALID)
+    return sites
 
 
 def _error_table(site_id: str) -> dict | None:
-    """Errores de validación del sitio (`data/proyeccion_errores.json`), o None si no se han generado."""
+    """Errores de validación del sitio, de `app/analysis/proyeccion_errores.json`. None si el sitio no se validó.
+
+    El archivo viaja con el código (no con `data/`, que en producción solo sincroniza CSV y el manifiesto).
+    """
     def loader(path: Path) -> dict:
         try:
-            return json.loads(path.read_text(encoding="utf-8")).get("sitios", {})
-        except (OSError, ValueError):
-            return {}
-    return (lectura.cached_by_mtime(c.get_data_dir() / c.ERRORS_FILENAME, loader, ERRORS_KIND) or {}).get(site_id)
+            return _check_errors_table(json.loads(path.read_text(encoding="utf-8")))
+        except (OSError, ValueError):                   # ilegible o JSON mal formado
+            raise LecturaError(c.HTTP_UNAVAILABLE, c.MSG_SIM_ERRORS_INVALID) from None
+    sites = lectura.cached_by_mtime(c.ERRORS_PATH, loader, c.CACHE_KIND_ERRORS)
+    if sites is None:
+        raise LecturaError(c.HTTP_UNAVAILABLE, c.MSG_SIM_ERRORS_MISSING)
+    return sites.get(site_id)
 
 
 def _uncertainty(table: dict | None, months_ahead: np.ndarray) -> list[dict | None]:
-    """Incertidumbre (RMSE de la validación, grados) por punto según los meses de horizonte."""
+    """Incertidumbre (RMSE de validación, grados) por punto según los meses de horizonte."""
     if not table:
         return [None] * len(months_ahead)
     out = []
     for month in months_ahead:
         entry = {}
         for column in VARIABLES:
-            by_month = table[column]["rmse_por_mes_deg"]
-            entry[column] = by_month[month] if by_month[month] is not None else table[column]["rmse_deg"]
+            by_month = table[column][c.KEY_RMSE_MONTHS]
+            entry[column] = by_month[month] if by_month[month] is not None else table[column][c.KEY_RMSE_DEG]
         out.append(entry)
     return out
 
@@ -94,7 +119,8 @@ def simulate(site_id: str, desde: str | None, hasta: str | None, paso_horas: flo
             series[column] = np.where(in_data, series[column], projected[column])
     months = np.clip(np.floor((t_days - model.last_t_days) / c.MONTH_DAYS), 0,
                      c.PROJECTION_MONTHS_AHEAD - 1).astype(int)
-    uncertainty = _uncertainty(_error_table(site_id), months)
+    table = _error_table(site_id) if not in_data.all() else None
+    uncertainty = _uncertainty(table, months)
     points = [{c.COL_UTC: lectura.fmt(t), c.KEY_ORIGEN: c.ORIGEN_DATOS if inside else c.ORIGEN_PROYECCION,
                **{col: round(float(series[col][i]), c.ROUND_DEG) for col in VARIABLES},
                c.KEY_INCERTIDUMBRE: None if inside else uncertainty[i]}
@@ -102,8 +128,10 @@ def simulate(site_id: str, desde: str | None, hasta: str | None, paso_horas: flo
     warnings = []
     if not in_data.all():
         warnings.append({c.KEY_CODIGO: c.AVISO_PROYECCION, c.KEY_MENSAJE: c.MSG_SIM_WARNING})
+        if table is None:
+            warnings.append({c.KEY_CODIGO: c.AVISO_SIN_INCERTIDUMBRE, c.KEY_MENSAJE: c.MSG_SIM_NO_UNCERTAINTY})
         if max(r[c.COL_SOL_EL] for r in rows) > c.SIM_AZIMUTH_MAX_SUN_EL_DEG:
             warnings.append({c.KEY_CODIGO: c.AVISO_AZIMUT_CENIT, c.KEY_MENSAJE: c.MSG_SIM_AZIMUTH_WARNING})
-    return {"site_id": site_id, c.KEY_DESDE_UTC: lectura.fmt(start), "hasta_utc": lectura.fmt(end),
+    return {c.COL_SITE_ID: site_id, c.KEY_DESDE_UTC: lectura.fmt(start), c.KEY_HASTA_UTC: lectura.fmt(end),
             c.KEY_PASO_HORAS: paso_horas, c.KEY_FIN_DATOS: lectura.fmt(rows[-1][c.COL_UTC]),
             c.KEY_AVISOS: warnings, c.KEY_PUNTOS: points}

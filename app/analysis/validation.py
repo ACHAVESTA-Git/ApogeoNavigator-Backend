@@ -29,8 +29,8 @@ def error_by_month(truth: pl.DataFrame, pred: pl.DataFrame, last_t_days: float, 
         err = _error(column, pred[column].to_numpy(), truth[column].to_numpy())
         by_month = [_clean(np.sqrt(np.mean(err[month == m] ** 2))) if np.any(month == m) else None
                     for m in range(c.PROJECTION_MONTHS_AHEAD)]
-        out[column] = {"mae_deg": _clean(np.mean(np.abs(err))), "rmse_deg": _clean(np.sqrt(np.mean(err ** 2))),
-                       "rmse_por_mes_deg": by_month}
+        out[column] = {c.KEY_MAE_DEG: _clean(np.mean(np.abs(err))), c.KEY_RMSE_DEG: _clean(np.sqrt(np.mean(err ** 2))),
+                       c.KEY_RMSE_MONTHS: by_month}
     return out
 
 
@@ -53,31 +53,30 @@ def event_errors(truth: pl.DataFrame, pred: pl.DataFrame, elevation: str, visibl
                 if gap <= c.EVENT_MATCH_MAX_HOURS:
                     diffs.append(gap)
     diffs = np.array(diffs)
-    return {"eventos_reales": total, "eventos_proyectados": sum(len(v) for v in estimated.values()),
-            "emparejados_pct": _clean(100 * len(diffs) / total) if total else None,
-            "mae_h": _clean(diffs.mean()) if len(diffs) else None,
-            "mediana_h": _clean(np.median(diffs)) if len(diffs) else None,
-            "max_h": _clean(diffs.max()) if len(diffs) else None}
+    return {c.KEY_EVENTS_REAL: total, c.KEY_EVENTS_PROJECTED: sum(len(v) for v in estimated.values()),
+            c.KEY_EVENTS_MATCHED_PCT: _clean(100 * len(diffs) / total) if total else None,
+            c.KEY_EVENTS_MAE_H: _clean(diffs.mean()) if len(diffs) else None,
+            c.KEY_EVENTS_MEDIAN_H: _clean(np.median(diffs)) if len(diffs) else None,
+            c.KEY_EVENTS_MAX_H: _clean(diffs.max()) if len(diffs) else None}
 
 
 def semaforo_hits(truth: pl.DataFrame, pred: pl.DataFrame, step_h: float) -> dict:
     """Meses completos en que el semáforo proyectado coincide con el real (energía, comunicación y global)."""
     min_samples = 0.9 * c.MONTH_DAYS * c.HOURS_PER_DAY / step_h
     months = {}
-    for name, frame in (("real", truth), ("proyeccion", pred)):
-        months[name] = pipeline.monthly_percentages(frame.lazy()).filter(pl.col("muestras") >= min_samples).collect()
+    for name, frame in ((c.KEY_REAL, truth), (c.KEY_PROJECTION_SIDE, pred)):
+        months[name] = pipeline.monthly_percentages(frame.lazy()).filter(pl.col(c.COL_SAMPLES) >= min_samples).collect()
     rows = []
-    for real, est in zip(months["real"].iter_rows(named=True), months["proyeccion"].iter_rows(named=True)):
+    for real, est in zip(months[c.KEY_REAL].iter_rows(named=True), months[c.KEY_PROJECTION_SIDE].iter_rows(named=True)):
         a = lectura.traffic_light(real[c.COL_PCT_SOL], real[c.COL_PCT_TIERRA])
         b = lectura.traffic_light(est[c.COL_PCT_SOL], est[c.COL_PCT_TIERRA])
-        rows.append({"mes": real[c.COL_UTC].strftime("%Y-%m"), "pct_sol_real": _clean(real[c.COL_PCT_SOL]),
-                     "pct_sol_proy": _clean(est[c.COL_PCT_SOL]), "pct_tierra_real": _clean(real[c.COL_PCT_TIERRA]),
-                     "pct_tierra_proy": _clean(est[c.COL_PCT_TIERRA]),
-                     "acierta": {k: a[k] == b[k] for k in (c.KEY_ENERGIA, c.KEY_COMUNICACION, c.KEY_GLOBAL)}})
-    total = len(rows)
-    return {"meses": total, "meses_detalle": rows,
-            **{f"aciertos_{k}": sum(r["acierta"][k] for r in rows) for k in (c.KEY_ENERGIA, c.KEY_COMUNICACION,
-                                                                                c.KEY_GLOBAL)}}
+        rows.append({c.KEY_MONTH: real[c.COL_UTC].strftime(c.MONTH_FORMAT),
+                     c.KEY_PCT_SUN_REAL: _clean(real[c.COL_PCT_SOL]), c.KEY_PCT_SUN_PROJ: _clean(est[c.COL_PCT_SOL]),
+                     c.KEY_PCT_EARTH_REAL: _clean(real[c.COL_PCT_TIERRA]), c.KEY_PCT_EARTH_PROJ: _clean(est[c.COL_PCT_TIERRA]),
+                     c.KEY_HIT: {k: a[k] == b[k] for k in (c.KEY_ENERGIA, c.KEY_COMUNICACION, c.KEY_GLOBAL)}})
+    levels = (c.KEY_ENERGIA, c.KEY_COMUNICACION, c.KEY_GLOBAL)
+    return {c.KEY_MONTHS: len(rows), c.KEY_MONTHS_DETAIL: rows,
+            **{f"{c.KEY_HITS_PREFIX}{k}": sum(r[c.KEY_HIT][k] for r in rows) for k in levels}}
 
 
 def evaluate_site(training: pl.LazyFrame, truth_lazy: pl.LazyFrame) -> dict:
@@ -89,10 +88,10 @@ def evaluate_site(training: pl.LazyFrame, truth_lazy: pl.LazyFrame) -> dict:
     baseline = projection.persistence_baseline(training, times)
     errors = error_by_month(truth, pred, model.last_t_days, model.t0)
     for column in VALUE_COLUMNS:
-        errors[column]["rmse_referencia_ingenua_deg"] = _clean(np.sqrt(np.mean(
+        errors[column][c.KEY_RMSE_NAIVE] = _clean(np.sqrt(np.mean(
             _error(column, baseline[column], truth[column].to_numpy()) ** 2)))
-    return {"periodo_sinodico_dias": _clean(model.synodic_days), "ventana_dias": _clean(model.window_days),
-            "errores": errors,
-            "puestas_sol": event_errors(truth, pred, c.COL_SOL_EL, SOL_VISIBLE),
-            "puestas_tierra": event_errors(truth, pred, c.COL_TIERRA_EL, TIERRA_VISIBLE),
-            "semaforo": semaforo_hits(truth, pred, pipeline.step_hours(truth_lazy))}
+    return {c.KEY_SYNODIC_DAYS: _clean(model.synodic_days), c.KEY_WINDOW_DAYS: _clean(model.window_days),
+            c.KEY_ERRORS: errors,
+            c.KEY_EVENTS_SUN: event_errors(truth, pred, c.COL_SOL_EL, SOL_VISIBLE),
+            c.KEY_EVENTS_EARTH: event_errors(truth, pred, c.COL_TIERRA_EL, TIERRA_VISIBLE),
+            c.KEY_TRAFFIC_HITS: semaforo_hits(truth, pred, pipeline.step_hours(truth_lazy))}

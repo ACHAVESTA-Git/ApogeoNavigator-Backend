@@ -2,7 +2,7 @@
 """Análisis exploratorio, validación de la proyección contra Horizons y gráficos.
 
 Escribe:
-  * data/proyeccion_errores.json              errores por sitio y mes de horizonte (los usa la API)
+  * app/analysis/proyeccion_errores.json     errores por sitio y mes de horizonte (los usa la API; viaja con el código)
   * scripts/datos/validacion/resultados.json  resultados completos (exploración + validación)
   * docs/datos/img/*.png                      gráficos del informe (matplotlib, solo en este script)
 
@@ -31,7 +31,7 @@ from app.services import lectura                              # noqa: E402
 
 PARQUET = ROOT / "scripts/datos/validacion/horizons_verdad.parquet"
 RESULTS = ROOT / "scripts/datos/validacion/resultados.json"
-ERRORS = ROOT / "data" / c.ERRORS_FILENAME
+ERRORS = c.ERRORS_PATH
 IMG = ROOT / "docs/datos/img"
 DPI = 130
 COLORS = {"sol": "#d97706", "tierra": "#2563eb", "real": "#111827", "proy": "#dc2626", "ingenua": "#6b7280"}

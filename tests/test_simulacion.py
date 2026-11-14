@@ -13,12 +13,11 @@ from app.services import lectura
 DATA = Path(__file__).resolve().parents[1] / "data"
 SITES = ("slim", "apollo11", "apollo15", "shackleton")
 LAST_DATA = "2027-06-01T00:00Z"
-pytestmark = pytest.mark.skipif(not (DATA / c.ERRORS_FILENAME).is_file(), reason="faltan los errores de validación")
 
 
 @pytest.fixture
 def data_dir(tmp_path, monkeypatch) -> Path:
-    for name in ("sites.csv", c.ERRORS_FILENAME, *(f"efemerides_{s}.csv" for s in SITES)):
+    for name in ("sites.csv", *(f"efemerides_{s}.csv" for s in SITES)):
         shutil.copy(DATA / name, tmp_path / name)
     monkeypatch.setenv("DATA_DIR", str(tmp_path))
     lectura.clear_cache()
@@ -95,11 +94,66 @@ def test_azimut_solar_no_fiable_cerca_del_cenit(api):
     assert other == [c.AVISO_PROYECCION]
 
 
-def test_sin_tabla_de_errores_la_incertidumbre_es_null(api, data_dir):
-    (data_dir / c.ERRORS_FILENAME).unlink()
-    lectura.clear_cache()
+def test_la_tabla_de_errores_viaja_con_el_codigo_no_con_los_datos(api, data_dir):
+    assert c.ERRORS_PATH.is_file() and c.ERRORS_PATH.parent.name == "analysis"
+    assert not (data_dir / c.ERRORS_FILENAME).exists()                    # data/ no la lleva y la incertidumbre sigue ahí
     points = get(api, desde="2027-06-02T00:00Z", hasta="2027-06-03T00:00Z").json()["puntos"]
-    assert points[0]["origen"] == "proyeccion" and points[0]["incertidumbre_deg"] is None
+    assert points[0]["origen"] == "proyeccion" and points[0]["incertidumbre_deg"] is not None
+
+
+def _with_errors_file(monkeypatch, tmp_path, content: str | None):
+    path = tmp_path / "errores.json"
+    if content is not None:
+        path.write_text(content, encoding="utf-8")
+    monkeypatch.setattr(c, "ERRORS_PATH", path)
+    lectura.clear_cache()
+
+
+@pytest.mark.parametrize("content", [
+    "{esto no es json", "", "[]", "null", '{"version": 1}', '{"version": 99, "sitios": {}}',
+    '{"version": 1, "sitios": {"slim": {"sol_az_deg": {}}}}',
+    '{"version": 1, "sitios": {"slim": []}}',
+    '{"version": 1, "sitios": {"slim": {"sol_az_deg": {"rmse_deg": 1, "rmse_por_mes_deg": [1, 2]}}}}',
+])
+def test_tabla_de_errores_corrupta_da_503_con_detail(api, monkeypatch, tmp_path, content):
+    _with_errors_file(monkeypatch, tmp_path, content)
+    response = get(api, desde="2027-06-02T00:00Z", hasta="2027-06-03T00:00Z")
+    assert response.status_code == 503 and response.json() == {"detail": c.MSG_SIM_ERRORS_INVALID}
+
+
+def test_tabla_de_errores_ausente_da_503(api, monkeypatch, tmp_path):
+    _with_errors_file(monkeypatch, tmp_path, None)
+    response = get(api, desde="2027-06-02T00:00Z", hasta="2027-06-03T00:00Z")
+    assert response.status_code == 503 and response.json() == {"detail": c.MSG_SIM_ERRORS_MISSING}
+
+
+def test_la_tabla_de_errores_no_hace_falta_si_todo_es_dato_real(api, monkeypatch, tmp_path):
+    _with_errors_file(monkeypatch, tmp_path, None)
+    assert get(api, desde="2026-12-01T00:00Z", hasta="2026-12-02T00:00Z").status_code == 200
+
+
+def test_un_sitio_sin_validacion_avisa_en_vez_de_callar(api, monkeypatch, tmp_path):
+    import json
+    table = json.loads(Path(c.ERRORS_PATH).read_text(encoding="utf-8"))
+    del table[c.KEY_SITES]["slim"]
+    path = tmp_path / "errores.json"
+    path.write_text(json.dumps(table), encoding="utf-8")
+    monkeypatch.setattr(c, "ERRORS_PATH", path)
+    lectura.clear_cache()
+    body = get(api, desde="2027-06-02T00:00Z", hasta="2027-06-03T00:00Z").json()
+    assert body["puntos"][0]["incertidumbre_deg"] is None
+    assert [a["codigo"] for a in body["avisos"]] == [c.AVISO_PROYECCION, c.AVISO_SIN_INCERTIDUMBRE]
+
+
+def test_un_ano_a_paso_de_1_h_cabe_en_el_tope(api):
+    response = get(api, desde="2027-06-01T00:00Z", hasta="2028-06-01T00:00Z")
+    assert response.status_code == 200 and len(response.json()["puntos"]) == 8785 <= c.SIM_MAX_POINTS
+
+
+def test_el_tope_de_puntos_da_un_error_claro(api):
+    response = get(api, desde="2026-12-01T00:00Z", hasta="2028-06-01T00:00Z")
+    assert response.status_code == 422
+    assert f"el máximo es {c.SIM_MAX_POINTS}" in response.json()["detail"] and "paso_horas" in response.json()["detail"]
 
 
 def test_paso_fino_interpola_entre_filas(api):

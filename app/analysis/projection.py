@@ -47,7 +47,7 @@ def earth_frequencies() -> list[float]:
     return [FA, FD, 2 * FA, 2 * f_syn, 2 * f_syn + FA, abs(2 * f_syn - FA)]
 
 
-SUN, EARTH = "sol", "tierra"
+SUN, EARTH = c.KEY_SOL, c.KEY_TIERRA
 COLUMNS = {SUN: (c.COL_SOL_AZ, c.COL_SOL_EL), EARTH: (c.COL_TIERRA_AZ, c.COL_TIERRA_EL)}
 
 

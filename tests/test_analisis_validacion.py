@@ -92,9 +92,9 @@ def test_el_error_crece_con_el_horizonte_en_la_mayoria_de_variables(evaluations)
 
 
 def test_la_tabla_de_errores_de_la_api_esta_al_dia(evaluations):
-    """data/proyeccion_errores.json debe coincidir con una evaluación nueva (regenerar con analizar_proyeccion.py)."""
-    table = json.loads((DATA / c.ERRORS_FILENAME).read_text(encoding="utf-8"))
-    assert table["version"] == c.ERRORS_VERSION and sorted(table["sitios"]) == sorted(SITES)
+    """app/analysis/proyeccion_errores.json debe coincidir con una evaluación nueva (regenerar con analizar_proyeccion.py)."""
+    table = json.loads(c.ERRORS_PATH.read_text(encoding="utf-8"))
+    assert table[c.KEY_VERSION] == c.ERRORS_VERSION and sorted(table[c.KEY_SITES]) == sorted(SITES)
     for sid in SITES:
         for column in frames.VALUE_COLUMNS:
             stored, fresh = table["sitios"][sid][column], evaluations[sid]["errores"][column]
