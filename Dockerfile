@@ -28,4 +28,5 @@ USER app
 HEALTHCHECK --interval=30s --timeout=4s --start-period=25s --retries=3 \
   CMD ["python", "-c", "import os, sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:' + os.environ.get('PORT', '8080') + '/api/health', timeout=3).status == 200 else 1)"]
 
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
+# exec: uvicorn pasa a ser el proceso principal y recibe SIGTERM (cierre ordenado en Cloud Run).
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]

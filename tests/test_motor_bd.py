@@ -45,3 +45,7 @@ def test_get_engine_usa_las_opciones(monkeypatch):
         assert engine.pool.size() == c.DB_POOL_SIZE
     finally:
         db_session.configure(None)
+
+
+def test_psycopg2_no_recibe_prepare_threshold():
+    assert "connect_args" not in db_session.engine_options("postgresql+psycopg2://u:x@h:5432/db")

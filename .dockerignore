@@ -5,6 +5,10 @@
 __pycache__
 *.pyc
 .env
+.env.*
+*.pem
+*.key
+*credentials*.json
 .pytest_cache
 .pqc_dev
 tests
