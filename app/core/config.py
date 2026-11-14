@@ -545,14 +545,14 @@ FFT_SYNODIC_BAND_DAYS = (24.0, 36.0)     # banda donde se busca el pico del mes 
 FFT_MATCH_RESOLUTION_FRACTION = 0.5      # un pico "coincide" con un periodo conocido si dista < ½ P²/T
 HARMONIC_RIDGE = 1e-8                    # regularización relativa de los mínimos cuadrados
 SUN_SYNODIC_HARMONICS = 8                # k·f_sinódico, k = 1..8 (la elevación no es una senoide)
-SUN_SIDEBAND_HARMONICS = 2               # k·f_sinódico ± f_anomalístico para k = 1..2
+SUN_SIDEBAND_HARMONICS = 2               # k·f_sinódico ± f_anomalístico para k = 1..2 (incluye el batido de ~411 d)
 SUN_ANOMALISTIC_HARMONICS = 2
-EARTH_LIBRATION_HARMONICS = 1            # f_anomalístico y f_dracónico
-LONG_PERIOD_WINDOW_FRACTION = 0.5        # no se ajusta un periodo mayor que la mitad de la ventana
+REFINE_STRIDE_SAMPLES = 6                # el afinado del periodo usa una de cada 6 muestras (velocidad)
 PROJECTION_MIN_WINDOW_DAYS = 2 * SYNODIC_MONTH_DAYS
 REFINE_GRID_POINTS = 41
 REFINE_ITERATIONS = 4
 REFINE_HALF_BAND_DAYS = 0.6
+CV_HOLDOUT_FRACTION = 1 / 3              # validación cruzada: se prueba en el último tercio de los datos
 MONTH_DAYS = 30.4375                     # mes medio, para agrupar el error por meses de horizonte
 PROJECTION_MAX_DAYS = 366                # hasta dónde se proyecta tras el último dato
 PROJECTION_MONTHS_AHEAD = 12
@@ -573,7 +573,8 @@ PARAM_PASO_HORAS = "paso_horas"
 KEY_PUNTOS = "puntos"
 KEY_FIN_DATOS = "fin_datos_utc"
 KEY_INCERTIDUMBRE = "incertidumbre_deg"
-KEY_AVISO = "aviso"
+AVISO_PROYECCION = "proyeccion_estadistica"
+AVISO_AZIMUT_CENIT = "azimut_solar_cenit"
 MSG_SIM_BEFORE_DATA = "'desde' es anterior al primer dato disponible"
 MSG_SIM_BEYOND_PROJECTION = "'hasta' supera el máximo proyectable ({days} días tras el último dato)"
 MSG_SIM_STEP = "'paso_horas' debe estar entre {min:g} y {max:g}"
