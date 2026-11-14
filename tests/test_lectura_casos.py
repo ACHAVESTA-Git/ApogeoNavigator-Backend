@@ -43,7 +43,8 @@ def metrics(api, *sites, **params):
 # ------------------------------------------------------------------ cálculo y semáforo
 @pytest.mark.parametrize("sun_up,earth_up,pct_sol,pct_tierra,semaforo", [
     (48, 48, 100.0, 100.0, ("verde", "verde", "verde")),
-    (24, 48, 50.0, 100.0, ("amarillo", "verde", "amarillo")),
+    (24, 48, 50.0, 100.0, ("verde", "verde", "verde")),
+    (15, 48, 31.25, 100.0, ("amarillo", "verde", "amarillo")),
     (10, 10, 20.83, 20.83, ("rojo", "rojo", "rojo")),
     (34, 0, 70.83, 0.0, ("verde", "rojo", "rojo")),
     (0, 48, 0.0, 100.0, ("rojo", "verde", "rojo")),
@@ -60,15 +61,40 @@ def test_metricas_sinteticas(api, data_dir, sun_up, earth_up, pct_sol, pct_tierr
 
 
 @pytest.mark.parametrize("pct,expected", [
+    (100.0, "verde"), (45.0, "verde"), (44.99, "amarillo"), (25.0, "amarillo"), (24.99, "rojo"), (0.0, "rojo"),
+])
+def test_frontera_del_semaforo_de_energia(pct, expected):
+    assert service.traffic_light(pct, 100.0)["energia"] == expected
+
+
+@pytest.mark.parametrize("pct,expected", [
     (100.0, "verde"), (70.0, "verde"), (69.99, "amarillo"), (40.0, "amarillo"), (39.99, "rojo"), (0.0, "rojo"),
 ])
-def test_frontera_del_semaforo(pct, expected):
-    assert service.traffic_light(pct, pct) == {"energia": expected, "comunicacion": expected, "global": expected}
+def test_frontera_del_semaforo_de_comunicacion_no_cambia(pct, expected):
+    assert service.traffic_light(100.0, pct)["comunicacion"] == expected
 
 
 def test_semaforo_global_es_el_peor():
     assert service.traffic_light(100.0, 10.0)["global"] == "rojo"
     assert service.traffic_light(75.0, 50.0)["global"] == "amarillo"
+    assert service.traffic_light(30.0, 100.0)["global"] == "amarillo"       # energía amarilla con umbral de 25-45
+
+
+@pytest.mark.parametrize("peak,avisa", [(-5.0, True), (0.4, True), (2.99, True), (3.0, False), (45.0, False), (88.09, False)])
+def test_aviso_sensible_al_relieve_segun_la_elevacion_maxima(peak, avisa):
+    avisos = service.warnings_for(peak)
+    assert bool(avisos) is avisa
+    if avisa:
+        assert avisos[0]["codigo"] == "sensible_al_relieve" and "3" in avisos[0]["mensaje"]
+
+
+def test_el_aviso_viaja_en_las_metricas(api, data_dir):
+    put(data_dir, "efemerides_sitio_uno.csv", ephem_csv(24, 48))          # Sol hasta 0.4°: sensible al relieve
+    item = metrics(api, "sitio_uno").json()["resultados"][0]
+    assert [a["codigo"] for a in item["avisos"]] == ["sensible_al_relieve"]
+    alto = ephem_csv(49, 49).replace(",10,0.4,", ",10,5.0,")      # Sol siempre a 5° (sin saltos físicos)
+    put(data_dir, "efemerides_sitio_dos.csv", alto)
+    assert metrics(api, "sitio_dos").json()["resultados"][0]["avisos"] == []
 
 
 # ------------------------------------------------------------------ metricas.csv es opcional

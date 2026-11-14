@@ -41,6 +41,12 @@ def test_shackleton_sol_continuo_y_tierra_parcial(api):
     assert item["pct_tierra"] == 39.11 and item["horas_tierra_visible"] == 291
     assert item["semaforo"] == {"energia": "verde", "comunicacion": "rojo", "global": "rojo"}
     assert item["origen"] == "calculado"
+    assert [a["codigo"] for a in item["avisos"]] == ["sensible_al_relieve"]       # el Sol polar nunca pasa de unos 1,5°
+
+
+def test_apollo11_con_sol_alto_no_tiene_aviso_de_relieve(api):
+    item = metrics(api, "apollo11", **FULL).json()["resultados"][0]
+    assert item["sol_el_max_deg"] > 3 and item["avisos"] == []
 
 
 @pytest.mark.parametrize("site_id", ["change4", "change6"])
@@ -67,9 +73,20 @@ def test_sitios_repetidos_se_calculan_una_vez(api):
     assert len(metrics(api, "slim", "slim", **FULL).json()["resultados"]) == 1
 
 
-def test_rango_por_defecto_es_todo_el_archivo(api):
+def test_rango_por_defecto_son_35_dias_desde_el_inicio(api):
     item = metrics(api, "apollo11").json()["resultados"][0]
-    assert (item["inicio_utc"], item["fin_utc"]) == (FULL["desde"], FULL["hasta"])
+    assert (item["inicio_utc"], item["fin_utc"]) == ("2026-12-01T00:00Z", "2027-01-05T00:00Z")
+
+
+MONTHS = [("2026-12-01", "2027-01-01"), ("2027-01-01", "2027-02-01"), ("2027-02-01", "2027-03-01"),
+          ("2027-03-01", "2027-04-01"), ("2027-04-01", "2027-05-01"), ("2027-05-01", "2027-06-01")]
+
+
+@pytest.mark.parametrize("site_id", SITES)
+@pytest.mark.parametrize("start,end", MONTHS)
+def test_cada_mes_coincide_con_metricas_csv(api, site_id, start, end):
+    item = metrics(api, site_id, desde=f"{start}T00:00Z", hasta=f"{end}T00:00Z").json()["resultados"][0]
+    assert item["referencia"] is not None and item["referencia"]["coincide"] is True
 
 
 def test_subrango_sin_referencia(api):
@@ -95,7 +112,7 @@ def test_errores_de_metricas(api, sites, params, status):
 # ------------------------------------------------------------------ efemérides
 def test_efemerides_rango_por_defecto_limita_a_35_dias(api):
     body = api.get("/api/efemerides/apollo11").json()
-    assert body["paso_horas"] == 1 and len(body["filas"]) == 745      # el archivo solo tiene 31 días
+    assert body["paso_horas"] == 1 and len(body["filas"]) == 35 * 24 + 1      # el archivo tiene 6 meses
     assert body["filas"][0] == {"utc": "2026-12-01T00:00Z", "sol_az_deg": body["filas"][0]["sol_az_deg"],
                                 "sol_el_deg": body["filas"][0]["sol_el_deg"],
                                 "tierra_az_deg": body["filas"][0]["tierra_az_deg"],
@@ -109,7 +126,7 @@ def test_efemerides_rango_explicito_incluye_extremos(api):
 
 
 @pytest.mark.parametrize("params", [
-    {"desde": "2026-12-01T00:00Z", "hasta": "2027-01-15T00:00Z"},     # fuera de los datos
+    {"desde": "2026-12-01T00:00Z", "hasta": "2027-01-15T00:00Z"},     # más de 35 días
     {"desde": "2026-11-01T00:00Z"},                                   # antes de los datos
     {"desde": "2026-12-02T00:00Z", "hasta": "2026-12-02T00:00Z"},     # rango vacío
     {"desde": "2026-12-01 00:00"},                                    # formato
@@ -157,10 +174,9 @@ def test_puesta_del_sol_apolo15(api):
                               "horas_restantes": None}
 
 
-def test_puestas_sol_polar_sin_cambios(api):
+def test_puestas_sol_polar_visible(api):
     body = api.get("/api/puestas/shackleton", params={"desde": "2026-12-05T06:00Z"}).json()
-    assert body["sol"] == {"visible": True, "proxima_puesta_utc": None, "proxima_salida_utc": None,
-                           "horas_restantes": None}
+    assert body["sol"]["visible"] is True
     assert body["tierra"]["horas_restantes"] is not None
 
 
@@ -175,7 +191,7 @@ def test_puestas_instante_intermedio_usa_la_fila_anterior(api):
 
 
 @pytest.mark.parametrize("site_id,desde,status", [
-    ("apollo15", "2027-02-01T00:00Z", 422),
+    ("apollo15", "2027-07-01T00:00Z", 422),
     ("apollo15", "mañana", 422),
     ("no_existe", "2026-12-01T00:00Z", 404),
 ])

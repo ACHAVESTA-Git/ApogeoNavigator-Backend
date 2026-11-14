@@ -295,8 +295,19 @@ METRICS_FILENAME = "metricas.csv"
 QUERY_MAX_RANGE_DAYS = 35
 MAX_COMPARE_SITES = 3
 ORIGEN_CALCULADO = "calculado"
-SEMAFORO_VERDE_MIN = 70.0          # provisional hasta que el PO confirme los umbrales
-SEMAFORO_AMARILLO_MIN = 40.0
+# Umbrales del semáforo, fijados por el usuario (% de tiempo con el astro sobre el horizonte).
+# Energía (Sol): verde >= 45, amarillo de 25 a < 45, rojo < 25. Comunicación (Tierra): verde >= 70, amarillo de 40 a < 70.
+SEMAFORO_ENERGIA_VERDE_MIN = 45.0
+SEMAFORO_ENERGIA_AMARILLO_MIN = 25.0
+SEMAFORO_COMUNICACION_VERDE_MIN = 70.0
+SEMAFORO_COMUNICACION_AMARILLO_MIN = 40.0
+RELIEF_WARNING_MAX_SUN_EL_DEG = 3.0   # Sol siempre por debajo de esto: el relieve real puede taparlo
+AVISO_RELIEVE = "sensible_al_relieve"
+MSG_AVISO_RELIEVE = ("Sensible al relieve: el Sol no supera {deg:g}° sobre el horizonte ideal, "
+                     "así que una colina puede taparlo y las horas de sol reales ser menores")
+KEY_AVISOS = "avisos"
+KEY_CODIGO = "codigo"
+KEY_MENSAJE = "mensaje"
 SEMAFORO_VERDE, SEMAFORO_AMARILLO, SEMAFORO_ROJO = "verde", "amarillo", "rojo"
 METRICS_DEG_TOL = 0.001
 MSG_SITE_NOT_IN_CATALOG = "El sitio no existe en sites.csv"
@@ -490,3 +501,29 @@ MSG_KEYS_WARNING = ("Guarda la clave privada ahora: se muestra UNA sola vez y no
 MSG_KEYS_DELIVERY_COUNT_FAILED = "no se pudo contar la entrega de la clave (%s)"
 MSG_KEYS_SAME_KEY_LOG = "ADMIN_API_KEY es igual a UPLOAD_API_KEY: el gestor de claves queda cerrado"
 MSG_KEYS_READ_LOG = "lectura de admin: operacion=%s filtros=%s resultados=%s"
+
+# ---------------------------------------------------------------- CORS
+ENV_CORS_ORIGINS = "CORS_ORIGINS"                 # lista separada por comas
+ENV_CORS_ORIGIN_REGEX = "CORS_ORIGIN_REGEX"       # p. ej. ^https://([a-z0-9-]+\.)?mi-proyecto\.pages\.dev$
+CORS_DEFAULT_ORIGINS = ("http://localhost:5173", "http://127.0.0.1:5173")
+CORS_ALLOW_METHODS = ("GET", "POST", "OPTIONS")
+CORS_ALLOW_HEADERS = (API_KEY_HEADER, "Content-Type")
+CORS_ALLOW_CREDENTIALS = False                    # nunca credenciales con orígenes comodín
+CORS_MAX_AGE_SECONDS = 600
+CORS_WILDCARD = "*"
+MSG_CORS_WILDCARD = "CORS_ORIGINS no admite «*»: lista los orígenes permitidos"
+
+
+def get_cors_origins() -> list[str]:
+    """Orígenes permitidos: CORS_ORIGINS (separados por comas) o, sin definir, los de desarrollo local."""
+    raw = os.getenv(ENV_CORS_ORIGINS)
+    if raw is None:
+        return list(CORS_DEFAULT_ORIGINS)
+    origins = [o.strip().rstrip("/") for o in raw.split(",") if o.strip()]
+    if CORS_WILDCARD in origins:
+        raise ValueError(MSG_CORS_WILDCARD)
+    return origins
+
+
+def get_cors_origin_regex() -> str | None:
+    return os.getenv(ENV_CORS_ORIGIN_REGEX) or None

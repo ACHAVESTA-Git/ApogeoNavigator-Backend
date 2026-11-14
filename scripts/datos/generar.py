@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Descarga efemérides de JPL Horizons y genera sites.csv, efemerides_*.csv y metricas.csv.
-Uso: python3 generar.py [data_dir]  (por defecto ../../data)"""
+Uso: python3 generar.py [data_dir]  (por defecto ../../data)\nRango: 2026-12-01 a 2027-06-01, paso 1 h; metricas.csv: una fila por sitio y mes."""
 from pathlib import Path as _P
 DATA_DIR = str(_P(__file__).resolve().parents[2] / "data")
 import csv, re, sys, time, urllib.parse, urllib.request
@@ -9,13 +9,13 @@ from pathlib import Path
 from sitios import SITES
 
 API = "https://ssd.jpl.nasa.gov/api/horizons.api"
-INICIO, FIN = datetime(2026,12,1,tzinfo=timezone.utc), datetime(2027,1,1,tzinfo=timezone.utc)
+INICIO, FIN = datetime(2026,12,1,tzinfo=timezone.utc), datetime(2027,6,1,tzinfo=timezone.utc)
 FMT = "%Y-%m-%dT%H:%MZ"
 
 def horizons(cuerpo, lat, lon):
     p = {"format":"text","COMMAND":f"'{cuerpo}'","OBJ_DATA":"'NO'","MAKE_EPHEM":"'YES'","EPHEM_TYPE":"'OBSERVER'",
          "CENTER":"'coord@301'","COORD_TYPE":"'GEODETIC'","SITE_COORD":f"'{lon},{lat},0'",
-         "START_TIME":"'2026-12-01 00:00'","STOP_TIME":"'2027-01-01 00:00'","STEP_SIZE":"'1 h'",
+         "START_TIME":f"'{INICIO:%Y-%m-%d %H:%M}'","STOP_TIME":f"'{FIN:%Y-%m-%d %H:%M}'","STEP_SIZE":"'1 h'",
          "QUANTITIES":"'4'","CSV_FORMAT":"'YES'","CAL_FORMAT":"'CAL'"}
     url = API + "?" + urllib.parse.urlencode(p, quote_via=urllib.parse.quote)
     for i in range(3):
@@ -33,6 +33,15 @@ def horizons(cuerpo, lat, lon):
         t = datetime.strptime(c[0], "%Y-%b-%d %H:%M").replace(tzinfo=timezone.utc)
         out[t] = (float(c[3]), float(c[4]))
     return out, txt
+
+def meses():
+    """Meses completos [día 1, día 1 del mes siguiente) dentro del rango (cada uno de <= 35 días)."""
+    ini = INICIO
+    while ini < FIN:
+        fin = datetime(ini.year + ini.month // 12, ini.month % 12 + 1, 1, tzinfo=timezone.utc)
+        yield ini, min(fin, FIN)
+        ini = fin
+
 
 def main(data):
     data = Path(data); data.mkdir(parents=True, exist_ok=True)
@@ -54,14 +63,14 @@ def main(data):
             for t in ts:
                 w.writerow([t.strftime(FMT), f"{sol[t][0]%360:.6f}".replace("360.000000","0.000000"), f"{sol[t][1]:.6f}",
                             f"{tie[t][0]%360:.6f}".replace("360.000000","0.000000"), f"{tie[t][1]:.6f}"])
-        # métricas sobre el intervalo [inicio, fin): 744 muestras de 1 h
-        u = ts[:horas_rango]
-        es = [sol[t][1] for t in u]; et = [tie[t][1] for t in u]
-        up = [e for e in es if e > 0]
-        hs, ht = len(up), sum(1 for e in et if e > 0)
-        met.append([sid, INICIO.strftime(FMT), FIN.strftime(FMT), hs, round(hs/horas_rango*100,2), round(max(es),4),
-                    round(sum(up)/hs,4) if hs else "", ht, round(ht/horas_rango*100,2)])
-        print(sid, hs, ht, flush=True); time.sleep(0.5)
+        for ini, fin in meses():
+            u = [t for t in ts if ini <= t < fin]            # intervalo [ini, fin): una muestra = 1 h
+            es = [sol[t][1] for t in u]; et = [tie[t][1] for t in u]
+            up = [e for e in es if e > 0]
+            hs, ht, n = len(up), sum(1 for e in et if e > 0), len(u)
+            met.append([sid, ini.strftime(FMT), fin.strftime(FMT), hs, round(hs/n*100,2), round(max(es),4),
+                        round(sum(up)/hs,4) if hs else "", ht, round(ht/n*100,2)])
+        print(sid, flush=True); time.sleep(0.5)
     with open(data/"metricas.csv","w",encoding="utf-8",newline="") as f:
         w = csv.writer(f, lineterminator="\n")
         w.writerow(["site_id","inicio_utc","fin_utc","horas_sol","pct_sol","sol_el_max_deg","sol_el_media_deg","horas_tierra_visible","pct_tierra"])
