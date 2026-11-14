@@ -288,6 +288,10 @@ MSG_METRICS_INVALID = "metricas.csv no cumple el estándar de CSV"
 
 # ---------------------------------------------------------------- base de datos y auditoría
 DB_POOL_RECYCLE_SECONDS = 1800
+DB_POOL_SIZE = 2                      # pequeño: Cloud Run escala instancias y Cloud SQL limita conexiones
+DB_MAX_OVERFLOW = 2
+DB_POOL_TIMEOUT_SECONDS = 10
+DB_SQLITE_PREFIX = "sqlite"
 DB_EMAIL_MAX = 320
 DB_NAME_MAX = 120
 DB_PROVIDER_MAX = 40
