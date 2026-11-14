@@ -43,13 +43,18 @@ def save_atomic(filename: str, content: bytes) -> Path | None:
             history.mkdir(exist_ok=True)
             stamp = datetime.now(timezone.utc).strftime(config.HISTORY_STAMP)
             backup = history / f"{target.stem}_{stamp}{target.suffix}"
+            counter = 0
+            while backup.exists():          # nunca pisar una copia previa
+                counter += 1
+                backup = history / f"{target.stem}_{stamp}_{counter}{target.suffix}"
             backup.write_bytes(target.read_bytes())
-        fd, tmp_name = tempfile.mkstemp(dir=data_dir, prefix=".tmp_", suffix=".csv")
+        fd, tmp_name = tempfile.mkstemp(dir=data_dir, prefix=config.TMP_PREFIX, suffix=config.TMP_SUFFIX)
         try:
             with os.fdopen(fd, "wb") as tmp:
                 tmp.write(content)
                 tmp.flush()
                 os.fsync(tmp.fileno())
+            os.chmod(tmp_name, config.FILE_MODE)
             os.replace(tmp_name, target)
         except BaseException:
             Path(tmp_name).unlink(missing_ok=True)
