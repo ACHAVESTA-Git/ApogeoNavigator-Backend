@@ -22,6 +22,7 @@ from app.models.claves import ClaveUsuario, EstadoClave, TipoClave
 from app.routers import admin_claves
 from app.security import gestor_claves as gk
 from app.security import pqc
+from app.services.usuarios import crear_usuario
 from app.utils import auditoria_util
 
 ADMIN_KEY = "admin-secreto"
@@ -64,8 +65,7 @@ def client():
 
 def _usuario(engine, email="ana@example.org", nombre="Ana Ruiz", activo=True) -> uuid.UUID:
     with Session(engine) as s:
-        usuario = Usuario(email=email, nombre=nombre, activo=activo)
-        s.add(usuario)
+        usuario = crear_usuario(s, email, nombre, activo=activo)
         s.commit()
         return usuario.id
 
