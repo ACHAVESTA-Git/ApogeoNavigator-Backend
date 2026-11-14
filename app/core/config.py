@@ -287,7 +287,7 @@ METRICS_FILENAME = "metricas.csv"
 QUERY_MAX_RANGE_DAYS = 35
 MAX_COMPARE_SITES = 3
 ORIGEN_CALCULADO = "calculado"
-# Umbrales provisionales del semáforo hasta que el PO los confirme (% de tiempo con el astro sobre el horizonte).
+# Umbrales del semáforo, fijados por el usuario (% de tiempo con el astro sobre el horizonte).
 # Energía (Sol): verde >= 45, amarillo de 25 a < 45, rojo < 25. Comunicación (Tierra): verde >= 70, amarillo de 40 a < 70.
 SEMAFORO_ENERGIA_VERDE_MIN = 45.0
 SEMAFORO_ENERGIA_AMARILLO_MIN = 25.0

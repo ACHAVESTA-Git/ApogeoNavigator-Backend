@@ -160,7 +160,7 @@ def _level(pct: float, green_min: float, yellow_min: float) -> str:
 
 
 def traffic_light(pct_sol: float, pct_tierra: float) -> dict[str, str]:
-    """Semáforo provisional: energía por % de Sol, comunicación por % de Tierra (umbrales distintos), global = el peor."""
+    """Semáforo: energía por % de Sol, comunicación por % de Tierra (umbrales distintos), global = el peor."""
     energy = _level(pct_sol, c.SEMAFORO_ENERGIA_VERDE_MIN, c.SEMAFORO_ENERGIA_AMARILLO_MIN)
     comms = _level(pct_tierra, c.SEMAFORO_COMUNICACION_VERDE_MIN, c.SEMAFORO_COMUNICACION_AMARILLO_MIN)
     order = (c.SEMAFORO_ROJO, c.SEMAFORO_AMARILLO, c.SEMAFORO_VERDE)
