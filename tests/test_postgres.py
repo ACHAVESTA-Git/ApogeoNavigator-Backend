@@ -108,8 +108,8 @@ def test_borrar_un_usuario_no_toca_la_auditoria_en_postgres(pg):
     uid = uuid.uuid4()
     db_session.configure(create_engine(URL))
     with engine.begin() as conn:
-        conn.execute(text("INSERT INTO usuarios (id, email, nombre, rol, activo, creado_utc) "
-                          "VALUES (:i, 'a@x.org', 'Ana', 'analista', true, now())"), {"i": uid})
+        conn.execute(text("INSERT INTO usuarios (id, email_cifrado, email_hash, nombre, rol, activo, creado_utc) "
+                          "VALUES (:i, 'x'::bytea, repeat('a', 64), 'Ana', 'analista', true, now())"), {"i": uid})
     au.registrar_evento(A.LOGIN, "ana", usuario_id=uid, estricto=True)
     with engine.begin() as conn:
         conn.execute(text("DELETE FROM usuarios WHERE id = :i"), {"i": uid})       # no debe disparar el trigger
@@ -197,8 +197,8 @@ def test_anon_recibe_permiso_denegado_y_el_propietario_sigue_leyendo(roles_supab
     command.downgrade(cfg, "base")
     command.upgrade(cfg, "head")
     with engine.begin() as conn:
-        conn.execute(text("INSERT INTO usuarios (id, email, nombre, rol, activo, creado_utc) "
-                          "VALUES (gen_random_uuid(), 'a@x.org', 'Ana', 'analista', true, now())"))
+        conn.execute(text("INSERT INTO usuarios (id, email_cifrado, email_hash, nombre, rol, activo, creado_utc) "
+                          "VALUES (gen_random_uuid(), 'x'::bytea, repeat('a', 64), 'Ana', 'analista', true, now())"))
         assert conn.execute(text("SELECT count(*) FROM usuarios")).scalar() == 1          # propietario: ve su dato
     with pytest.raises(DBAPIError, match="permission denied"):
         with engine.begin() as conn:
@@ -222,3 +222,35 @@ def test_el_downgrade_desactiva_rls(pg):
         activadas = {r[0] for r in conn.execute(text(
             "SELECT relname FROM pg_class WHERE relrowsecurity AND relnamespace = 'public'::regnamespace"))}
         assert not (set(TABLAS) & activadas)
+
+
+# ------------------------------------------------------------------ email cifrado (migraciones 0004 y 0005)
+def test_migracion_del_email_cifrado_con_datos_en_postgres(pg, monkeypatch):
+    import uuid
+    from app.core import config
+    from app.security import gestor_claves as gk
+    semilla, clave_hash = gk.generar_claves_servidor()
+    monkeypatch.setenv(config.ENV_KEM_PRIVATE, semilla)
+    monkeypatch.setenv(config.ENV_EMAIL_HASH_KEY, clave_hash)
+    gk.reiniciar()
+    engine, cfg = pg
+    command.downgrade(cfg, "0003_rls")
+    with engine.begin() as conn:
+        for email in ("Ana@Example.org", "luis@example.org"):
+            conn.execute(text("INSERT INTO usuarios (id, email, nombre, rol, activo, creado_utc) "
+                              "VALUES (:i, :e, 'Ana', 'analista', true, now())"), {"i": uuid.uuid4(), "e": email})
+    command.upgrade(cfg, "head")
+    with engine.connect() as conn:
+        columnas = {c["name"]: str(c["type"]) for c in inspect(conn).get_columns("usuarios")}
+        assert "email" not in columnas and columnas["email_cifrado"] == "BYTEA"
+        filas = conn.execute(text("SELECT email_cifrado, email_hash FROM usuarios")).fetchall()
+        assert sorted(gk.descifrar_email(bytes(f[0])) for f in filas) == ["ana@example.org", "luis@example.org"]
+        assert conn.execute(text("SELECT count(*) FROM pg_constraint WHERE conname = 'uq_usuarios_email_hash'")).scalar() == 1
+    with pytest.raises(IntegrityError):                                       # el hash sigue siendo único
+        with engine.begin() as conn:
+            conn.execute(text("INSERT INTO usuarios (id, email_cifrado, email_hash, nombre, rol, activo, creado_utc) "
+                              "SELECT gen_random_uuid(), email_cifrado, email_hash, 'Copia', 'analista', true, now() FROM usuarios LIMIT 1"))
+    command.downgrade(cfg, "0003_rls")
+    with engine.connect() as conn:
+        assert sorted(r[0] for r in conn.execute(text("SELECT email FROM usuarios"))) == ["ana@example.org", "luis@example.org"]
+    gk.reiniciar()
