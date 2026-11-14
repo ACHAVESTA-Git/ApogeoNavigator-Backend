@@ -3,18 +3,19 @@
 - La clave PRIVADA se entrega UNA sola vez en la respuesta de generar o rotar; el servidor no la guarda y
   ningún endpoint la vuelve a devolver. El admin no la ve: la recibe quien hace la petición para entregársela
   al usuario, y si se pierde se revoca y se emite otra.
-- Autenticación: X-API-Key con ADMIN_API_KEY (distinta de la de carga) hasta que exista OAuth con rol admin.
-- Cada acción se registra en la auditoría firmada (CAMBIO_DATOS) en la misma transacción: si no se puede
-  registrar, no se hace.
+- Autenticación: X-API-Key con ADMIN_API_KEY, que debe ser distinta de UPLOAD_API_KEY (si son iguales, el gestor
+  queda cerrado), hasta que exista OAuth con rol admin.
+- Cada cambio (generar, revocar, rotar) se registra en la auditoría firmada en la misma transacción: si no se
+  puede registrar, no se hace. Las LECTURAS (listar, pública, huella) no entran en la cadena firmada porque
+  `accion_auditoria` no tiene un valor de lectura; dejan una línea de log estructurado (sin emails).
 """
 from __future__ import annotations
 
 import base64
 import logging
-import os
-import secrets
 import uuid
-from datetime import datetime, timezone
+from contextlib import contextmanager
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response
 from fastapi.responses import JSONResponse
@@ -24,63 +25,31 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from starlette.background import BackgroundTask
 
-from app.core import config as app_config
+from app.core import config as c
+from app.core.security import matches_api_key
 from app.db import session as db_session
 from app.db.enums import AccionAuditoria
-from app.db.models import Usuario
+from app.db.models import Usuario, utcnow
 from app.db.session import get_db
 from app.models.claves import ClaveUsuario, EstadoClave, TipoClave
 from app.security import gestor_claves as gk
 from app.utils import auditoria_util
 
-log = logging.getLogger("apogeo.claves")
-
-ENV_ADMIN_API_KEY = "ADMIN_API_KEY"
-HEADER_API_KEY = app_config.API_KEY_HEADER
-PREFIX = "/api/admin/claves"
-ACTOR_ADMIN = "admin-api-key"
-PAGE_DEFAULT = 50
-PAGE_MAX = 200
-MOTIVE_MIN = 3
-MOTIVE_ROTATION = "rotación"
-ESCAPE = "\\"
-NO_STORE = {"Cache-Control": "no-store", "Pragma": "no-cache"}
-PEM_MEDIA_TYPE = "application/x-pem-file"
-FORMAT_PEM = "pem"
-FORMAT_JSON = "json"
-
-OP_GENERADA = "clave_generada"
-OP_REVOCADA = "clave_revocada"
-OP_ROTADA = "clave_rotada"
-
-MSG_ADMIN_KEY = "Clave de administración inválida o ausente"
-MSG_NO_USER = "El usuario no existe"
-MSG_INACTIVE_USER = "El usuario está desactivado; no se le pueden emitir claves"
-MSG_NO_KEY = "La clave no existe"
-MSG_ALREADY_ACTIVE = "El usuario ya tiene una clave activa de tipo {tipo}; usa rotar para reemitirla"
-MSG_ALREADY_ACTIVE_GENERIC = "Ya hay una clave activa para ese usuario y tipo"
-MSG_ALREADY_REVOKED = "La clave ya está revocada"
-MSG_AUDIT_FAILED = "No se pudo registrar la auditoría; no se hizo ningún cambio"
-MSG_WARNING = ("Guarda la clave privada ahora: se muestra UNA sola vez y no se puede recuperar. "
-               "Si se pierde, hay que revocar el par y emitir uno nuevo.")
-
+log = logging.getLogger(c.KEYS_LOGGER)
 
 
 # ---------------------------------------------------------------- autenticación
-def require_admin_key(x_api_key: str | None = Header(default=None, alias=HEADER_API_KEY)) -> None:
-    """Exige la clave de administración. Sin ADMIN_API_KEY configurada, el gestor queda cerrado (401)."""
-    expected = os.getenv(ENV_ADMIN_API_KEY, "")
-    if not expected or not x_api_key:
-        raise HTTPException(status_code=401, detail=MSG_ADMIN_KEY)
-    try:
-        candidate = x_api_key.encode(app_config.HEADER_ENCODING).decode(app_config.KEY_ENCODING)
-    except UnicodeError:
-        candidate = x_api_key
-    if not secrets.compare_digest(candidate.encode(app_config.KEY_ENCODING), expected.encode(app_config.KEY_ENCODING)):
-        raise HTTPException(status_code=401, detail=MSG_ADMIN_KEY)
+def require_admin_key(x_api_key: str | None = Header(default=None, alias=c.API_KEY_HEADER)) -> None:
+    """Exige la clave de administración. Cerrado (401) sin ADMIN_API_KEY o si es igual a UPLOAD_API_KEY."""
+    expected = c.get_admin_api_key()
+    if expected and expected == c.get_upload_api_key():
+        log.error(c.MSG_KEYS_SAME_KEY_LOG)
+        raise HTTPException(status_code=c.HTTP_UNAUTHORIZED, detail=c.MSG_KEYS_ADMIN_KEY)
+    if not matches_api_key(x_api_key, expected):
+        raise HTTPException(status_code=c.HTTP_UNAUTHORIZED, detail=c.MSG_KEYS_ADMIN_KEY)
 
 
-router = APIRouter(prefix=PREFIX, tags=["admin-claves"], dependencies=[Depends(require_admin_key)])
+router = APIRouter(prefix=c.KEYS_ROUTE_PREFIX, tags=[c.KEYS_ROUTER_TAG], dependencies=[Depends(require_admin_key)])
 
 
 # ---------------------------------------------------------------- esquemas
@@ -128,11 +97,11 @@ class GenerarIn(BaseModel):
 
 
 class RevocarIn(BaseModel):
-    motivo: str = Field(min_length=MOTIVE_MIN, max_length=200)
+    motivo: str = Field(min_length=c.KEYS_MOTIVE_MIN, max_length=c.KEYS_MOTIVE_MAX)
 
 
 class RotarIn(BaseModel):
-    motivo: str = Field(default=MOTIVE_ROTATION, min_length=MOTIVE_MIN, max_length=200)
+    motivo: str = Field(default=c.KEYS_MOTIVE_ROTATION, min_length=c.KEYS_MOTIVE_MIN, max_length=c.KEYS_MOTIVE_MAX)
 
 
 class PublicaOut(BaseModel):
@@ -157,7 +126,7 @@ def _out(clave: ClaveUsuario, usuario: Usuario | None = None) -> dict:
     """Campos públicos de una clave. Nunca incluye material privado (no existe en la base)."""
     return {"id": clave.id, "usuario_id": clave.usuario_id, "tipo": clave.tipo, "algoritmo": clave.algoritmo,
             "estado": clave.estado, "huella_sha3_256": clave.huella_sha3_256, "tamano_publica": clave.tamano_publica,
-            "tamano_privada": clave.tamano_privada, "tamano_privada_fips": gk.TAMANO_PRIVADA_FIPS[clave.tipo.value],
+            "tamano_privada": clave.tamano_privada, "tamano_privada_fips": c.TAMANO_PRIVADA_FIPS[clave.tipo.value],
             "creada_utc": clave.creada_utc, "revocada_utc": clave.revocada_utc,
             "motivo_revocacion": clave.motivo_revocacion, "reemplazada_por": clave.reemplazada_por,
             "backups": clave.backups,
@@ -171,10 +140,16 @@ def _auditar(db: Session, operacion: str, clave: ClaveUsuario, motivo: str | Non
         detalle["motivo"] = motivo
     detalle.update(extra or {})
     try:
-        auditoria_util.registrar_evento(AccionAuditoria.CAMBIO_DATOS, ACTOR_ADMIN, recurso=f"clave/{clave.id}",
-                                        detalle=detalle, db=db, estricto=True)
+        auditoria_util.registrar_evento(AccionAuditoria.CAMBIO_DATOS, c.ACTOR_ADMIN,
+                                        recurso=c.KEYS_AUDIT_RESOURCE.format(id=clave.id), detalle=detalle, db=db,
+                                        estricto=True)
     except auditoria_util.ErrorAuditoria:
-        raise HTTPException(status_code=503, detail=MSG_AUDIT_FAILED) from None
+        raise HTTPException(status_code=c.HTTP_UNAVAILABLE, detail=c.MSG_KEYS_AUDIT_FAILED) from None
+
+
+def _log_lectura(operacion: str, filtros: str, resultados: int) -> None:
+    """Las lecturas no entran en la cadena firmada: dejan rastro en el log (sin emails ni material de claves)."""
+    log.info(c.MSG_KEYS_READ_LOG, operacion, filtros, resultados)
 
 
 def _nueva_clave(db: Session, usuario: Usuario, tipo: str) -> tuple[ClaveUsuario, gk.ParNuevo]:
@@ -186,26 +161,41 @@ def _nueva_clave(db: Session, usuario: Usuario, tipo: str) -> tuple[ClaveUsuario
     return clave, par
 
 
-def _entregar(db: Session, usuario: Usuario, creadas: list[tuple[ClaveUsuario, gk.ParNuevo]]) -> JSONResponse:
-    """Confirma la transacción y devuelve las privadas UNA vez. Tras enviar la respuesta marca backups=1 y borra."""
+def _borrar_todas(creadas: list[tuple[ClaveUsuario, gk.ParNuevo]]) -> None:
+    for _, par in creadas:
+        gk.borrar(par.privada_pem)
+
+
+@contextmanager
+def _cambio(db: Session, creadas: list[tuple[ClaveUsuario, gk.ParNuevo]]):
+    """Protege una escritura: ante cualquier fallo borra las privadas generadas; un choque con el índice único
+    «una activa por usuario y tipo» (dos peticiones simultáneas) es un 409, no un 500."""
     try:
-        db.commit()
+        yield
     except IntegrityError:
         db.rollback()
-        for _, par in creadas:
-            gk.borrar(par.privada_pem)
-        raise HTTPException(status_code=409, detail=MSG_ALREADY_ACTIVE_GENERIC) from None
+        _borrar_todas(creadas)
+        raise HTTPException(status_code=c.HTTP_CONFLICT, detail=c.MSG_KEYS_ALREADY_ACTIVE_GENERIC) from None
+    except BaseException:
+        _borrar_todas(creadas)
+        raise
+
+
+def _entregar(db: Session, usuario: Usuario, creadas: list[tuple[ClaveUsuario, gk.ParNuevo]]) -> JSONResponse:
+    """Confirma la transacción y devuelve las privadas UNA vez. Tras enviar la respuesta marca backups=1 y borra."""
+    with _cambio(db, creadas):
+        db.commit()
     claves = []
     for clave, par in creadas:
-        item = _out(clave, usuario)
-        item |= {"clave_publica_pem": gk.publica_pem(clave.tipo.value, clave.clave_publica),
-                 "privada_pem": par.privada_pem.decode("ascii"),
-                 "nombre_archivo_privada": f"{clave.tipo.value}-{clave.huella_sha3_256[:12]}.privada.pem"}
-        claves.append(item)
-    cuerpo = Entrega(aviso=MSG_WARNING, claves=[ClaveEntregada(**c) for c in claves]).model_dump(mode="json")
+        claves.append(_out(clave, usuario) | {
+            "clave_publica_pem": gk.publica_pem(clave.tipo.value, clave.clave_publica),
+            "privada_pem": par.privada_pem.decode("ascii"),
+            "nombre_archivo_privada": c.KEYS_PRIVATE_FILENAME.format(
+                tipo=clave.tipo.value, huella=clave.huella_sha3_256[:c.KEYS_FILE_FINGERPRINT_CHARS])})
+    cuerpo = Entrega(aviso=c.MSG_KEYS_WARNING, claves=[ClaveEntregada(**item) for item in claves]).model_dump(mode="json")
     ids = [clave.id for clave, _ in creadas]
     buffers = [par.privada_pem for _, par in creadas]
-    return JSONResponse(content=cuerpo, status_code=201, headers=NO_STORE,
+    return JSONResponse(content=cuerpo, status_code=c.HTTP_CREATED, headers=c.NO_STORE_HEADERS,
                         background=BackgroundTask(_marcar_entregadas, ids, buffers))
 
 
@@ -216,37 +206,35 @@ def _marcar_entregadas(ids: list[uuid.UUID], buffers: list[bytearray]) -> None:
             for clave in session.scalars(select(ClaveUsuario).where(ClaveUsuario.id.in_(ids))):
                 clave.backups = 1
     except Exception as exc:  # noqa: BLE001  (la entrega ya ocurrió; solo se registra el fallo del contador)
-        log.error("no se pudo contar la entrega de la clave (%s)", type(exc).__name__)
+        log.error(c.MSG_KEYS_DELIVERY_COUNT_FAILED, type(exc).__name__)
     finally:
         for buffer in buffers:
             gk.borrar(buffer)
 
 
-def _get(db: Session, clave_id: uuid.UUID) -> ClaveUsuario:
-    clave = db.get(ClaveUsuario, clave_id)
+def _get(db: Session, clave_id: uuid.UUID, bloquear: bool = False) -> ClaveUsuario:
+    """Busca la clave. Con ``bloquear`` toma un bloqueo de fila (SELECT ... FOR UPDATE; SQLite lo ignora)."""
+    consulta = select(ClaveUsuario).where(ClaveUsuario.id == clave_id)
+    clave = db.scalar(consulta.with_for_update() if bloquear else consulta)
     if clave is None:
-        raise HTTPException(status_code=404, detail=MSG_NO_KEY)
+        raise HTTPException(status_code=c.HTTP_NOT_FOUND, detail=c.MSG_KEYS_NO_KEY)
     return clave
 
 
 def _usuario_activo(db: Session, usuario_id: uuid.UUID) -> Usuario:
     usuario = db.get(Usuario, usuario_id)
     if usuario is None:
-        raise HTTPException(status_code=404, detail=MSG_NO_USER)
+        raise HTTPException(status_code=c.HTTP_NOT_FOUND, detail=c.MSG_KEYS_NO_USER)
     if not usuario.activo:
-        raise HTTPException(status_code=409, detail=MSG_INACTIVE_USER)
+        raise HTTPException(status_code=c.HTTP_CONFLICT, detail=c.MSG_KEYS_INACTIVE_USER)
     return usuario
-
-
-def _ahora() -> datetime:
-    return datetime.now(timezone.utc)
 
 
 # ---------------------------------------------------------------- endpoints
 @router.get("", response_model=PaginaClaves)
 def listar(usuario_id: uuid.UUID | None = None, estado: EstadoClave | None = None, tipo: TipoClave | None = None,
-           q: str | None = Query(None, max_length=100, description="Texto en el email o el nombre del usuario"),
-           limite: int = Query(PAGE_DEFAULT, ge=1, le=PAGE_MAX), offset: int = Query(0, ge=0),
+           q: str | None = Query(None, max_length=c.KEYS_Q_MAX, description="Texto en el email o el nombre del usuario"),
+           limite: int = Query(c.KEYS_PAGE_DEFAULT, ge=1, le=c.KEYS_PAGE_MAX), offset: int = Query(0, ge=0),
            db: Session = Depends(get_db)):
     consulta = select(ClaveUsuario, Usuario).join(Usuario, Usuario.id == ClaveUsuario.usuario_id)
     if usuario_id:
@@ -256,14 +244,18 @@ def listar(usuario_id: uuid.UUID | None = None, estado: EstadoClave | None = Non
     if tipo:
         consulta = consulta.where(ClaveUsuario.tipo == tipo)
     if q:
-        patron = "%" + q.replace(ESCAPE, ESCAPE * 2).replace("%", ESCAPE + "%").replace("_", ESCAPE + "_") + "%"
-        consulta = consulta.where(or_(Usuario.email.ilike(patron, escape=ESCAPE), Usuario.nombre.ilike(patron, escape=ESCAPE)))
+        escape = c.LIKE_ESCAPE
+        patron = "%" + q.replace(escape, escape * 2).replace("%", escape + "%").replace("_", escape + "_") + "%"
+        consulta = consulta.where(or_(Usuario.email.ilike(patron, escape=escape), Usuario.nombre.ilike(patron, escape=escape)))
     total = db.scalar(select(func.count()).select_from(consulta.subquery()))
     filas = db.execute(consulta.order_by(ClaveUsuario.creada_utc.desc(), ClaveUsuario.id).limit(limite).offset(offset)).all()
-    return PaginaClaves(total=total, limite=limite, offset=offset, items=[ClaveOut(**_out(c, u)) for c, u in filas])
+    _log_lectura(c.OP_KEY_READ + ":listar",
+                 f"usuario_id={bool(usuario_id)} estado={estado} tipo={tipo} q={bool(q)} limite={limite} offset={offset}",
+                 len(filas))
+    return PaginaClaves(total=total, limite=limite, offset=offset, items=[ClaveOut(**_out(k, u)) for k, u in filas])
 
 
-@router.post("", status_code=201, response_model=Entrega)
+@router.post("", status_code=c.HTTP_CREATED, response_model=Entrega)
 def generar(cuerpo: GenerarIn, db: Session = Depends(get_db)):
     usuario = _usuario_activo(db, cuerpo.usuario_id)
     tipos = list(dict.fromkeys(cuerpo.tipos))
@@ -271,28 +263,27 @@ def generar(cuerpo: GenerarIn, db: Session = Depends(get_db)):
         existe = db.scalar(select(ClaveUsuario.id).where(
             ClaveUsuario.usuario_id == usuario.id, ClaveUsuario.tipo == tipo, ClaveUsuario.estado == EstadoClave.ACTIVA))
         if existe:
-            raise HTTPException(status_code=409, detail=MSG_ALREADY_ACTIVE.format(tipo=tipo.value))
+            raise HTTPException(status_code=c.HTTP_CONFLICT, detail=c.MSG_KEYS_ALREADY_ACTIVE.format(tipo=tipo.value))
     creadas = [_nueva_clave(db, usuario, tipo.value) for tipo in tipos]
-    try:
+    with _cambio(db, creadas):
         db.flush()
         for clave, _ in creadas:
-            _auditar(db, OP_GENERADA, clave)
-    except BaseException:
-        for _, par in creadas:
-            gk.borrar(par.privada_pem)
-        raise
+            _auditar(db, c.OP_KEY_GENERATED, clave)
     return _entregar(db, usuario, creadas)
 
 
 @router.get("/{clave_id}/publica", response_model=PublicaOut)
-def publica(clave_id: uuid.UUID, formato: str = Query(FORMAT_JSON, pattern=f"^({FORMAT_JSON}|{FORMAT_PEM})$"),
+def publica(clave_id: uuid.UUID, formato: str = Query(c.KEYS_FORMAT_JSON, pattern=c.KEYS_FORMAT_PATTERN),
             db: Session = Depends(get_db)):
     """Pública (también si está revocada: sirve para verificar lo firmado antes)."""
     clave = _get(db, clave_id)
     pem = gk.publica_pem(clave.tipo.value, clave.clave_publica)
-    if formato == FORMAT_PEM:
-        return Response(content=pem, media_type=PEM_MEDIA_TYPE,
-                        headers={"Content-Disposition": f'attachment; filename="{clave.tipo.value}-{clave.huella_sha3_256[:12]}.publica.pem"'})
+    _log_lectura(c.OP_KEY_READ + ":publica", f"clave_id={clave.id} formato={formato}", 1)
+    if formato == c.KEYS_FORMAT_PEM:
+        nombre = c.KEYS_PUBLIC_FILENAME.format(tipo=clave.tipo.value,
+                                               huella=clave.huella_sha3_256[:c.KEYS_FILE_FINGERPRINT_CHARS])
+        return Response(content=pem, media_type=c.PEM_MEDIA_TYPE,
+                        headers={"Content-Disposition": f'attachment; filename="{nombre}"'})
     return PublicaOut(id=clave.id, tipo=clave.tipo, algoritmo=clave.algoritmo, estado=clave.estado,
                       huella_sha3_256=clave.huella_sha3_256, clave_publica_pem=pem,
                       clave_publica_b64=base64.b64encode(clave.clave_publica).decode("ascii"))
@@ -301,39 +292,41 @@ def publica(clave_id: uuid.UUID, formato: str = Query(FORMAT_JSON, pattern=f"^({
 @router.get("/{clave_id}/huella", response_model=HuellaOut)
 def huella(clave_id: uuid.UUID, db: Session = Depends(get_db)):
     clave = _get(db, clave_id)
+    _log_lectura(c.OP_KEY_READ + ":huella", f"clave_id={clave.id}", 1)
     return HuellaOut(id=clave.id, algoritmo=clave.algoritmo, estado=clave.estado, huella_sha3_256=clave.huella_sha3_256)
 
 
 @router.post("/{clave_id}/revocar", response_model=ClaveOut)
 def revocar(clave_id: uuid.UUID, cuerpo: RevocarIn, db: Session = Depends(get_db)):
-    clave = _get(db, clave_id)
+    clave = _get(db, clave_id, bloquear=True)
     if clave.estado == EstadoClave.REVOCADA:
-        raise HTTPException(status_code=409, detail=MSG_ALREADY_REVOKED)
-    clave.estado, clave.revocada_utc, clave.motivo_revocacion = EstadoClave.REVOCADA, _ahora(), cuerpo.motivo
-    db.flush()
-    _auditar(db, OP_REVOCADA, clave, motivo=cuerpo.motivo)
+        raise HTTPException(status_code=c.HTTP_CONFLICT, detail=c.MSG_KEYS_ALREADY_REVOKED)
+    clave.estado, clave.revocada_utc, clave.motivo_revocacion = EstadoClave.REVOCADA, utcnow(), cuerpo.motivo
+    with _cambio(db, []):
+        db.flush()
+        _auditar(db, c.OP_KEY_REVOKED, clave, motivo=cuerpo.motivo)
     usuario = db.get(Usuario, clave.usuario_id)
     db.commit()
     return ClaveOut(**_out(clave, usuario))
 
 
-@router.post("/{clave_id}/rotar", status_code=201, response_model=Entrega)
+@router.post("/{clave_id}/rotar", status_code=c.HTTP_CREATED, response_model=Entrega)
 def rotar(clave_id: uuid.UUID, cuerpo: RotarIn | None = None, db: Session = Depends(get_db)):
     """Revoca la clave y emite otra del mismo tipo para el mismo usuario (la privada nueva se entrega una vez)."""
     motivo = (cuerpo or RotarIn()).motivo
-    vieja = _get(db, clave_id)
+    vieja = _get(db, clave_id, bloquear=True)
     if vieja.estado == EstadoClave.REVOCADA:
-        raise HTTPException(status_code=409, detail=MSG_ALREADY_REVOKED)
+        raise HTTPException(status_code=c.HTTP_CONFLICT, detail=c.MSG_KEYS_ALREADY_REVOKED)
     usuario = _usuario_activo(db, vieja.usuario_id)
-    vieja.estado, vieja.revocada_utc, vieja.motivo_revocacion = EstadoClave.REVOCADA, _ahora(), motivo
-    db.flush()                                    # libera el hueco del índice de «una activa por tipo»
-    nueva, par = _nueva_clave(db, usuario, vieja.tipo.value)
-    try:
+    vieja.estado, vieja.revocada_utc, vieja.motivo_revocacion = EstadoClave.REVOCADA, utcnow(), motivo
+    creadas: list[tuple[ClaveUsuario, gk.ParNuevo]] = []
+    with _cambio(db, creadas):
+        db.flush()                                    # libera el hueco del índice de «una activa por tipo»
+        creadas.append(_nueva_clave(db, usuario, vieja.tipo.value))
+        nueva = creadas[0][0]
         db.flush()
         vieja.reemplazada_por = nueva.id
         db.flush()
-        _auditar(db, OP_ROTADA, nueva, motivo=motivo, extra={"reemplaza_a": str(vieja.id), "huella_anterior": vieja.huella_sha3_256})
-    except BaseException:
-        gk.borrar(par.privada_pem)
-        raise
-    return _entregar(db, usuario, [(nueva, par)])
+        _auditar(db, c.OP_KEY_ROTATED, nueva, motivo=motivo,
+                 extra={"reemplaza_a": str(vieja.id), "huella_anterior": vieja.huella_sha3_256})
+    return _entregar(db, usuario, creadas)

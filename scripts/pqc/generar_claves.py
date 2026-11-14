@@ -25,6 +25,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+from app.core import config  # noqa: E402
 from app.security import gestor_claves, pqc  # noqa: E402
 
 EXIT_OK = 0
@@ -50,8 +51,8 @@ def main(argv: list[str] | None = None) -> int:
     args = _parse(argv)
     if args.servidor:
         semilla, clave_hash = gestor_claves.generar_claves_servidor()
-        print(f"{gestor_claves.ENV_KEM_PRIVATE}={semilla}")
-        print(f"{gestor_claves.ENV_EMAIL_HASH_KEY}={clave_hash}")
+        print(f"{config.ENV_KEM_PRIVATE}={semilla}")
+        print(f"{config.ENV_EMAIL_HASH_KEY}={clave_hash}")
         print(MSG_WARNING, file=sys.stderr)
         return EXIT_OK
     if args.solo_publica:

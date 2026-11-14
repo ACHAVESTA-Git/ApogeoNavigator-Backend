@@ -31,52 +31,8 @@ from cryptography.hazmat.primitives.asymmetric.mlkem import MLKEM1024PrivateKey,
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
-from app.core import config as app_config
+from app.core import config as c
 from app.security import pqc
-
-# ---------------------------------------------------------------- constantes
-ALG_KEM = "ML-KEM-1024"
-ALG_FIRMA = "ML-DSA-65"
-TIPO_KEM = "kem"
-TIPO_FIRMA = "firma"
-ALGORITMO_POR_TIPO = {TIPO_KEM: ALG_KEM, TIPO_FIRMA: ALG_FIRMA}
-# Tamaños según FIPS 203 (ML-KEM-1024) y FIPS 204 (ML-DSA-65). La privada se entrega como semilla (64 y 32 bytes).
-TAMANO_PUBLICA = {TIPO_KEM: 1568, TIPO_FIRMA: 1952}
-TAMANO_PRIVADA_ENTREGADA = {TIPO_KEM: 64, TIPO_FIRMA: 32}
-TAMANO_PRIVADA_FIPS = {TIPO_KEM: 3168, TIPO_FIRMA: 4032}
-KEM_CIPHERTEXT_BYTES = 1568
-KEM_SEED_BYTES = 64
-SHARED_SECRET_BYTES = 32
-
-KEM_DEM_VERSION = b"\x02"
-KEM_DEM_NONCE_BYTES = 12
-KEY_ID_BYTES = 8
-KEM_DEM_TAG_BYTES = 16
-KEM_DEM_HEADER_BYTES = 1 + KEY_ID_BYTES + KEM_CIPHERTEXT_BYTES + KEM_DEM_NONCE_BYTES
-KEM_DEM_INFO = b"apogeo-kem-dem-v1"
-EMAIL_AAD = b"usuarios.email"
-
-ENV_KEM_PRIVATE = "PQC_KEM_PRIVATE_KEY"
-ENV_KEM_PUBLIC = "PQC_KEM_PUBLIC_KEY"
-ENV_EMAIL_HASH_KEY = "EMAIL_HASH_KEY"
-ENV_KEM_PREVIOUS = "PQC_KEM_PRIVATE_KEY_ANTERIORES"      # semillas anteriores, separadas por comas
-ENV_EMAIL_HASH_PREVIOUS = "EMAIL_HASH_KEY_ANTERIORES"     # claves de hash anteriores, separadas por comas
-LIST_SEPARATOR = ","
-DEV_SERVER_KEYS_FILENAME = "claves_servidor.json"
-DEV_FILE_MODE = 0o600
-DEV_DIR_MODE = 0o700
-EMAIL_HASH_KEY_BYTES = 32
-TEXT_ENCODING = "utf-8"
-
-MSG_TIPO_DESCONOCIDO = "Tipo de clave desconocido: {tipo!r}."
-MSG_NO_SERVER_KEYS = (
-    f"Faltan {ENV_KEM_PRIVATE} o {ENV_EMAIL_HASH_KEY} y el entorno es de producción: "
-    "no se generan claves del servidor automáticamente."
-)
-MSG_SERVER_KEYS_DEV = "Claves del servidor (KEM y hash de email) de DESARROLLO en {ruta}; no valen para producción."
-MSG_BAD_BLOB = "Dato cifrado inválido o manipulado."
-MSG_UNKNOWN_KEY = "El dato está cifrado con una clave del servidor que ya no está configurada."
-MSG_BAD_KEY = "{nombre} inválida: {detalle}."
 
 
 class ErrorGestorClaves(RuntimeError):
@@ -96,24 +52,19 @@ class ParNuevo:
     privada_pem: bytearray
 
 
-def huella(publica: bytes) -> str:
-    """SHA3-256 (hex) de la clave pública cruda; mismo criterio que ``pqc.huella_clave_publica``."""
-    return hashlib.sha3_256(publica).hexdigest()
-
-
 def generar_par(tipo: str) -> ParNuevo:
     """Genera un par del tipo dado. La privada sale en PEM (PKCS#8, forma de semilla) y no se almacena."""
-    if tipo == TIPO_KEM:
+    if tipo == c.TIPO_KEM:
         privada = MLKEM1024PrivateKey.generate()
-    elif tipo == TIPO_FIRMA:
+    elif tipo == c.TIPO_FIRMA:
         privada = MLDSA65PrivateKey.generate()
     else:
-        raise ValueError(MSG_TIPO_DESCONOCIDO.format(tipo=tipo))
+        raise ValueError(c.MSG_TIPO_DESCONOCIDO.format(tipo=tipo))
     publica = privada.public_key().public_bytes_raw()
     pem = bytearray(privada.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8,
                                           serialization.NoEncryption()))
-    return ParNuevo(tipo=tipo, algoritmo=ALGORITMO_POR_TIPO[tipo], publica=publica, huella=huella(publica),
-                    tamano_publica=len(publica), tamano_privada=TAMANO_PRIVADA_ENTREGADA[tipo], privada_pem=pem)
+    return ParNuevo(tipo=tipo, algoritmo=c.ALGORITMO_POR_TIPO[tipo], publica=publica, huella=pqc.huella_clave_publica(publica),
+                    tamano_publica=len(publica), tamano_privada=c.TAMANO_PRIVADA_ENTREGADA[tipo], privada_pem=pem)
 
 
 def borrar(buffer: bytearray | None) -> None:
@@ -124,42 +75,42 @@ def borrar(buffer: bytearray | None) -> None:
 
 def publica_pem(tipo: str, publica: bytes) -> str:
     """Clave pública en PEM (SubjectPublicKeyInfo) a partir de los bytes crudos guardados."""
-    if tipo == TIPO_KEM:
+    if tipo == c.TIPO_KEM:
         clave = MLKEM1024PublicKey.from_public_bytes(publica)
-    elif tipo == TIPO_FIRMA:
+    elif tipo == c.TIPO_FIRMA:
         clave = MLDSA65PublicKey.from_public_bytes(publica)
     else:
-        raise ValueError(MSG_TIPO_DESCONOCIDO.format(tipo=tipo))
+        raise ValueError(c.MSG_TIPO_DESCONOCIDO.format(tipo=tipo))
     return clave.public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo).decode("ascii")
 
 
 # ---------------------------------------------------------------- KEM-DEM
 def _derivar_clave(secreto: bytes, texto_kem: bytes) -> bytes:
-    return HKDF(algorithm=hashes.SHA256(), length=SHARED_SECRET_BYTES, salt=None,
-                info=KEM_DEM_INFO + texto_kem[:32]).derive(secreto)
+    return HKDF(algorithm=hashes.SHA256(), length=c.SHARED_SECRET_BYTES, salt=None,
+                info=c.KEM_DEM_INFO + texto_kem[:32]).derive(secreto)
 
 
 def id_de_clave(publica: bytes) -> bytes:
     """Identificador corto (8 bytes) de una clave KEM pública: va en cada blob para saber con qué clave descifrar."""
-    return hashlib.sha3_256(publica).digest()[:KEY_ID_BYTES]
+    return hashlib.sha3_256(publica).digest()[:c.KEY_ID_BYTES]
 
 
 def kem_dem_cifrar(publica: bytes, datos: bytes, aad: bytes = b"") -> bytes:
     """Cifra ``datos`` para el dueño de la clave KEM ``publica`` (1568 bytes crudos)."""
     secreto, texto_kem = MLKEM1024PublicKey.from_public_bytes(publica).encapsulate()
-    nonce = os.urandom(KEM_DEM_NONCE_BYTES)
-    cabecera = KEM_DEM_VERSION + id_de_clave(publica) + texto_kem + nonce
-    cifrado = AESGCM(_derivar_clave(secreto, texto_kem)).encrypt(nonce, datos, aad + cabecera[:1 + KEY_ID_BYTES])
+    nonce = os.urandom(c.KEM_DEM_NONCE_BYTES)
+    cabecera = c.KEM_DEM_VERSION + id_de_clave(publica) + texto_kem + nonce
+    cifrado = AESGCM(_derivar_clave(secreto, texto_kem)).encrypt(nonce, datos, aad + cabecera[:1 + c.KEY_ID_BYTES])
     return cabecera + cifrado
 
 
 def _partes(blob: bytes) -> tuple[bytes, bytes, bytes, bytes, bytes]:
     """(versión+id, id, texto KEM, nonce, cifrado) o ErrorGestorClaves si el blob no tiene la forma esperada."""
-    if len(blob) < KEM_DEM_HEADER_BYTES + KEM_DEM_TAG_BYTES or blob[:1] != KEM_DEM_VERSION:
-        raise ErrorGestorClaves(MSG_BAD_BLOB)
-    inicio_ct = 1 + KEY_ID_BYTES
-    return (blob[:inicio_ct], blob[1:inicio_ct], blob[inicio_ct:inicio_ct + KEM_CIPHERTEXT_BYTES],
-            blob[inicio_ct + KEM_CIPHERTEXT_BYTES:KEM_DEM_HEADER_BYTES], blob[KEM_DEM_HEADER_BYTES:])
+    if len(blob) < c.KEM_DEM_HEADER_BYTES + c.KEM_DEM_TAG_BYTES or blob[:1] != c.KEM_DEM_VERSION:
+        raise ErrorGestorClaves(c.MSG_BAD_BLOB)
+    inicio_ct = 1 + c.KEY_ID_BYTES
+    return (blob[:inicio_ct], blob[1:inicio_ct], blob[inicio_ct:inicio_ct + c.KEM_CIPHERTEXT_BYTES],
+            blob[inicio_ct + c.KEM_CIPHERTEXT_BYTES:c.KEM_DEM_HEADER_BYTES], blob[c.KEM_DEM_HEADER_BYTES:])
 
 
 def id_del_blob(blob: bytes) -> bytes:
@@ -173,12 +124,12 @@ def kem_dem_descifrar(privada: MLKEM1024PrivateKey | bytes, blob: bytes, aad: by
         privada = MLKEM1024PrivateKey.from_seed_bytes(bytes(privada))
     cabecera, kid, texto_kem, nonce, cifrado = _partes(blob)
     if kid != id_de_clave(privada.public_key().public_bytes_raw()):
-        raise ErrorGestorClaves(MSG_BAD_BLOB)
+        raise ErrorGestorClaves(c.MSG_BAD_BLOB)
     try:
         secreto = privada.decapsulate(texto_kem)
         return AESGCM(_derivar_clave(secreto, texto_kem)).decrypt(nonce, cifrado, aad + cabecera)
     except Exception:  # etiqueta GCM inválida, texto KEM inválido... todo es «manipulado»
-        raise ErrorGestorClaves(MSG_BAD_BLOB) from None
+        raise ErrorGestorClaves(c.MSG_BAD_BLOB) from None
 
 
 # ---------------------------------------------------------------- claves del servidor (datos personales)
@@ -199,18 +150,18 @@ def _b64(valor: str, nombre: str, esperado: int) -> bytes:
     try:
         raw = base64.b64decode(valor.strip(), validate=True)
     except ValueError:
-        raise ErrorGestorClaves(MSG_BAD_KEY.format(nombre=nombre, detalle="no es base64")) from None
+        raise ErrorGestorClaves(c.MSG_BAD_KEY.format(nombre=nombre, detalle="no es base64")) from None
     if len(raw) != esperado:
-        raise ErrorGestorClaves(MSG_BAD_KEY.format(nombre=nombre, detalle=f"debe tener {esperado} bytes"))
+        raise ErrorGestorClaves(c.MSG_BAD_KEY.format(nombre=nombre, detalle=f"debe tener {esperado} bytes"))
     return raw
 
 
 def _dev_file() -> Path:
-    return Path(os.getenv(pqc.ENV_DEV_KEY_DIR) or pqc.DEFAULT_DEV_KEY_DIR) / DEV_SERVER_KEYS_FILENAME
+    return Path(os.getenv(pqc.ENV_DEV_KEY_DIR) or pqc.DEFAULT_DEV_KEY_DIR) / c.DEV_SERVER_KEYS_FILENAME
 
 
 def _lista(valor: str, nombre: str, esperado: int) -> list[bytes]:
-    return [_b64(item, nombre, esperado) for item in valor.split(LIST_SEPARATOR) if item.strip()]
+    return [_b64(item, nombre, esperado) for item in valor.split(c.LIST_SEPARATOR) if item.strip()]
 
 
 def _servidor_desde(semilla: bytes, clave_hash: bytes, semillas_previas: list[bytes] | None = None,
@@ -225,34 +176,33 @@ def _servidor_desde(semilla: bytes, clave_hash: bytes, semillas_previas: list[by
 
 
 def _cargar_servidor() -> _ClavesServidor:
-    semilla_b64 = os.getenv(ENV_KEM_PRIVATE, "").strip()
-    hash_b64 = os.getenv(ENV_EMAIL_HASH_KEY, "").strip()
+    semilla_b64 = os.getenv(c.ENV_KEM_PRIVATE, "").strip()
+    hash_b64 = os.getenv(c.ENV_EMAIL_HASH_KEY, "").strip()
     if semilla_b64 and hash_b64:
         return _servidor_desde(
-            _b64(semilla_b64, ENV_KEM_PRIVATE, KEM_SEED_BYTES), _b64(hash_b64, ENV_EMAIL_HASH_KEY, EMAIL_HASH_KEY_BYTES),
-            _lista(os.getenv(ENV_KEM_PREVIOUS, ""), ENV_KEM_PREVIOUS, KEM_SEED_BYTES),
-            _lista(os.getenv(ENV_EMAIL_HASH_PREVIOUS, ""), ENV_EMAIL_HASH_PREVIOUS, EMAIL_HASH_KEY_BYTES))
-    if app_config.is_production():
-        raise ErrorGestorClaves(MSG_NO_SERVER_KEYS)
+            _b64(semilla_b64, c.ENV_KEM_PRIVATE, c.KEM_SEED_BYTES), _b64(hash_b64, c.ENV_EMAIL_HASH_KEY, c.EMAIL_HASH_KEY_BYTES),
+            _lista(os.getenv(c.ENV_KEM_PREVIOUS, ""), c.ENV_KEM_PREVIOUS, c.KEM_SEED_BYTES),
+            _lista(os.getenv(c.ENV_EMAIL_HASH_PREVIOUS, ""), c.ENV_EMAIL_HASH_PREVIOUS, c.EMAIL_HASH_KEY_BYTES))
+    if c.is_production():
+        raise ErrorGestorClaves(c.MSG_NO_SERVER_KEYS)
     archivo = _dev_file()
     if archivo.is_file():
         try:
-            datos = json.loads(archivo.read_text(encoding=TEXT_ENCODING))
-            claves = _servidor_desde(_b64(datos[ENV_KEM_PRIVATE], ENV_KEM_PRIVATE, KEM_SEED_BYTES),
-                                     _b64(datos[ENV_EMAIL_HASH_KEY], ENV_EMAIL_HASH_KEY, EMAIL_HASH_KEY_BYTES))
+            datos = json.loads(archivo.read_text(encoding=c.KEY_ENCODING))
+            claves = _servidor_desde(_b64(datos[c.ENV_KEM_PRIVATE], c.ENV_KEM_PRIVATE, c.KEM_SEED_BYTES),
+                                     _b64(datos[c.ENV_EMAIL_HASH_KEY], c.ENV_EMAIL_HASH_KEY, c.EMAIL_HASH_KEY_BYTES))
         except (OSError, ValueError, KeyError, TypeError):
-            raise ErrorGestorClaves(MSG_BAD_KEY.format(nombre=str(archivo), detalle="archivo de desarrollo corrupto")) from None
+            raise ErrorGestorClaves(c.MSG_BAD_KEY.format(nombre=str(archivo), detalle="archivo de desarrollo corrupto")) from None
     else:
         archivo.parent.mkdir(parents=True, exist_ok=True)
-        os.chmod(archivo.parent, DEV_DIR_MODE)
-        (archivo.parent / pqc.DEV_GITIGNORE_NAME).write_text(pqc.DEV_GITIGNORE_CONTENT, encoding=TEXT_ENCODING)
-        semilla, clave_hash = os.urandom(KEM_SEED_BYTES), os.urandom(EMAIL_HASH_KEY_BYTES)
+        os.chmod(archivo.parent, pqc.DEV_DIR_MODE)
+        (archivo.parent / pqc.DEV_GITIGNORE_NAME).write_text(pqc.DEV_GITIGNORE_CONTENT, encoding=c.KEY_ENCODING)
+        semilla, clave_hash = os.urandom(c.KEM_SEED_BYTES), os.urandom(c.EMAIL_HASH_KEY_BYTES)
         claves = _servidor_desde(semilla, clave_hash)
-        fd = os.open(archivo, os.O_WRONLY | os.O_CREAT | os.O_EXCL, DEV_FILE_MODE)
-        with os.fdopen(fd, "w", encoding=TEXT_ENCODING) as f:
-            json.dump({ENV_KEM_PRIVATE: base64.b64encode(semilla).decode("ascii"),
-                       ENV_EMAIL_HASH_KEY: base64.b64encode(clave_hash).decode("ascii")}, f)
-    warnings.warn(MSG_SERVER_KEYS_DEV.format(ruta=archivo), RuntimeWarning, stacklevel=3)
+        pqc._escribir_atomico(archivo, json.dumps({
+            c.ENV_KEM_PRIVATE: base64.b64encode(semilla).decode("ascii"),
+            c.ENV_EMAIL_HASH_KEY: base64.b64encode(clave_hash).decode("ascii")}))
+    warnings.warn(c.MSG_SERVER_KEYS_DEV.format(ruta=archivo), RuntimeWarning, stacklevel=3)
     return claves
 
 
@@ -274,8 +224,8 @@ def reiniciar() -> None:
 
 def generar_claves_servidor() -> tuple[str, str]:
     """(PQC_KEM_PRIVATE_KEY, EMAIL_HASH_KEY) nuevas en base64, para guardarlas como secretos."""
-    return (base64.b64encode(os.urandom(KEM_SEED_BYTES)).decode("ascii"),
-            base64.b64encode(os.urandom(EMAIL_HASH_KEY_BYTES)).decode("ascii"))
+    return (base64.b64encode(os.urandom(c.KEM_SEED_BYTES)).decode("ascii"),
+            base64.b64encode(os.urandom(c.EMAIL_HASH_KEY_BYTES)).decode("ascii"))
 
 
 def _normalizar_email(email: str) -> str:
@@ -284,19 +234,19 @@ def _normalizar_email(email: str) -> str:
 
 def cifrar_email(email: str) -> bytes:
     """Email cifrado en reposo (KEM-DEM con la clave KEM ACTUAL del servidor)."""
-    return kem_dem_cifrar(_obtener().kem_publica, _normalizar_email(email).encode(TEXT_ENCODING), EMAIL_AAD)
+    return kem_dem_cifrar(_obtener().kem_publica, _normalizar_email(email).encode(c.KEY_ENCODING), c.EMAIL_AAD)
 
 
 def _clave_para(blob: bytes) -> MLKEM1024PrivateKey:
     clave = _obtener().kem_por_id.get(id_del_blob(blob))
     if clave is None:
-        raise ErrorGestorClaves(MSG_UNKNOWN_KEY)
+        raise ErrorGestorClaves(c.MSG_UNKNOWN_KEY)
     return clave
 
 
 def descifrar_email(blob: bytes) -> str:
     """Descifra con la clave que indique el blob (la actual o una anterior configurada)."""
-    return kem_dem_descifrar(_clave_para(blob), blob, EMAIL_AAD).decode(TEXT_ENCODING)
+    return kem_dem_descifrar(_clave_para(blob), blob, c.EMAIL_AAD).decode(c.KEY_ENCODING)
 
 
 def necesita_reencriptar(blob: bytes) -> bool:
@@ -315,7 +265,7 @@ def email_hash(email: str) -> str:
 
 
 def _hmac_email(clave: bytes, email: str) -> str:
-    return hmac.new(clave, _normalizar_email(email).encode(TEXT_ENCODING), hashlib.sha256).hexdigest()
+    return hmac.new(clave, _normalizar_email(email).encode(c.KEY_ENCODING), hashlib.sha256).hexdigest()
 
 
 def email_hash_candidatos(email: str) -> list[str]:
