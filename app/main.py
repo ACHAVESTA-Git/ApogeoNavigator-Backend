@@ -2,13 +2,14 @@ from fastapi import FastAPI, HTTPException
 
 from app.core import config
 from app.core.limits import upload_guard
-from app.routers import datos
+from app.routers import datos, lectura
 from app.schemas.sites import Site
 from app.services import storage
 
 app = FastAPI(title=config.API_TITLE, version=config.API_VERSION)
 app.middleware("http")(upload_guard)
 app.include_router(datos.router)
+app.include_router(lectura.router)
 
 
 @app.get(config.ROUTE_HEALTH)
