@@ -129,10 +129,10 @@ def test_nulos_disfrazados_y_recortes():
 
 
 def test_cabecera_exacta():
-    assert csv_reader.header_issues(["a", "b"], ["a", "b"]) == []
+    assert list(csv_reader.header_issues(["a", "b"], ["a", "b"])) == []
     codes = {i.code for i in csv_reader.header_issues(["b", "a", "a", "z"], ["a", "b", "c"])}
     assert codes == {"E_CABECERA", "E_COLUMNA_DESCONOCIDA"}
-    assert csv_reader.header_issues(["b", "a"], ["a", "b"])[0].code == "E_CABECERA"
+    assert next(csv_reader.header_issues(["b", "a"], ["a", "b"])).code == "E_CABECERA"
     assert csv_reader.row_width_issue([], 3) and csv_reader.row_width_issue(["x"], 3)
     assert csv_reader.row_width_issue(["x", "y", "z"], 3) is None
 
