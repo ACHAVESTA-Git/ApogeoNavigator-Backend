@@ -143,6 +143,8 @@ Everything is configured with environment variables; see [`.env.example`](.env.e
 pytest                                  # more than 650 tests; no database, bucket or network needed
 TEST_DATABASE_URL=postgresql+psycopg://user:pass@localhost:5432/apogeo_test pytest tests/test_postgres.py
 ```
+`tests/test_contrato_congelado.py` freezes the HTTP contract the frontend depends on (status codes, error texts and the shape of every JSON response, plus the OpenAPI operations) against `tests/contrato/snapshots.json`. A refactor must keep it green; if a contract change is deliberate, regenerate with `UPDATE_CONTRATO=1 pytest tests/test_contrato_congelado.py` and review the snapshot diff in the pull request.
+
 The second command runs the PostgreSQL-specific tests (immutable audit trigger, migrations, concurrency) against a throwaway database whose name must contain `test`; they are skipped otherwise.
 
 ## AI usage declaration
