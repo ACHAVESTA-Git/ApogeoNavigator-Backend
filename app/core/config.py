@@ -398,6 +398,7 @@ DB_KEY_FINGERPRINT_MAX = 64
 SIGNED_DOC_VERSION = 1
 AUDIT_ADVISORY_LOCK_KEY = 0x41504F47        # "APOG": serializa la cadena en PostgreSQL
 AUDIT_DETAIL_MAX_BYTES = 4096
+KEY_TRUNCADO = "truncado"             # detalle del evento: el archivo se cortó al pasar el límite de tamaño
 AUDIT_FIRST_SEQUENCE = 1
 CK_SIGNED_OR_NONE = "ck_{tabla}_firma_o_ninguno"
 HASH_HEX_LENGTH = 64                  # SHA3-256 / HMAC-SHA256 en hexadecimal
