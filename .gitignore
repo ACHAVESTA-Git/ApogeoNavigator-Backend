@@ -4,3 +4,6 @@ __pycache__/
 .env
 .pytest_cache/
 .idea/
+
+# Copias de versiones anteriores de los datos (las crea la API de carga)
+data/_historial/
