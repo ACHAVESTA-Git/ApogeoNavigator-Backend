@@ -21,10 +21,14 @@ def utcnow() -> datetime:
 
 class Usuario(Base):
     __tablename__ = "usuarios"
-    __table_args__ = (UniqueConstraint("proveedor_oauth", "sub_oauth", name="uq_usuarios_oauth"),)
+    __table_args__ = (UniqueConstraint("proveedor_oauth", "sub_oauth", name="uq_usuarios_oauth"),
+                      CheckConstraint(f"length(email_hash) = {c.HASH_HEX_LENGTH}", name="ck_usuarios_email_hash_longitud"))
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-    email: Mapped[str] = mapped_column(String(c.DB_EMAIL_MAX), unique=True)
+    # El email nunca se guarda en claro (Ley 29733): va cifrado con ML-KEM-1024 (KEM-DEM) y se busca por su HMAC.
+    # Usa app/services/usuarios.py (crear_usuario, buscar_por_email, email_de) en lugar de tocar estas columnas.
+    email_cifrado: Mapped[bytes] = mapped_column(LargeBinary)
+    email_hash: Mapped[str] = mapped_column(String(c.HASH_HEX_LENGTH), unique=True)
     nombre: Mapped[str] = mapped_column(String(c.DB_NAME_MAX))
     proveedor_oauth: Mapped[str | None] = mapped_column(String(c.DB_PROVIDER_MAX))
     sub_oauth: Mapped[str | None] = mapped_column(String(c.DB_SUB_MAX))

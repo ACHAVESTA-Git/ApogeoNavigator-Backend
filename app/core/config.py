@@ -13,6 +13,10 @@ ENV_DATA_DIR = "DATA_DIR"
 ENV_UPLOAD_API_KEY = "UPLOAD_API_KEY"
 ENV_ADMIN_API_KEY = "ADMIN_API_KEY"
 ENV_DATABASE_URL = "DATABASE_URL"
+ENV_DATA_BUCKET = "DATA_BUCKET"
+ENV_DATA_BUCKET_PREFIX = "DATA_BUCKET_PREFIX"
+ENV_DATA_SEED_DIR = "DATA_SEED_DIR"
+ENV_DATA_REFRESH_SECONDS = "DATA_REFRESH_SECONDS"
 ENV_IP_HASH_SALT = "IP_HASH_SALT"
 ENV_AUDIT_REQUIRE_SIGNATURE = "AUDIT_REQUIRE_SIGNATURE"
 ENV_CLOUD_RUN_MARKER = "K_SERVICE"
@@ -35,6 +39,29 @@ HEADER_ENCODING = "latin-1"
 def get_data_dir() -> Path:
     """Carpeta de datos (se lee en cada llamada para que las pruebas puedan cambiarla)."""
     return Path(os.getenv(ENV_DATA_DIR) or DEFAULT_DATA_DIR)
+
+
+def get_data_bucket() -> str:
+    """Bucket de Cloud Storage con los datos. Vacío = solo disco local (desarrollo)."""
+    return os.getenv(ENV_DATA_BUCKET, "").strip()
+
+
+def get_data_bucket_prefix() -> str:
+    prefix = os.getenv(ENV_DATA_BUCKET_PREFIX, "").strip().strip("/")
+    return f"{prefix}/" if prefix else ""
+
+
+def get_seed_dir() -> Path | None:
+    """Carpeta con la semilla de datos (la imagen Docker la copia a /srv/seed-data)."""
+    raw = os.getenv(ENV_DATA_SEED_DIR)
+    return Path(raw) if raw else None
+
+
+def get_data_refresh_seconds() -> float:
+    try:
+        return max(0.0, float(os.getenv(ENV_DATA_REFRESH_SECONDS, DEFAULT_DATA_REFRESH_SECONDS)))
+    except ValueError:
+        return DEFAULT_DATA_REFRESH_SECONDS
 
 
 def get_database_url() -> str:
@@ -356,6 +383,7 @@ DB_POOL_SIZE = 2                      # pequeño: Cloud Run escala instancias y 
 DB_MAX_OVERFLOW = 2
 DB_POOL_TIMEOUT_SECONDS = 10
 DB_SQLITE_PREFIX = "sqlite"
+DB_PSYCOPG_PREFIX = "postgresql+psycopg://"      # no casa con psycopg2, que no admite prepare_threshold
 DB_EMAIL_MAX = 320
 DB_NAME_MAX = 120
 DB_PROVIDER_MAX = 40
@@ -418,6 +446,21 @@ MSG_AUDIT_KEY_MISMATCH = "El evento se firmó con otra clave (huella distinta de
 MSG_AUDIT_CANNOT_VERIFY = "Hay eventos firmados pero no hay verificador de firmas disponible"
 MSG_AUDIT_SIGNATURE_REQUIRED = "No se pudo firmar el evento y la firma es obligatoria"
 
+# ---------------------------------------------------------------- almacenamiento en Cloud Storage
+DEFAULT_DATA_REFRESH_SECONDS = 30.0
+BUCKET_HISTORY_PREFIX = f"{HISTORY_DIRNAME}/"
+NEW_OBJECT_GENERATION = 0               # if_generation_match=0: solo crear si el objeto no existe
+MANIFEST_NAME = "manifest.json"
+BUCKET_PATH_SEP = "/"
+LOGGER_DATASTORE = "apogeo.datastore"
+MSG_REPLICA_RESET_FAILED = "No se pudo restablecer la réplica local desde el bucket (%s)"
+SEED_SUFFIX = ".csv"
+MSG_PROD_NEEDS_BUCKET = ("En producción hay que configurar DATA_BUCKET: el disco de Cloud Run es efímero y los datos "
+                         "cargados se perderían. Define DATA_BUCKET (y dale al servicio permiso sobre el bucket)")
+MSG_BUCKET_UNAVAILABLE = "No se pudo acceder al almacenamiento de datos; no se guardó nada"
+MSG_DATA_CONFLICT = "Otro proceso modificó los datos a la vez; se recargó la versión vigente. Reintenta la carga"
+MSG_SEED_MANIFEST_SKIPPED = "No se pudo firmar el manifiesto de la semilla (%s); se publicará con la primera carga"
+HTTP_CONFLICT = 409
 
 # ---------------------------------------------------------------- gestor de claves PQC (app/security/gestor_claves.py)
 # Por usuario: un par ML-KEM-1024 (FIPS 203) y un par ML-DSA-65 (FIPS 204). La privada no se guarda nunca.

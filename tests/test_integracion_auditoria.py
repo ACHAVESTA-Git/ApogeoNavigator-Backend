@@ -135,8 +135,12 @@ def test_arranque_en_produccion_sin_sal_falla(bd, data_dir, monkeypatch):
 
 
 def test_arranque_en_produccion_con_sal_funciona(bd, data_dir, monkeypatch):
+    from app.services import datastore
+    from tests.conftest import MemoryStore
     monkeypatch.setenv("K_SERVICE", "apogeo-backend")
     monkeypatch.setenv("IP_HASH_SALT", "sal")
+    monkeypatch.setenv("DATA_BUCKET", "bucket-de-prueba")
+    datastore.set_store(MemoryStore())
     with TestClient(app) as client:
         assert client.get("/api/health").status_code == 200
 

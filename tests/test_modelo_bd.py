@@ -27,7 +27,10 @@ def engine():
 
 
 def _user(**kw):
-    return models.Usuario(email=kw.pop("email", "a@example.org"), nombre="Ana", **kw)
+    """Usuario de prueba a nivel de modelo (sin criptografía): el hash se deriva del «email» para probar la unicidad."""
+    import hashlib
+    email = kw.pop("email", "a@example.org")
+    return models.Usuario(email_cifrado=b"blob-de-prueba", email_hash=hashlib.sha256(email.encode()).hexdigest(), nombre="Ana", **kw)
 
 
 def test_crea_las_cuatro_tablas(engine):
@@ -43,7 +46,7 @@ def test_usuario_valores_por_defecto(engine):
         assert u.creado_utc is not None and u.ultimo_login_utc is None
 
 
-def test_email_unico(engine):
+def test_email_hash_unico(engine):
     with Session(engine) as s:
         s.add_all([_user(), _user()])
         with pytest.raises(IntegrityError):
