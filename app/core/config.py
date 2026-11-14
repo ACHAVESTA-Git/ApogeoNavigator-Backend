@@ -11,6 +11,8 @@ from pathlib import Path
 # ---------------------------------------------------------------- entorno
 ENV_DATA_DIR = "DATA_DIR"
 ENV_UPLOAD_API_KEY = "UPLOAD_API_KEY"
+ENV_DATABASE_URL = "DATABASE_URL"
+ENV_IP_HASH_SALT = "IP_HASH_SALT"
 DEFAULT_DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 HISTORY_DIRNAME = "_historial"
 HISTORY_STAMP = "%Y%m%dT%H%M%S%fZ"
@@ -28,6 +30,15 @@ HEADER_ENCODING = "latin-1"
 def get_data_dir() -> Path:
     """Carpeta de datos (se lee en cada llamada para que las pruebas puedan cambiarla)."""
     return Path(os.getenv(ENV_DATA_DIR) or DEFAULT_DATA_DIR)
+
+
+def get_database_url() -> str:
+    """URL de SQLAlchemy (p. ej. postgresql+psycopg://...). Vacía = auditoría y BD desactivadas."""
+    return os.getenv(ENV_DATABASE_URL, "")
+
+
+def get_ip_hash_salt() -> str:
+    return os.getenv(ENV_IP_HASH_SALT, "")
 
 
 def get_upload_api_key() -> str:
@@ -274,3 +285,43 @@ MSG_COMPARE_COUNT = "Se pueden consultar de 1 a {max} sitios"
 MSG_SITE_ID_REQUIRED = "Indica al menos un site_id"
 MSG_NO_ROWS_IN_RANGE = "No hay datos en el rango pedido"
 MSG_METRICS_INVALID = "metricas.csv no cumple el estándar de CSV"
+
+# ---------------------------------------------------------------- base de datos y auditoría
+DB_POOL_RECYCLE_SECONDS = 1800
+DB_POOL_SIZE = 2                      # pequeño: Cloud Run escala instancias y Cloud SQL limita conexiones
+DB_MAX_OVERFLOW = 2
+DB_POOL_TIMEOUT_SECONDS = 10
+DB_SQLITE_PREFIX = "sqlite"
+DB_EMAIL_MAX = 320
+DB_NAME_MAX = 120
+DB_PROVIDER_MAX = 40
+DB_SUB_MAX = 255
+DB_ACTOR_MAX = 80
+DB_FILENAME_MAX = 120
+DB_RESOURCE_MAX = 200
+DB_PATH_MAX = 500
+DB_USER_AGENT_MAX = 200
+DB_ALGORITHM_MAX = 40
+HASH_HEX_LENGTH = 64                  # SHA3-256 / HMAC-SHA256 en hexadecimal
+
+ACTOR_API_KEY = "api-key"
+ACTOR_ANONYMOUS = "anonimo"
+GENESIS_HASH = "0" * HASH_HEX_LENGTH  # hash_prev del primer evento
+AUDIT_SIGN_CONTEXT = b"auditoria"
+UPLOAD_SIGN_CONTEXT = b"carga-csv"
+AUDIT_TS_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
+AUDIT_WRITE_RETRIES = 3
+AUDIT_VERIFY_BATCH = 500
+AUDIT_PAGE_DEFAULT = 50
+AUDIT_PAGE_MAX = 200
+FORWARDED_FOR_HEADER = "x-forwarded-for"
+USER_AGENT_HEADER = "user-agent"
+UNSIGNED_ALGORITHM = "NINGUNO"
+
+ROUTE_AUDIT = "/api/auditoria"
+ROUTE_AUDIT_VERIFY = "/api/auditoria/verificar"
+ROUTER_TAG_AUDIT = "auditoria"
+MSG_DB_DISABLED = "La base de datos no está configurada (DATABASE_URL)"
+MSG_AUDIT_RANGE_ORDER = "'hasta' debe ser posterior a 'desde'"
+MSG_AUDIT_WRITE_FAILED = "No se pudo registrar el evento de auditoría"
+MSG_AUDIT_NO_SIGNER = "Firma PQC no disponible; el evento se guarda sin firmar"
