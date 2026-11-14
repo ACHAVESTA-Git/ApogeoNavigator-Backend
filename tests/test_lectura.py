@@ -1,4 +1,5 @@
 """Endpoints de lectura (/api/efemerides, /api/metricas, /api/puestas) con los CSV reales de data/."""
+import csv
 import shutil
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -174,10 +175,33 @@ def test_puesta_del_sol_apolo15(api):
                               "horas_restantes": None}
 
 
-def test_puestas_sol_polar_visible(api):
-    body = api.get("/api/puestas/shackleton", params={"desde": "2026-12-05T06:00Z"}).json()
-    assert body["sol"]["visible"] is True
-    assert body["tierra"]["horas_restantes"] is not None
+def expected_events(site_id: str, desde: str, column: str) -> dict:
+    """Cálculo independiente sobre el CSV: estado en `desde` y primera puesta y salida posteriores."""
+    with open(REAL_DATA / f"efemerides_{site_id}.csv", encoding="utf-8") as f:
+        rows = [(r["utc"], float(r[column]) > 0) for r in csv.DictReader(f)]
+    idx = next(i for i, (utc, _) in enumerate(rows) if utc == desde)
+    visible = rows[idx][1]
+    state, first_sunset, first_sunrise = visible, None, None
+    for utc, v in rows[idx + 1:]:
+        if v != state:
+            if state:
+                first_sunset = first_sunset or utc
+            else:
+                first_sunrise = first_sunrise or utc
+            state = v
+    return {"visible": visible, "proxima_puesta_utc": first_sunset, "proxima_salida_utc": first_sunrise}
+
+
+@pytest.mark.parametrize("site_id", ["shackleton", "apollo15", "im1_odysseus", "change4", "slim"])
+@pytest.mark.parametrize("desde", ["2026-12-05T06:00Z", "2027-02-10T12:00Z", "2027-05-20T00:00Z"])
+def test_puestas_coinciden_con_el_calculo_independiente(api, site_id, desde):
+    body = api.get(f"/api/puestas/{site_id}", params={"desde": desde}).json()
+    for key, column in (("sol", "sol_el_deg"), ("tierra", "tierra_el_deg")):
+        expected = expected_events(site_id, desde, column)
+        got = {k: body[key][k] for k in expected}
+        assert got == expected, (site_id, desde, key)
+        nxt = expected["proxima_puesta_utc"] if expected["visible"] else expected["proxima_salida_utc"]
+        assert (body[key]["horas_restantes"] is None) == (nxt is None)
 
 
 def test_puestas_tierra_nunca_visible_en_cara_oculta(api):
