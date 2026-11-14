@@ -108,8 +108,8 @@ def test_borrar_un_usuario_no_toca_la_auditoria_en_postgres(pg):
     uid = uuid.uuid4()
     db_session.configure(create_engine(URL))
     with engine.begin() as conn:
-        conn.execute(text("INSERT INTO usuarios (id, email, nombre, rol, activo, creado_utc) "
-                          "VALUES (:i, 'a@x.org', 'Ana', 'analista', true, now())"), {"i": uid})
+        conn.execute(text("INSERT INTO usuarios (id, email_cifrado, email_hash, nombre, rol, activo, creado_utc) "
+                          "VALUES (:i, 'x'::bytea, repeat('a', 64), 'Ana', 'analista', true, now())"), {"i": uid})
     au.registrar_evento(A.LOGIN, "ana", usuario_id=uid, estricto=True)
     with engine.begin() as conn:
         conn.execute(text("DELETE FROM usuarios WHERE id = :i"), {"i": uid})       # no debe disparar el trigger
@@ -139,3 +139,35 @@ def test_el_primer_evento_con_la_tabla_vacia_tambien_se_serializa(pg):
         list(pool.map(lambda i: au.registrar_evento(A.LOGIN, f"u{i}", estricto=True), range(8)))
     r = au.verificar_cadena()
     assert r.valida and r.n_eventos == 8 and r.primer_hash_prev_es_genesis is True
+
+
+# ------------------------------------------------------------------ email cifrado (migraciones 0003 y 0004)
+def test_migracion_del_email_cifrado_con_datos_en_postgres(pg, monkeypatch):
+    import uuid
+    from app.core import config
+    from app.security import gestor_claves as gk
+    semilla, clave_hash = gk.generar_claves_servidor()
+    monkeypatch.setenv(config.ENV_KEM_PRIVATE, semilla)
+    monkeypatch.setenv(config.ENV_EMAIL_HASH_KEY, clave_hash)
+    gk.reiniciar()
+    engine, cfg = pg
+    command.downgrade(cfg, "0002_claves")
+    with engine.begin() as conn:
+        for email in ("Ana@Example.org", "luis@example.org"):
+            conn.execute(text("INSERT INTO usuarios (id, email, nombre, rol, activo, creado_utc) "
+                              "VALUES (:i, :e, 'Ana', 'analista', true, now())"), {"i": uuid.uuid4(), "e": email})
+    command.upgrade(cfg, "head")
+    with engine.connect() as conn:
+        columnas = {c["name"]: str(c["type"]) for c in inspect(conn).get_columns("usuarios")}
+        assert "email" not in columnas and columnas["email_cifrado"] == "BYTEA"
+        filas = conn.execute(text("SELECT email_cifrado, email_hash FROM usuarios")).fetchall()
+        assert sorted(gk.descifrar_email(bytes(f[0])) for f in filas) == ["ana@example.org", "luis@example.org"]
+        assert conn.execute(text("SELECT count(*) FROM pg_constraint WHERE conname = 'uq_usuarios_email_hash'")).scalar() == 1
+    with pytest.raises(IntegrityError):                                       # el hash sigue siendo único
+        with engine.begin() as conn:
+            conn.execute(text("INSERT INTO usuarios (id, email_cifrado, email_hash, nombre, rol, activo, creado_utc) "
+                              "SELECT gen_random_uuid(), email_cifrado, email_hash, 'Copia', 'analista', true, now() FROM usuarios LIMIT 1"))
+    command.downgrade(cfg, "0002_claves")
+    with engine.connect() as conn:
+        assert sorted(r[0] for r in conn.execute(text("SELECT email FROM usuarios"))) == ["ana@example.org", "luis@example.org"]
+    gk.reiniciar()
