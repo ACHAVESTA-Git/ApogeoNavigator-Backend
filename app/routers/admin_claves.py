@@ -256,8 +256,11 @@ def listar(usuario_id: uuid.UUID | None = None, estado: EstadoClave | None = Non
     if q:
         escape = c.LIKE_ESCAPE
         patron = "%" + q.replace(escape, escape * 2).replace("%", escape + "%").replace("_", escape + "_") + "%"
-        consulta = consulta.where(or_(Usuario.email_hash.in_(gk.email_hash_candidatos(q)),
-                                      Usuario.nombre.ilike(patron, escape=escape)))
+        try:
+            hashes = gk.email_hash_candidatos(q)
+        except gk.ErrorGestorClaves:         # sin claves del servidor (producción mal configurada): solo por nombre
+            hashes = []
+        consulta = consulta.where(or_(Usuario.email_hash.in_(hashes), Usuario.nombre.ilike(patron, escape=escape)))
     total = db.scalar(select(func.count()).select_from(consulta.subquery()))
     filas = db.execute(consulta.order_by(ClaveUsuario.creada_utc.desc(), ClaveUsuario.id).limit(limite).offset(offset)).all()
     _log_lectura(c.OP_KEY_READ + ":listar",
