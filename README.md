@@ -28,6 +28,7 @@ At Shackleton the Sun never rises above 1.74° (about 88° at Apollo 11), and on
 ```
 - **Reads** use a local replica of `data/`; the metrics are recomputed from the ephemerides and compared with the reference `metricas.csv`.
 - **Uploads** (`/api/datos/**`, API key required) are validated against a declarative schema, saved atomically, signed into a manifest and audited.
+- **Errors** are JSON `{"detail": ...}` everywhere, handled in one place (`app/core/errors.py`): domain errors keep their status, a database or bucket outage is a `503`, and anything unexpected is a generic `500` whose trace goes to the log, never to the client. Native FastAPI validation errors (`422` with a list) are left as they are.
 - **Production** target: Cloud Run + Cloud SQL + Cloud Storage on Google Cloud (not deployed yet). The image runs as a non-root user and ships a seed copy of `data/`.
 
 ```
