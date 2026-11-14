@@ -1,6 +1,6 @@
 # Informe de fuentes de datos NASA · T5 · 14/11/2026
 
-Datos reales para el rango 2026-12-01T00:00Z → 2027-06-01T00:00Z (6 meses, 4369 filas por sitio, paso de 1 h). `metricas.csv` tiene una fila por sitio y mes (60 filas). Dictamen del revisor (Opus): ver el final de este informe.
+Datos reales para el rango 2026-12-01T00:00Z → 2027-06-01T00:00Z (6 meses, 4369 filas por sitio, paso de 1 h). `metricas.csv` tiene una fila por sitio y mes (60 filas). Resultado de la revisión de datos: ver el final de este informe.
 
 ## 1. Qué aporta cada fuente y qué tomamos
 
@@ -80,5 +80,5 @@ Tabla de diciembre de 2026 (la primera fila mensual de `metricas.csv`; los demá
 - **Trazabilidad:** no se guardaron las cabeceras crudas de Horizons; son reproducibles con `generar.py`.
 - Citar «Fuente: NASA/JPL Horizons» sin sugerir respaldo de NASA al proyecto.
 
-## 6. Dictamen del revisor (Opus)
+## 6. Revisión de datos
 **APROBADO** para los 10 sitios con 6 meses (4369 filas por sitio) y 60 filas mensuales de métricas. Las efemérides coinciden con una descarga independiente de Horizons con diferencia máxima 0 en las 4369 filas, y las 60 filas de `metricas.csv` salen iguales al recalcularlas. Los meses tienen 672, 720 o 744 h: compara por porcentaje, no por horas.
