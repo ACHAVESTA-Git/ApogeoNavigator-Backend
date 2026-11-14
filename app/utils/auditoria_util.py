@@ -14,7 +14,6 @@ Mejor esfuerzo: si la base de datos no está configurada no se registra nada; si
 """
 import hashlib
 import hmac
-import json
 import logging
 import uuid
 from collections.abc import Iterator
@@ -24,14 +23,17 @@ from datetime import datetime, timezone
 from typing import Any, Protocol
 
 from sqlalchemy import func, select, text
-from sqlalchemy.exc import IntegrityError
+from cryptography.exceptions import UnsupportedAlgorithm
+from sqlalchemy import event as sa_event
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.core import config as c
 from app.db import session as db_session
 from app.db.enums import AccionAuditoria, TipoCarga
 from app.db.models import CargaArchivo, EventoAuditoria
-from app.utils.text import clip_value
+from app.security.pqc import ErrorClavesPQC, canonicalizar
+from app.utils.text import clean_text
 
 log = logging.getLogger("apogeo.auditoria")
 
@@ -66,7 +68,7 @@ def get_firmante() -> Firmante | None:
         try:
             from app.security import pqc
             _firmante = pqc
-        except Exception:  # noqa: BLE001  (ImportError)
+        except ImportError:
             log.warning(c.MSG_AUDIT_NO_SIGNER)
             return None
     return _firmante
@@ -97,7 +99,7 @@ def client_ip(request: Any) -> str | None:
 def _request_context(request: Any) -> tuple[str | None, str | None]:
     if request is None:
         return None, None
-    return hash_ip(client_ip(request)), clip_value(request.headers.get(c.USER_AGENT_HEADER), c.DB_USER_AGENT_MAX)
+    return hash_ip(client_ip(request)), clean_text(request.headers.get(c.USER_AGENT_HEADER), c.DB_USER_AGENT_MAX)
 
 
 # ------------------------------------------------------------------ canónico, hash y firma
@@ -107,9 +109,7 @@ def iso_utc(ts: datetime) -> str:
     return ts.strftime(c.AUDIT_TS_FORMAT)
 
 
-def canonical_json(obj: Any) -> bytes:
-    """Mismo formato que pqc.canonicalizar: claves ordenadas, sin espacios, UTF-8."""
-    return json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False, default=str).encode("utf-8")
+canonical_json = canonicalizar      # una sola definición del JSON canónico: la de app.security.pqc
 
 
 def canonical_event(secuencia: int, ts_utc: datetime, usuario_id: uuid.UUID | None, actor: str, accion: str,
@@ -144,7 +144,7 @@ def _identity() -> tuple[Firmante | None, str, str | None]:
         if signer is None:
             raise ErrorAuditoria(c.MSG_AUDIT_NO_SIGNER)
         return signer, signer.ALGORITMO, signer.huella_clave_publica()
-    except Exception as exc:  # noqa: BLE001
+    except (ErrorClavesPQC, ErrorAuditoria) as exc:
         if c.audit_requires_signature():
             raise ErrorAuditoria(c.MSG_AUDIT_SIGNATURE_REQUIRED) from exc
         log.warning("%s (%s)", c.MSG_AUDIT_NO_SIGNER, type(exc).__name__)
@@ -156,7 +156,7 @@ def _sign(signer: Firmante | None, document: dict, contexto: bytes) -> bytes | N
         return None
     try:
         return signer.firmar(canonical_json(document), contexto=contexto)
-    except Exception as exc:  # noqa: BLE001
+    except (ErrorClavesPQC, UnsupportedAlgorithm, ValueError) as exc:
         raise ErrorAuditoria(c.MSG_AUDIT_SIGNATURE_REQUIRED) from exc
 
 
@@ -167,8 +167,25 @@ def _lock_chain(session: Session) -> None:
         session.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": c.AUDIT_ADVISORY_LOCK_KEY})
 
 
+def _check_detail(value: Any) -> None:
+    """Solo str, int, bool, None, listas y dicts con claves str: así el JSON canónico es estable (sin floats ni fechas)."""
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if not isinstance(key, str):
+                raise ErrorAuditoria(c.MSG_AUDIT_DETAIL_TYPE)
+            _check_detail(item)
+    elif isinstance(value, list):
+        for item in value:
+            _check_detail(item)
+    elif value is not None and not isinstance(value, (str, int, bool)):
+        raise ErrorAuditoria(c.MSG_AUDIT_DETAIL_TYPE)
+
+
 def _append_event(session: Session, accion: AccionAuditoria, actor: str, usuario_id: uuid.UUID | None,
                   recurso: str | None, detalle: dict, ip_hash: str | None, user_agent: str | None) -> EventoAuditoria:
+    actor = clean_text(actor, c.DB_ACTOR_MAX) or c.ACTOR_ANONYMOUS
+    recurso = clean_text(recurso, c.DB_RESOURCE_MAX)
+    _check_detail(detalle)
     if len(canonical_json(detalle)) > c.AUDIT_DETAIL_MAX_BYTES:
         raise ErrorAuditoria(c.MSG_AUDIT_DETAIL_TOO_BIG.format(max=c.AUDIT_DETAIL_MAX_BYTES))
     signer, algorithm, fingerprint = _identity()
@@ -189,8 +206,8 @@ def _append_event(session: Session, accion: AccionAuditoria, actor: str, usuario
             with session.begin_nested():
                 session.add(event)
                 session.flush()
-            # Ancla externa: el log estructurado (Cloud Logging) permite detectar truncados de la cola.
-            log.info("auditoria cabeza secuencia=%s hash=%s", seq, current)
+            # Ancla externa (solo en logs, con retención limitada): se emite al CONFIRMAR, nunca si hay rollback.
+            sa_event.listen(session, "after_commit", lambda _s, s=seq, h=current: log.info(c.MSG_AUDIT_ANCHOR, s, h), once=True)
             return event
         except IntegrityError:   # red de seguridad: otro escritor tomó esa secuencia o ese hash_prev
             if attempt == c.AUDIT_WRITE_RETRIES:
@@ -204,10 +221,12 @@ def _run(work, db: Session | None, estricto: bool):
         if db is not None:
             return work(db)
         if not db_session.db_enabled():
+            if c.audit_requires_signature():       # producción sin base de datos: falla cerrado
+                raise ErrorAuditoria(c.MSG_DB_DISABLED)
             return None
         with db_session.session_scope() as session:
             return work(session)
-    except Exception as exc:  # noqa: BLE001
+    except (SQLAlchemyError, ErrorAuditoria) as exc:
         if estricto or c.audit_requires_signature():
             raise exc if isinstance(exc, ErrorAuditoria) else ErrorAuditoria(c.MSG_AUDIT_WRITE_FAILED) from exc
         log.error("%s (%s)", c.MSG_AUDIT_WRITE_FAILED, type(exc).__name__)
@@ -222,6 +241,8 @@ def unidad_de_trabajo() -> Iterator[Session | None]:
     Permite registrar la auditoría ANTES de escribir un archivo y deshacerla si el guardado falla.
     """
     if not db_session.db_enabled():
+        if c.audit_requires_signature():
+            raise ErrorAuditoria(c.MSG_DB_DISABLED)
         yield None
         return
     with db_session.session_scope() as session:
@@ -244,6 +265,7 @@ def registrar_login(usuario_id: uuid.UUID, actor: str, request: Any = None, deta
 
 def registrar_login_fallido(actor: str = c.ACTOR_ANONYMOUS, request: Any = None, motivo: str | None = None,
                             db: Session | None = None) -> EventoAuditoria | None:
+    motivo = clean_text(motivo, c.DB_RESOURCE_MAX)
     return registrar_evento(AccionAuditoria.LOGIN_FALLIDO, actor, detalle={"motivo": motivo} if motivo else None,
                             request=request, db=db)
 
@@ -265,6 +287,8 @@ def registrar_carga(tipo: str, nombre_archivo: str, contenido: bytes, filas: int
     """
     digest = hashlib.sha3_256(contenido).hexdigest()
     ip_hash, user_agent = _request_context(request)
+    nombre_archivo = clean_text(nombre_archivo, c.DB_FILENAME_MAX) or ""
+    actor = clean_text(actor, c.DB_ACTOR_MAX) or c.ACTOR_ANONYMOUS
 
     def work(session: Session) -> RegistroCarga:
         signer, algorithm, fingerprint = _identity()
@@ -334,7 +358,7 @@ def verificar_cadena(db: Session | None = None) -> ResultadoVerificacion:
         current_fingerprint = None
         try:
             current_fingerprint = signer.huella_clave_publica() if signer is not None else None
-        except Exception:  # noqa: BLE001
+        except ErrorClavesPQC:
             signer = None
         expected_prev, expected_seq, total, first_ok = c.GENESIS_HASH, c.AUDIT_FIRST_SEQUENCE, 0, None
         stream = session.execute(select(EventoAuditoria).order_by(EventoAuditoria.secuencia)

@@ -392,6 +392,8 @@ MSG_AUDIT_ALGORITHM_MISMATCH = "El algoritmo de firma del evento no coincide con
 MSG_AUDIT_DETAIL_TOO_BIG = "El detalle del evento supera {max} bytes"
 MSG_AUDIT_BAD_SEQUENCE = "La secuencia no es consecutiva: falta o sobra un evento"
 MSG_AUDIT_SALT_REQUIRED = "En producción IP_HASH_SALT es obligatoria cuando hay base de datos"
+MSG_AUDIT_DETAIL_TYPE = "El detalle solo admite str, int, bool, None, listas y dicts con claves de texto"
+MSG_AUDIT_ANCHOR = "auditoria cabeza secuencia=%s hash=%s"
 MSG_AUDIT_UNSIGNED = "El evento no está firmado (algoritmo NINGUNO): la cadena no es verificable"
 MSG_AUDIT_KEY_MISMATCH = "El evento se firmó con otra clave (huella distinta de la configurada)"
 MSG_AUDIT_CANNOT_VERIFY = "Hay eventos firmados pero no hay verificador de firmas disponible"
