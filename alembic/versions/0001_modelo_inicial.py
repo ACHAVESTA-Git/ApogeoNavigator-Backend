@@ -17,6 +17,7 @@ UTC = sa.DateTime(timezone=True)
 JSON_TYPE = sa.JSON().with_variant(postgresql.JSONB(), "postgresql")
 BIGINT_PK = sa.BigInteger().with_variant(sa.Integer(), "sqlite")
 
+SIGNED_OR_NONE = "firma_pqc IS NOT NULL OR COALESCE(algoritmo_firma, '') = 'NINGUNO'"
 ROLES = ("analista", "revisor", "admin")
 TIPOS = ("sites", "efemerides", "metricas")
 ACCIONES = ("LOGIN", "LOGIN_FALLIDO", "LOGOUT", "CARGA_VALIDADA", "CARGA_GUARDADA", "CARGA_RECHAZADA",
@@ -66,6 +67,8 @@ def upgrade() -> None:
         sa.Column("creado_utc", UTC, nullable=False),
         sa.Column("firma_pqc", sa.LargeBinary()),
         sa.Column("algoritmo_firma", sa.String(40)),
+        sa.Column("huella_clave", sa.String(64)),
+        sa.CheckConstraint(SIGNED_OR_NONE, name="ck_cargas_archivo_firma_o_ninguno"),
     )
     op.create_index("ix_cargas_archivo_creado_utc", "cargas_archivo", ["creado_utc"])
     op.create_index("ix_cargas_archivo_sha3_256", "cargas_archivo", ["sha3_256"])
@@ -85,6 +88,8 @@ def upgrade() -> None:
         sa.Column("hash_actual", sa.String(64), nullable=False, unique=True),
         sa.Column("firma_pqc", sa.LargeBinary()),
         sa.Column("algoritmo_firma", sa.String(40)),
+        sa.Column("huella_clave", sa.String(64)),
+        sa.CheckConstraint(SIGNED_OR_NONE, name="ck_eventos_auditoria_firma_o_ninguno"),
     )
     op.create_index("ix_eventos_auditoria_ts_utc", "eventos_auditoria", ["ts_utc"])
     op.create_index("ix_eventos_auditoria_usuario_id", "eventos_auditoria", ["usuario_id"])

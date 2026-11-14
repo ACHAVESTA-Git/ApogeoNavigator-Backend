@@ -2,12 +2,17 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import (Boolean, Enum, ForeignKey, Index, Integer, LargeBinary, String, UniqueConstraint, Uuid, BigInteger)
+from sqlalchemy import (BigInteger, Boolean, CheckConstraint, Enum, ForeignKey, Index, Integer, LargeBinary, String,
+                        UniqueConstraint, Uuid)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core import config as c
 from app.db.base import BIGINT_PK, JSON_TYPE, UTC_DATETIME, Base
 from app.db.enums import AccionAuditoria, RolUsuario, TipoCarga
+
+
+# Un registro sin firma debe declararlo: no hay medias tintas (firma nula solo con algoritmo NINGUNO).
+SIGNED_OR_NONE = f"firma_pqc IS NOT NULL OR COALESCE(algoritmo_firma, '') = '{c.UNSIGNED_ALGORITHM}'"
 
 
 def utcnow() -> datetime:
@@ -50,7 +55,8 @@ class Sesion(Base):
 class CargaArchivo(Base):
     __tablename__ = "cargas_archivo"
     __table_args__ = (Index("ix_cargas_archivo_creado_utc", "creado_utc"), Index("ix_cargas_archivo_sha3_256", "sha3_256"),
-                      Index("ix_cargas_archivo_usuario_id", "usuario_id"))
+                      Index("ix_cargas_archivo_usuario_id", "usuario_id"),
+                      CheckConstraint(SIGNED_OR_NONE, name=c.CK_SIGNED_OR_NONE.format(tabla="cargas_archivo")))
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     usuario_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("usuarios.id", ondelete="SET NULL"))
@@ -67,13 +73,15 @@ class CargaArchivo(Base):
     creado_utc: Mapped[datetime] = mapped_column(UTC_DATETIME, default=utcnow)
     firma_pqc: Mapped[bytes | None] = mapped_column(LargeBinary)
     algoritmo_firma: Mapped[str | None] = mapped_column(String(c.DB_ALGORITHM_MAX))
+    huella_clave: Mapped[str | None] = mapped_column(String(c.DB_KEY_FINGERPRINT_MAX))   # clave pública que firmó
 
 
 class EventoAuditoria(Base):
     """Evento encadenado: hash_actual = SHA3-256(hash_prev + evento canónico) y firmado con PQC."""
     __tablename__ = "eventos_auditoria"
     __table_args__ = (Index("ix_eventos_auditoria_ts_utc", "ts_utc"), Index("ix_eventos_auditoria_usuario_id", "usuario_id"),
-                      Index("ix_eventos_auditoria_accion", "accion"))
+                      Index("ix_eventos_auditoria_accion", "accion"),
+                      CheckConstraint(SIGNED_OR_NONE, name=c.CK_SIGNED_OR_NONE.format(tabla="eventos_auditoria")))
 
     id: Mapped[int] = mapped_column(BIGINT_PK, primary_key=True, autoincrement=True)
     ts_utc: Mapped[datetime] = mapped_column(UTC_DATETIME)
@@ -88,3 +96,4 @@ class EventoAuditoria(Base):
     hash_actual: Mapped[str] = mapped_column(String(c.HASH_HEX_LENGTH), unique=True)
     firma_pqc: Mapped[bytes | None] = mapped_column(LargeBinary)
     algoritmo_firma: Mapped[str | None] = mapped_column(String(c.DB_ALGORITHM_MAX))
+    huella_clave: Mapped[str | None] = mapped_column(String(c.DB_KEY_FINGERPRINT_MAX))

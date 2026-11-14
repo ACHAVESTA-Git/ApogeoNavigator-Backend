@@ -13,6 +13,10 @@ ENV_DATA_DIR = "DATA_DIR"
 ENV_UPLOAD_API_KEY = "UPLOAD_API_KEY"
 ENV_DATABASE_URL = "DATABASE_URL"
 ENV_IP_HASH_SALT = "IP_HASH_SALT"
+ENV_AUDIT_REQUIRE_SIGNATURE = "AUDIT_REQUIRE_SIGNATURE"
+ENV_CLOUD_RUN_MARKER = "K_SERVICE"
+ENV_ENVIRONMENT = "ENVIRONMENT"
+ENVIRONMENT_PRODUCTION = "production"
 DEFAULT_DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 HISTORY_DIRNAME = "_historial"
 HISTORY_STAMP = "%Y%m%dT%H%M%S%fZ"
@@ -41,9 +45,21 @@ def get_ip_hash_salt() -> str:
     return os.getenv(ENV_IP_HASH_SALT, "")
 
 
+def is_production() -> bool:
+    """Cloud Run (K_SERVICE definido) o ENVIRONMENT=production."""
+    return bool(os.getenv(ENV_CLOUD_RUN_MARKER)) or os.getenv(ENV_ENVIRONMENT, "").strip().lower() == ENVIRONMENT_PRODUCTION
+
+
+def audit_requires_signature() -> bool:
+    """En producción (o con AUDIT_REQUIRE_SIGNATURE=1) un evento que no se puede firmar no se registra: falla cerrado."""
+    return is_production() or os.getenv(ENV_AUDIT_REQUIRE_SIGNATURE, "").lower() in TRUE_VALUES
+
+
 def get_upload_api_key() -> str:
     return os.getenv(ENV_UPLOAD_API_KEY, "")
 
+
+TRUE_VALUES = ("1", "true", "yes", "si")
 
 # ---------------------------------------------------------------- archivo
 CSV_EXTENSION = ".csv"
@@ -331,6 +347,9 @@ DB_RESOURCE_MAX = 200
 DB_PATH_MAX = 500
 DB_USER_AGENT_MAX = 200
 DB_ALGORITHM_MAX = 40
+DB_KEY_FINGERPRINT_MAX = 64
+SIGNED_DOC_VERSION = 1
+CK_SIGNED_OR_NONE = "ck_{tabla}_firma_o_ninguno"
 HASH_HEX_LENGTH = 64                  # SHA3-256 / HMAC-SHA256 en hexadecimal
 
 ACTOR_API_KEY = "api-key"
@@ -354,3 +373,11 @@ MSG_DB_DISABLED = "La base de datos no está configurada (DATABASE_URL)"
 MSG_AUDIT_RANGE_ORDER = "'hasta' debe ser posterior a 'desde'"
 MSG_AUDIT_WRITE_FAILED = "No se pudo registrar el evento de auditoría"
 MSG_AUDIT_NO_SIGNER = "Firma PQC no disponible; el evento se guarda sin firmar"
+MSG_AUDIT_BROKEN_LINK = "La cadena está rota: hash_prev no coincide con el evento anterior"
+MSG_AUDIT_BAD_HASH = "hash_actual no coincide: el evento fue alterado"
+MSG_AUDIT_BAD_SIGNATURE = "La firma del evento no es válida"
+MSG_AUDIT_ALGORITHM_MISMATCH = "El algoritmo de firma del evento no coincide con el configurado"
+MSG_AUDIT_UNSIGNED = "El evento no está firmado (algoritmo NINGUNO): la cadena no es verificable"
+MSG_AUDIT_KEY_MISMATCH = "El evento se firmó con otra clave (huella distinta de la configurada)"
+MSG_AUDIT_CANNOT_VERIFY = "Hay eventos firmados pero no hay verificador de firmas disponible"
+MSG_AUDIT_SIGNATURE_REQUIRED = "No se pudo firmar el evento y la firma es obligatoria"

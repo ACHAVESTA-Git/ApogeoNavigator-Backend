@@ -82,7 +82,8 @@ def test_carga_archivo_guarda_firma_binaria(engine):
 def test_evento_detalle_json_y_enum(engine):
     with Session(engine) as s:
         s.add(models.EventoAuditoria(ts_utc=datetime.now(timezone.utc), actor="api-key", accion=AccionAuditoria.CARGA_GUARDADA,
-                                     detalle={"archivo": "sites.csv", "filas": 3}, hash_prev="0" * 64, hash_actual=HASH))
+                                     detalle={"archivo": "sites.csv", "filas": 3}, hash_prev="0" * 64, hash_actual=HASH,
+                                     algoritmo_firma="NINGUNO"))
         s.commit()
         ev = s.query(models.EventoAuditoria).one()
         assert ev.id == 1 and ev.accion is AccionAuditoria.CARGA_GUARDADA and ev.detalle["filas"] == 3
@@ -92,9 +93,21 @@ def test_hash_prev_unico_impide_bifurcar_la_cadena(engine):
     with Session(engine) as s:
         for i in range(2):
             s.add(models.EventoAuditoria(ts_utc=datetime.now(timezone.utc), actor="x", accion=AccionAuditoria.LOGIN,
-                                         detalle={}, hash_prev="0" * 64, hash_actual=f"{i}" * 64))
+                                         detalle={}, hash_prev="0" * 64, hash_actual=f"{i}" * 64, algoritmo_firma="NINGUNO"))
         with pytest.raises(IntegrityError):
             s.commit()
+
+
+def test_evento_sin_firma_exige_declararlo_con_NINGUNO(engine):
+    with Session(engine) as s:
+        s.add(models.EventoAuditoria(ts_utc=datetime.now(timezone.utc), actor="x", accion=AccionAuditoria.LOGIN,
+                                     detalle={}, hash_prev="0" * 64, hash_actual=HASH))     # ni firma ni NINGUNO
+        with pytest.raises(IntegrityError):
+            s.commit()
+        s.rollback()
+        s.add(models.EventoAuditoria(ts_utc=datetime.now(timezone.utc), actor="x", accion=AccionAuditoria.LOGIN,
+                                     detalle={}, hash_prev="0" * 64, hash_actual=HASH, firma_pqc=b"x", algoritmo_firma="ML-DSA-65"))
+        s.commit()
 
 
 def test_indices_de_auditoria(engine):
