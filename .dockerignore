@@ -1,6 +1,20 @@
 .git
+.github
+.idea
 .venv
 __pycache__
 *.pyc
 .env
+.env.*
+*.pem
+*.key
+*credentials*.json
 .pytest_cache
+.pqc_dev
+tests
+docs
+scripts
+# La semilla incluye data/*.csv, pero no el historial ni el manifiesto (se genera y firma en el despliegue).
+data/_historial
+data/manifest.json
+data/.tmp_*

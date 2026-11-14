@@ -7,7 +7,8 @@ from app.core.security import require_api_key
 from app.db.enums import AccionAuditoria
 from app.schemas.report import Report, SaveResult
 from app.security.pqc import ErrorClavesPQC
-from app.services import storage
+from app.services import datastore, storage
+from app.services.blobstore import StoreError
 from app.utils import auditoria_util
 from app.utils.csv_reader import read_limited
 from app.validation.engine import ValidationResult, validate_csv
@@ -71,12 +72,16 @@ def guardar(tipo: str, file: UploadFile, request: Request):
             registro = auditoria_util.registrar_carga(
                 tipo, result.target_filename, result.content, result.report.total_filas, True, 0,
                 AccionAuditoria.CARGA_GUARDADA, request=request, ruta_almacenamiento=result.target_filename, db=db) if db else None
-            backup = storage.save_atomic(result.target_filename, result.content)
+            backup = datastore.guardar(result.target_filename, result.content)
             if registro and backup:
                 registro.carga.ruta_historial = backup.name
     except auditoria_util.ErrorAuditoria:
         raise HTTPException(status_code=config.HTTP_UNAVAILABLE, detail=config.MSG_AUDIT_UNAVAILABLE) from None
     except ErrorClavesPQC:
         raise HTTPException(status_code=config.HTTP_UNAVAILABLE, detail=config.MSG_SIGNING_UNAVAILABLE) from None
+    except datastore.DataConflict:
+        raise HTTPException(status_code=config.HTTP_CONFLICT, detail=config.MSG_DATA_CONFLICT) from None
+    except StoreError:
+        raise HTTPException(status_code=config.HTTP_UNAVAILABLE, detail=config.MSG_BUCKET_UNAVAILABLE) from None
     return SaveResult(**result.report.model_dump(), guardado=True,
                       copia_historial=backup.name if backup else None)

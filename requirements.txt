@@ -5,3 +5,4 @@ cryptography==50.0.2
 sqlalchemy==2.0.44
 alembic==1.14.0
 psycopg[binary]==3.2.13
+google-cloud-storage==3.17.1
