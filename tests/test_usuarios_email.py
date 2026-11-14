@@ -1,4 +1,4 @@
-"""Email de usuarios cifrado en reposo: servicio, rotación de claves y migraciones 0004 y 0005."""
+"""Email de usuarios cifrado en reposo: servicio, rotación de claves y migraciones 0003 y 0004."""
 import uuid
 from pathlib import Path
 
@@ -118,7 +118,7 @@ def test_retirar_la_clave_anterior_antes_de_rotar_pierde_los_emails(engine, monk
             svc.email_de(u)
 
 
-# ------------------------------------------------------------------ migraciones 0004 y 0005
+# ------------------------------------------------------------------ migraciones 0003 y 0004
 def alembic_cfg(tmp_path) -> tuple[Config, str]:
     url = f"sqlite:///{tmp_path / 'm.db'}"
     cfg = Config(str(ROOT / "alembic.ini"))
@@ -138,9 +138,9 @@ def insertar_en_claro(url, *emails):
 
 def test_migrar_usuarios_existentes_cifra_verifica_y_quita_el_email(tmp_path):
     cfg, url = alembic_cfg(tmp_path)
-    command.upgrade(cfg, "0003_rls")
+    command.upgrade(cfg, "0002_claves")
     insertar_en_claro(url, "Ana@Example.org", "luis@example.org")
-    command.upgrade(cfg, "0004_email_cifrado")
+    command.upgrade(cfg, "0003_email_cifrado")
     eng = create_engine(url)
     with eng.connect() as conn:
         assert "email" in {c["name"] for c in inspect(conn).get_columns("usuarios")}             # aún conviven
@@ -168,9 +168,9 @@ def test_migrar_sin_usuarios_no_necesita_claves(tmp_path, monkeypatch):
 
 def test_no_se_borra_el_email_si_el_cifrado_no_coincide(tmp_path):
     cfg, url = alembic_cfg(tmp_path)
-    command.upgrade(cfg, "0003_rls")
+    command.upgrade(cfg, "0002_claves")
     eng = insertar_en_claro(url, "ana@example.org", "luis@example.org")
-    command.upgrade(cfg, "0004_email_cifrado")
+    command.upgrade(cfg, "0003_email_cifrado")
     with eng.begin() as conn:                                                   # corrompe: el blob de Ana pasa a ser el de otro email
         conn.execute(text("UPDATE usuarios SET email_cifrado = :b WHERE email = 'ana@example.org'"),
                      {"b": gk.cifrar_email("otro@example.org")})
@@ -183,7 +183,7 @@ def test_no_se_borra_el_email_si_el_cifrado_no_coincide(tmp_path):
 
 def test_no_se_borra_el_email_si_falta_el_cifrado(tmp_path):
     cfg, url = alembic_cfg(tmp_path)
-    command.upgrade(cfg, "0004_email_cifrado")
+    command.upgrade(cfg, "0003_email_cifrado")
     eng = insertar_en_claro(url, "ana@example.org")                             # inserción posterior a la copia: sin cifrar
     with pytest.raises(RuntimeError, match="no tiene email cifrado"):
         command.upgrade(cfg, "head")
@@ -192,12 +192,12 @@ def test_no_se_borra_el_email_si_falta_el_cifrado(tmp_path):
 
 def test_el_downgrade_restituye_el_email_descifrando(tmp_path):
     cfg, url = alembic_cfg(tmp_path)
-    command.upgrade(cfg, "0003_rls")
+    command.upgrade(cfg, "0002_claves")
     insertar_en_claro(url, "ana@example.org")
     command.upgrade(cfg, "head")
-    command.downgrade(cfg, "0004_email_cifrado")
+    command.downgrade(cfg, "0003_email_cifrado")
     eng = create_engine(url)
     with eng.connect() as conn:
         assert conn.execute(text("SELECT email FROM usuarios")).scalar() == "ana@example.org"
-    command.downgrade(cfg, "0003_rls")
+    command.downgrade(cfg, "0002_claves")
     assert "email_cifrado" not in {c["name"] for c in inspect(create_engine(url)).get_columns("usuarios")}

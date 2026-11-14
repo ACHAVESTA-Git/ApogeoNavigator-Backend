@@ -5,15 +5,15 @@ Antes de borrar `email` comprueba, fila a fila, que `descifrar_email(email_cifra
 `email_cifrado` y `email_hash` como NOT NULL, con CHECK de longitud, y elimina `email`.
 El downgrade vuelve a crear `email` descifrando los blobs (hacen falta las mismas claves).
 
-Revision ID: 0005_email_contraer
-Revises: 0004_email_cifrado
+Revision ID: 0004_email_contraer
+Revises: 0003_email_cifrado
 Create Date: 2026-11-14
 """
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0005_email_contraer"
-down_revision = "0004_email_cifrado"
+revision = "0004_email_contraer"
+down_revision = "0003_email_cifrado"
 branch_labels = None
 depends_on = None
 

@@ -141,7 +141,7 @@ def test_el_primer_evento_con_la_tabla_vacia_tambien_se_serializa(pg):
     assert r.valida and r.n_eventos == 8 and r.primer_hash_prev_es_genesis is True
 
 
-# ------------------------------------------------------------------ email cifrado (migraciones 0004 y 0005)
+# ------------------------------------------------------------------ email cifrado (migraciones 0003 y 0004)
 def test_migracion_del_email_cifrado_con_datos_en_postgres(pg, monkeypatch):
     import uuid
     from app.core import config
@@ -151,7 +151,7 @@ def test_migracion_del_email_cifrado_con_datos_en_postgres(pg, monkeypatch):
     monkeypatch.setenv(config.ENV_EMAIL_HASH_KEY, clave_hash)
     gk.reiniciar()
     engine, cfg = pg
-    command.downgrade(cfg, "0003_rls")
+    command.downgrade(cfg, "0002_claves")
     with engine.begin() as conn:
         for email in ("Ana@Example.org", "luis@example.org"):
             conn.execute(text("INSERT INTO usuarios (id, email, nombre, rol, activo, creado_utc) "
@@ -167,7 +167,7 @@ def test_migracion_del_email_cifrado_con_datos_en_postgres(pg, monkeypatch):
         with engine.begin() as conn:
             conn.execute(text("INSERT INTO usuarios (id, email_cifrado, email_hash, nombre, rol, activo, creado_utc) "
                               "SELECT gen_random_uuid(), email_cifrado, email_hash, 'Copia', 'analista', true, now() FROM usuarios LIMIT 1"))
-    command.downgrade(cfg, "0003_rls")
+    command.downgrade(cfg, "0002_claves")
     with engine.connect() as conn:
         assert sorted(r[0] for r in conn.execute(text("SELECT email FROM usuarios"))) == ["ana@example.org", "luis@example.org"]
     gk.reiniciar()

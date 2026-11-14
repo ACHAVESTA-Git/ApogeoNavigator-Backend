@@ -2,17 +2,17 @@
 
 Añade `email_cifrado` (BYTEA) y `email_hash` (HMAC-SHA256 único, para búsquedas exactas), cifra los emails existentes con
 las claves del servidor (PQC_KEM_PRIVATE_KEY y EMAIL_HASH_KEY, obligatorias si hay filas) y comprueba, fila a fila, que
-descifrar el blob devuelve el email original. La columna `email` en claro se conserva hasta la migración 0005.
+descifrar el blob devuelve el email original. La columna `email` en claro se conserva hasta la migración 0004.
 
-Revision ID: 0004_email_cifrado
-Revises: 0003_rls
+Revision ID: 0003_email_cifrado
+Revises: 0002_claves
 Create Date: 2026-11-14
 """
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0004_email_cifrado"
-down_revision = "0003_rls"
+revision = "0003_email_cifrado"
+down_revision = "0002_claves"
 branch_labels = None
 depends_on = None
 
