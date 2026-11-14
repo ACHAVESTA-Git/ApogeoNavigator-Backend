@@ -13,7 +13,7 @@ def validate_decimal(
     max_decimals: int = config.MAX_DECIMALS,
 ) -> float:
     """Convierte `value` a float. `-0` se normaliza a 0.0."""
-    if not config.DECIMAL_RE.match(value):
+    if not config.DECIMAL_RE.fullmatch(value):
         raise CellError(config.E_TIPO, "No es un número decimal (sin notación científica, inf ni nan)")
     decimals = len(value.split(".")[1]) if "." in value else 0
     if decimals > max_decimals:

@@ -48,7 +48,7 @@ CONTROL_CHAR_MAX = 0x1F
 
 # ---------------------------------------------------------------- números
 MAX_DECIMALS = 6
-DECIMAL_RE = re.compile(r"^[+-]?\d+(\.\d+)?$")   # sin notación científica, inf ni nan
+DECIMAL_RE = re.compile(r"[+-]?[0-9]+(\.[0-9]+)?")   # se usa con fullmatch; sin notación científica, inf ni nan
 
 LAT_MIN, LAT_MAX = -90.0, 90.0
 LON_MIN, LON_MAX = -180.0, 180.0
@@ -59,7 +59,7 @@ PCT_MIN, PCT_MAX = 0.0, 100.0
 
 # ---------------------------------------------------------------- fechas
 UTC_FORMAT = "%Y-%m-%dT%H:%MZ"
-UTC_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}Z$")
+UTC_RE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}Z")   # fullmatch
 
 # ---------------------------------------------------------------- tipos de archivo
 TIPO_SITES = "sites"
@@ -67,15 +67,15 @@ TIPO_EFEMERIDES = "efemerides"
 TIPO_METRICAS = "metricas"
 TIPOS_ARCHIVO = (TIPO_SITES, TIPO_EFEMERIDES, TIPO_METRICAS)
 
-SITE_ID_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{2,39}$")
-SITE_ID_PATTERN = SITE_ID_RE.pattern
+SITE_ID_CORE = r"[a-z0-9][a-z0-9_-]{2,39}"
+SITE_ID_RE = re.compile(SITE_ID_CORE)    # fullmatch
 FILENAME_PATTERNS = {
-    TIPO_SITES: re.compile(r"^sites\.csv$"),
-    TIPO_EFEMERIDES: re.compile(r"^efemerides_([a-z0-9][a-z0-9_-]{2,39})\.csv$"),
-    TIPO_METRICAS: re.compile(r"^metricas\.csv$"),
+    TIPO_SITES: re.compile(r"sites\.csv"),
+    TIPO_EFEMERIDES: re.compile(rf"efemerides_({SITE_ID_CORE})\.csv"),
+    TIPO_METRICAS: re.compile(r"metricas\.csv"),
 }
 SITES_FILENAME = "sites.csv"
-HTTPS_URL_RE = re.compile(r"^https://\S+$")
+HTTPS_URL_RE = re.compile(r"https://\S+")   # fullmatch
 
 SITE_CATEGORIAS = ("apolo", "artemis", "clps", "internacional", "historico", "personalizado")
 CATEGORIA_ARTEMIS = "artemis"

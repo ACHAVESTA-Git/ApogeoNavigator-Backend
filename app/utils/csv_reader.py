@@ -24,7 +24,7 @@ def read_limited(stream: BinaryIO) -> bytes:
 
 
 def check_filename(filename: str | None, pattern: re.Pattern) -> re.Match:
-    match = pattern.match(filename or "")
+    match = pattern.fullmatch(filename or "")
     if not match:
         raise FileError(config.E_NOMBRE_ARCHIVO, f"El nombre debe cumplir {pattern.pattern}")
     return match
