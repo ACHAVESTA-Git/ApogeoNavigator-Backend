@@ -2,8 +2,10 @@
 import csv
 import io
 import re
+from collections import Counter
 from dataclasses import dataclass
-from typing import BinaryIO, Sequence
+from itertools import islice
+from typing import BinaryIO, Iterator, Sequence
 
 from app.core import config
 from app.utils.errors import FileError
@@ -64,7 +66,8 @@ def parse_rows(text: str) -> tuple[list[str], list[Row]]:
     """Devuelve (cabecera recortada, filas de datos). Una única línea vacía final se ignora."""
     reader = csv.reader(io.StringIO(text, newline=""), delimiter=config.CSV_DELIMITER, strict=True)
     try:
-        rows = list(enumerate(reader, start=config.HEADER_ROW))
+        # Se lee como mucho cabecera + límite + línea final + 1 para detectar el exceso.
+        rows = list(islice(enumerate(reader, start=config.HEADER_ROW), config.MAX_DATA_ROWS + config.ROW_READ_SLACK))
     except csv.Error as exc:
         raise FileError(config.E_FORMATO, config.MSG_BAD_CSV.format(detail=exc)) from None
     if rows and rows[-1][1] == []:
@@ -76,16 +79,25 @@ def parse_rows(text: str) -> tuple[list[str], list[Row]]:
     return [name.strip() for name in rows[0][1]], rows[1:]
 
 
-def header_issues(header: Sequence[str], expected: Sequence[str]) -> list[HeaderIssue]:
-    """Cabecera exacta: duplicadas, desconocidas, faltantes y orden."""
-    issues = [HeaderIssue(n, config.E_CABECERA, config.MSG_HEADER_DUPLICATE, n)
-              for n in dict.fromkeys(n for n in header if header.count(n) > 1)]
-    issues += [HeaderIssue(n, config.E_COLUMNA_DESCONOCIDA, config.MSG_HEADER_UNKNOWN, n)
-               for n in header if n not in expected]
-    issues += [HeaderIssue(n, config.E_CABECERA, config.MSG_HEADER_MISSING) for n in expected if n not in header]
-    if not issues and list(header) != list(expected):
-        issues.append(HeaderIssue(None, config.E_CABECERA, config.MSG_HEADER_ORDER.format(expected=",".join(expected))))
-    return issues
+def header_issues(header: Sequence[str], expected: Sequence[str]) -> Iterator[HeaderIssue]:
+    """Cabecera exacta: duplicadas, desconocidas, faltantes y orden. Perezoso y O(n)."""
+    counts = Counter(header)
+    known = set(expected)
+    found = False
+    for name, times in counts.items():
+        if times > 1:
+            found = True
+            yield HeaderIssue(name, config.E_CABECERA, config.MSG_HEADER_DUPLICATE, name)
+    for name in header:
+        if name not in known:
+            found = True
+            yield HeaderIssue(name, config.E_COLUMNA_DESCONOCIDA, config.MSG_HEADER_UNKNOWN, name)
+    for name in expected:
+        if name not in counts:
+            found = True
+            yield HeaderIssue(name, config.E_CABECERA, config.MSG_HEADER_MISSING)
+    if not found and list(header) != list(expected):
+        yield HeaderIssue(None, config.E_CABECERA, config.MSG_HEADER_ORDER.format(expected=",".join(expected)))
 
 
 def row_width_issue(fields: Sequence[str], width: int) -> str | None:

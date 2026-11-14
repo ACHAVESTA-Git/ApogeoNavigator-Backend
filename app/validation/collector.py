@@ -13,7 +13,7 @@ class Collector:
 
     @staticmethod
     def _issue(fila, columna, codigo, mensaje, valor) -> Issue:
-        return Issue(fila=fila, columna=columna, codigo=codigo, mensaje=mensaje, valor=clip_value(valor))
+        return Issue(fila=fila, columna=clip_value(columna), codigo=codigo, mensaje=mensaje, valor=clip_value(valor))
 
     def error(self, fila: int, columna: str | None, codigo: str, mensaje: str, valor=None) -> None:
         self.total_errors += 1
