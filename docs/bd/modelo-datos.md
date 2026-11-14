@@ -135,8 +135,8 @@ Formatos de `DATABASE_URL`:
 - Local (Docker): `postgresql+psycopg://apogeo:apogeo_dev@postgres:5432/apogeo`
 - Cloud Run + Cloud SQL (socket Unix): `postgresql+psycopg://APP_USER:CLAVE@/apogeo?host=/cloudsql/PROYECTO:REGION:INSTANCIA` (si la clave tiene caracteres especiales, codifícala como URL). Por **IP pública** (no recomendado) exige TLS añadiendo `?sslmode=verify-full&sslrootcert=…`; por el socket Unix del proxy el tráfico ya va cifrado.
 
-## Producción en Supabase (mini-producción)
-Decisión actual del usuario: la base de datos de la mini-producción va en **Supabase (PostgreSQL)** y el frontend en Cloudflare. El código es el mismo (SQLAlchemy + psycopg 3); solo cambia `DATABASE_URL`. Esta sección es referencia: **no se ha creado ningún proyecto** de Supabase.
+## Producción en Supabase (alternativa, descartada por ahora: decisión del usuario, GCP)
+Supabase se valoró para la mini-producción y **se descartó por ahora**: el entorno de pruebas va en GCP (Cloud Run, Cloud SQL y Cloud Storage). Se conserva porque el código ya es compatible (SQLAlchemy + psycopg 3; solo cambia `DATABASE_URL`). Esta sección es referencia: **no se ha creado ningún proyecto** de Supabase.
 
 ### Cadena de conexión
 Supabase ofrece tres puntos de entrada (consulta los datos exactos en el panel del proyecto → *Connect*):
@@ -165,8 +165,8 @@ DATABASE_URL=postgresql+psycopg://postgres:<CLAVE>@db.<ref>.supabase.co:5432/pos
 - La clave de la base de datos va en el gestor de secretos del despliegue, no en el repositorio.
 - Mismas reglas de mínimo privilegio que en Cloud SQL (rol de migraciones propietario, rol de aplicación sin DDL ni `UPDATE`/`DELETE`/`TRUNCATE` sobre `eventos_auditoria`).
 
-## Producción en Cloud SQL (alternativa)
-Decisión previa del usuario: PostgreSQL 16 en **Cloud SQL para PostgreSQL**, pagado con el crédito del proyecto «Apogeo». Esta sección es referencia: **no se ha creado ningún recurso**. Los comandos crean recursos con coste: ejecútalos solo con confirmación del usuario y con `PROYECTO`, `REGION` e `INSTANCIA` sustituidos.
+## Producción en Cloud SQL
+Decisión del usuario (entorno de pruebas en GCP): PostgreSQL 16 en **Cloud SQL para PostgreSQL**, pagado con el crédito del proyecto «Apogeo». Esta sección es referencia: **no se ha creado ningún recurso**. Los comandos crean recursos con coste: ejecútalos solo con confirmación del usuario y con `PROYECTO`, `REGION` e `INSTANCIA` sustituidos.
 
 ### Conexión desde Cloud Run (la opción más simple)
 Se usa el **socket Unix** que Cloud Run monta en `/cloudsql/…`; no hace falta ninguna librería extra (psycopg ya lo entiende con `host=/cloudsql/…`). El Cloud SQL Python Connector añadiría una dependencia y no aporta nada a este proyecto.

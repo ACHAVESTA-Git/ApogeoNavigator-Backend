@@ -47,11 +47,11 @@ Notas de implementación: los errores de archivo (sin fila propia) se informan c
 En Cloud Run el disco es efímero, así que **en producción el bucket es la fuente de verdad**:
 - Con `K_SERVICE` o `ENVIRONMENT=production` y sin `DATA_BUCKET`, el arranque **falla** con un error claro.
 - Al arrancar se descargan los datos a `DATA_DIR` (réplica local, la que leen los endpoints). Si el bucket está vacío se siembra con la semilla de la imagen (`data/` del repositorio) y su manifiesto firmado; si ya tiene datos, la semilla se ignora.
-- Cada carga válida se guarda en local (con su manifiesto firmado) y se publica en el bucket (CSV, `manifest.json` y la copia anterior en `_historial/`) con precondición de generación: si otro proceso cambió el mismo objeto, responde **409** y recarga la versión vigente. Si el bucket no responde, **503** y no queda nada guardado.
+- Cada carga válida se guarda en local (con su manifiesto firmado) y se publica en el bucket (CSV, `manifest.json` y la copia anterior en `_historial/`) con precondición de generación: si otro proceso cambió el mismo objeto, responde **409** y recarga la versión vigente. Si el bucket no responde, **503**: la auditoría se deshace y la réplica local se restablece desde el bucket (mejor esfuerzo), de modo que las lecturas no sirven datos que el bucket no tiene. Si la subida falla justo entre el CSV y el manifiesto, el bucket puede quedar con un CSV más nuevo que su manifiesto (el verificador del manifiesto lo detecta); repite la carga.
 - Las lecturas comprueban el bucket como mucho cada `DATA_REFRESH_SECONDS`, así que otra instancia ve una carga en menos de ese tiempo.
 - Límite: con varias instancias escribiendo a la vez puede haber una ventana entre subir el CSV y el manifiesto. Para la demo, `--max-instances=1`.
 - Permisos: la cuenta de servicio de Cloud Run necesita `roles/storage.objectUser` sobre el bucket (credenciales por defecto del entorno, sin claves en el código).
-La imagen corre como usuario sin privilegios (uid 10001), incluye la semilla y un `HEALTHCHECK` sobre `/api/health`. `DATA_DIR` es `/srv/data` y debe ser escribible; con un volumen montado en otro sitio, comprueba que el usuario 10001 puede escribir en él.
+La imagen corre como usuario sin privilegios (uid 10001), incluye la semilla y un `HEALTHCHECK` sobre `/api/health` (lo usan `docker run` y compose; Cloud Run lo ignora y usa sus propias sondas). `DATA_DIR` es `/srv/data` y debe ser escribible; con un volumen montado en otro sitio, comprueba que el usuario 10001 puede escribir en él.
 
 ## Estructura
 ```
