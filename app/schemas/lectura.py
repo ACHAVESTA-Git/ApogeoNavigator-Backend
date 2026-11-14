@@ -28,6 +28,11 @@ class Reference(BaseModel):
     coincide: bool
 
 
+class Aviso(BaseModel):
+    codigo: str
+    mensaje: str
+
+
 class MetricsItem(BaseModel):
     site_id: str
     inicio_utc: str
@@ -39,6 +44,7 @@ class MetricsItem(BaseModel):
     horas_tierra_visible: float
     pct_tierra: float
     semaforo: dict[str, str]
+    avisos: list[Aviso] = []
     origen: str
     referencia: Reference | None
 
