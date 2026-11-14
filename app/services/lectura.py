@@ -153,17 +153,25 @@ def ephemeris_range(site_id: str, desde: str | None, hasta: str | None) -> dict:
 
 
 # ---------------------------------------------------------------- métricas
-def _level(pct: float) -> str:
-    if pct >= c.SEMAFORO_VERDE_MIN:
+def _level(pct: float, green_min: float, yellow_min: float) -> str:
+    if pct >= green_min:
         return c.SEMAFORO_VERDE
-    return c.SEMAFORO_AMARILLO if pct >= c.SEMAFORO_AMARILLO_MIN else c.SEMAFORO_ROJO
+    return c.SEMAFORO_AMARILLO if pct >= yellow_min else c.SEMAFORO_ROJO
 
 
 def traffic_light(pct_sol: float, pct_tierra: float) -> dict[str, str]:
-    """Semáforo provisional: energía por % de Sol, comunicación por % de Tierra, global = el peor."""
-    energy, comms = _level(pct_sol), _level(pct_tierra)
+    """Semáforo: energía por % de Sol, comunicación por % de Tierra (umbrales distintos), global = el peor."""
+    energy = _level(pct_sol, c.SEMAFORO_ENERGIA_VERDE_MIN, c.SEMAFORO_ENERGIA_AMARILLO_MIN)
+    comms = _level(pct_tierra, c.SEMAFORO_COMUNICACION_VERDE_MIN, c.SEMAFORO_COMUNICACION_AMARILLO_MIN)
     order = (c.SEMAFORO_ROJO, c.SEMAFORO_AMARILLO, c.SEMAFORO_VERDE)
     return {c.KEY_ENERGIA: energy, c.KEY_COMUNICACION: comms, c.KEY_GLOBAL: min(energy, comms, key=order.index)}
+
+
+def warnings_for(sun_el_max: float) -> list[dict[str, str]]:
+    """Avisos que acompañan al semáforo. Hoy: «sensible al relieve» si el Sol nunca supera 3°."""
+    if sun_el_max < c.RELIEF_WARNING_MAX_SUN_EL_DEG:
+        return [{c.KEY_CODIGO: c.AVISO_RELIEVE, c.KEY_MENSAJE: c.MSG_AVISO_RELIEVE.format(deg=c.RELIEF_WARNING_MAX_SUN_EL_DEG)}]
+    return []
 
 
 def compute_metrics(site_id: str, rows: list[Row], step_h: float, start: datetime, end: datetime) -> dict:
@@ -183,7 +191,8 @@ def compute_metrics(site_id: str, rows: list[Row], step_h: float, start: datetim
         c.COL_HORAS_SOL: hours_sun, c.COL_PCT_SOL: pct_sun, c.COL_SOL_EL_MAX: round(max(sun), c.ROUND_DEG),
         c.COL_SOL_EL_MEDIA: round(sum(sun_up) / len(sun_up), c.ROUND_DEG) if sun_up else None,
         c.COL_HORAS_TIERRA: hours_earth, c.COL_PCT_TIERRA: pct_earth,
-        c.KEY_SEMAFORO: traffic_light(pct_sun, pct_earth), c.KEY_ORIGEN: c.ORIGEN_CALCULADO,
+        c.KEY_SEMAFORO: traffic_light(pct_sun, pct_earth), c.KEY_AVISOS: warnings_for(max(sun)),
+        c.KEY_ORIGEN: c.ORIGEN_CALCULADO,
     }
 
 

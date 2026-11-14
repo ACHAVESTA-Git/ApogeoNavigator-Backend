@@ -42,6 +42,10 @@ Notas de implementación: los errores de archivo (sin fila propia) se informan c
 | `ADMIN_API_KEY` | vacía | Clave del gestor de claves (`/api/admin/**`), distinta de `UPLOAD_API_KEY` |
 | `PQC_PRIVATE_KEY`, `PQC_PUBLIC_KEY` | par de desarrollo en `.pqc_dev/` | Firma ML-DSA-65 (obligatorias en producción) |
 | `PQC_KEM_PRIVATE_KEY`, `EMAIL_HASH_KEY` | — | Cifrado del email y su huella de búsqueda (obligatorias en producción) |
+| `CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Orígenes permitidos, separados por comas (no admite `*`) |
+| `CORS_ORIGIN_REGEX` | vacía | Regex adicional, p. ej. las previsualizaciones de Cloudflare Pages: `^https://([a-z0-9-]+\.)?apogeo-navigator\.pages\.dev$` |
+
+CORS: solo GET, POST y OPTIONS, con las cabeceras `X-API-Key` y `Content-Type` y sin credenciales. Define `CORS_ORIGINS` con el dominio de producción y, si usas Cloudflare Pages, `CORS_ORIGIN_REGEX` con el nombre real del proyecto; no uses `*`.
 
 ## Datos en producción (Cloud Storage)
 En Cloud Run el disco es efímero, así que **en producción el bucket es la fuente de verdad**:

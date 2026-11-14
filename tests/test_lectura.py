@@ -1,4 +1,5 @@
 """Endpoints de lectura (/api/efemerides, /api/metricas, /api/puestas) con los CSV reales de data/."""
+import csv
 import shutil
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -41,6 +42,12 @@ def test_shackleton_sol_continuo_y_tierra_parcial(api):
     assert item["pct_tierra"] == 39.11 and item["horas_tierra_visible"] == 291
     assert item["semaforo"] == {"energia": "verde", "comunicacion": "rojo", "global": "rojo"}
     assert item["origen"] == "calculado"
+    assert [a["codigo"] for a in item["avisos"]] == ["sensible_al_relieve"]       # el Sol polar nunca pasa de unos 1,5°
+
+
+def test_apollo11_con_sol_alto_no_tiene_aviso_de_relieve(api):
+    item = metrics(api, "apollo11", **FULL).json()["resultados"][0]
+    assert item["sol_el_max_deg"] > 3 and item["avisos"] == []
 
 
 @pytest.mark.parametrize("site_id", ["change4", "change6"])
@@ -67,9 +74,20 @@ def test_sitios_repetidos_se_calculan_una_vez(api):
     assert len(metrics(api, "slim", "slim", **FULL).json()["resultados"]) == 1
 
 
-def test_rango_por_defecto_es_todo_el_archivo(api):
+def test_rango_por_defecto_son_35_dias_desde_el_inicio(api):
     item = metrics(api, "apollo11").json()["resultados"][0]
-    assert (item["inicio_utc"], item["fin_utc"]) == (FULL["desde"], FULL["hasta"])
+    assert (item["inicio_utc"], item["fin_utc"]) == ("2026-12-01T00:00Z", "2027-01-05T00:00Z")
+
+
+MONTHS = [("2026-12-01", "2027-01-01"), ("2027-01-01", "2027-02-01"), ("2027-02-01", "2027-03-01"),
+          ("2027-03-01", "2027-04-01"), ("2027-04-01", "2027-05-01"), ("2027-05-01", "2027-06-01")]
+
+
+@pytest.mark.parametrize("site_id", SITES)
+@pytest.mark.parametrize("start,end", MONTHS)
+def test_cada_mes_coincide_con_metricas_csv(api, site_id, start, end):
+    item = metrics(api, site_id, desde=f"{start}T00:00Z", hasta=f"{end}T00:00Z").json()["resultados"][0]
+    assert item["referencia"] is not None and item["referencia"]["coincide"] is True
 
 
 def test_subrango_sin_referencia(api):
@@ -95,7 +113,7 @@ def test_errores_de_metricas(api, sites, params, status):
 # ------------------------------------------------------------------ efemérides
 def test_efemerides_rango_por_defecto_limita_a_35_dias(api):
     body = api.get("/api/efemerides/apollo11").json()
-    assert body["paso_horas"] == 1 and len(body["filas"]) == 745      # el archivo solo tiene 31 días
+    assert body["paso_horas"] == 1 and len(body["filas"]) == 35 * 24 + 1      # el archivo tiene 6 meses
     assert body["filas"][0] == {"utc": "2026-12-01T00:00Z", "sol_az_deg": body["filas"][0]["sol_az_deg"],
                                 "sol_el_deg": body["filas"][0]["sol_el_deg"],
                                 "tierra_az_deg": body["filas"][0]["tierra_az_deg"],
@@ -109,7 +127,7 @@ def test_efemerides_rango_explicito_incluye_extremos(api):
 
 
 @pytest.mark.parametrize("params", [
-    {"desde": "2026-12-01T00:00Z", "hasta": "2027-01-15T00:00Z"},     # fuera de los datos
+    {"desde": "2026-12-01T00:00Z", "hasta": "2027-01-15T00:00Z"},     # más de 35 días
     {"desde": "2026-11-01T00:00Z"},                                   # antes de los datos
     {"desde": "2026-12-02T00:00Z", "hasta": "2026-12-02T00:00Z"},     # rango vacío
     {"desde": "2026-12-01 00:00"},                                    # formato
@@ -157,11 +175,33 @@ def test_puesta_del_sol_apolo15(api):
                               "horas_restantes": None}
 
 
-def test_puestas_sol_polar_sin_cambios(api):
-    body = api.get("/api/puestas/shackleton", params={"desde": "2026-12-05T06:00Z"}).json()
-    assert body["sol"] == {"visible": True, "proxima_puesta_utc": None, "proxima_salida_utc": None,
-                           "horas_restantes": None}
-    assert body["tierra"]["horas_restantes"] is not None
+def expected_events(site_id: str, desde: str, column: str) -> dict:
+    """Cálculo independiente sobre el CSV: estado en `desde` y primera puesta y salida posteriores."""
+    with open(REAL_DATA / f"efemerides_{site_id}.csv", encoding="utf-8") as f:
+        rows = [(r["utc"], float(r[column]) > 0) for r in csv.DictReader(f)]
+    idx = next(i for i, (utc, _) in enumerate(rows) if utc == desde)
+    visible = rows[idx][1]
+    state, first_sunset, first_sunrise = visible, None, None
+    for utc, v in rows[idx + 1:]:
+        if v != state:
+            if state:
+                first_sunset = first_sunset or utc
+            else:
+                first_sunrise = first_sunrise or utc
+            state = v
+    return {"visible": visible, "proxima_puesta_utc": first_sunset, "proxima_salida_utc": first_sunrise}
+
+
+@pytest.mark.parametrize("site_id", ["shackleton", "apollo15", "im1_odysseus", "change4", "slim"])
+@pytest.mark.parametrize("desde", ["2026-12-05T06:00Z", "2027-02-10T12:00Z", "2027-05-20T00:00Z"])
+def test_puestas_coinciden_con_el_calculo_independiente(api, site_id, desde):
+    body = api.get(f"/api/puestas/{site_id}", params={"desde": desde}).json()
+    for key, column in (("sol", "sol_el_deg"), ("tierra", "tierra_el_deg")):
+        expected = expected_events(site_id, desde, column)
+        got = {k: body[key][k] for k in expected}
+        assert got == expected, (site_id, desde, key)
+        nxt = expected["proxima_puesta_utc"] if expected["visible"] else expected["proxima_salida_utc"]
+        assert (body[key]["horas_restantes"] is None) == (nxt is None)
 
 
 def test_puestas_tierra_nunca_visible_en_cara_oculta(api):
@@ -175,7 +215,7 @@ def test_puestas_instante_intermedio_usa_la_fila_anterior(api):
 
 
 @pytest.mark.parametrize("site_id,desde,status", [
-    ("apollo15", "2027-02-01T00:00Z", 422),
+    ("apollo15", "2027-07-01T00:00Z", 422),
     ("apollo15", "mañana", 422),
     ("no_existe", "2026-12-01T00:00Z", 404),
 ])
