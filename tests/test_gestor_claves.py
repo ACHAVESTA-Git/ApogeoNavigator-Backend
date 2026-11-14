@@ -13,6 +13,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core import config
 from app.db import session as db_session
 from app.db.base import Base
 from app.db.enums import AccionAuditoria
@@ -29,14 +30,14 @@ HEADERS = {"X-API-Key": ADMIN_KEY}
 
 @pytest.fixture(autouse=True)
 def entorno(tmp_path, monkeypatch):
-    for nombre in (pqc.ENV_CLOUD_RUN_MARKER, pqc.ENV_ENVIRONMENT, gk.ENV_KEM_PRIVATE, gk.ENV_EMAIL_HASH_KEY):
+    for nombre in (pqc.ENV_CLOUD_RUN_MARKER, pqc.ENV_ENVIRONMENT, config.ENV_KEM_PRIVATE, config.ENV_EMAIL_HASH_KEY):
         monkeypatch.delenv(nombre, raising=False)
     privada, publica = pqc.generar_par()
     monkeypatch.setenv(pqc.ENV_PRIVATE_KEY, privada)
     monkeypatch.setenv(pqc.ENV_PUBLIC_KEY, publica)
     monkeypatch.setenv(pqc.ENV_DEV_KEY_DIR, str(tmp_path / "dev"))
-    monkeypatch.setenv(admin_claves.ENV_ADMIN_API_KEY, ADMIN_KEY)
-    monkeypatch.setenv("UPLOAD_API_KEY", "clave-de-carga")
+    monkeypatch.setenv(config.ENV_ADMIN_API_KEY, ADMIN_KEY)
+    monkeypatch.setenv(config.ENV_UPLOAD_API_KEY, "clave-de-carga")
     pqc.reiniciar()
     gk.reiniciar()
     auditoria_util.set_firmante()
@@ -86,7 +87,7 @@ def test_tamanos_y_algoritmos_de_los_pares():
     assert (kem.algoritmo, firma.algoritmo) == ("ML-KEM-1024", "ML-DSA-65")
     assert (len(kem.publica), len(firma.publica)) == (1568, 1952)
     assert (kem.tamano_privada, firma.tamano_privada) == (64, 32)
-    assert (gk.TAMANO_PRIVADA_FIPS["kem"], gk.TAMANO_PRIVADA_FIPS["firma"]) == (3168, 4032)
+    assert (config.TAMANO_PRIVADA_FIPS["kem"], config.TAMANO_PRIVADA_FIPS["firma"]) == (3168, 4032)
     assert kem.huella == pqc.huella_clave_publica(kem.publica)
 
 
@@ -156,14 +157,14 @@ def test_email_cifrado_y_hash_de_busqueda():
 
 def test_claves_del_servidor_desde_entorno_y_hash_distinto_con_otra_clave(monkeypatch):
     semilla, clave_hash = gk.generar_claves_servidor()
-    monkeypatch.setenv(gk.ENV_KEM_PRIVATE, semilla)
-    monkeypatch.setenv(gk.ENV_EMAIL_HASH_KEY, clave_hash)
+    monkeypatch.setenv(config.ENV_KEM_PRIVATE, semilla)
+    monkeypatch.setenv(config.ENV_EMAIL_HASH_KEY, clave_hash)
     gk.reiniciar()
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         primero = gk.email_hash("ana@example.org")
         assert gk.descifrar_email(gk.cifrar_email("ana@example.org")) == "ana@example.org"
-    monkeypatch.setenv(gk.ENV_EMAIL_HASH_KEY, gk.generar_claves_servidor()[1])
+    monkeypatch.setenv(config.ENV_EMAIL_HASH_KEY, gk.generar_claves_servidor()[1])
     gk.reiniciar()
     assert gk.email_hash("ana@example.org") != primero
 
@@ -176,10 +177,10 @@ def test_claves_del_servidor_en_produccion_no_se_inventan(monkeypatch, tmp_path)
     assert not (tmp_path / "dev").exists()
 
 
-@pytest.mark.parametrize("variable,valor", [(gk.ENV_KEM_PRIVATE, "no es base64"), (gk.ENV_KEM_PRIVATE, "AAAA")])
+@pytest.mark.parametrize("variable,valor", [(config.ENV_KEM_PRIVATE, "no es base64"), (config.ENV_KEM_PRIVATE, "AAAA")])
 def test_claves_del_servidor_invalidas(monkeypatch, variable, valor):
     monkeypatch.setenv(variable, valor)
-    monkeypatch.setenv(gk.ENV_EMAIL_HASH_KEY, gk.generar_claves_servidor()[1])
+    monkeypatch.setenv(config.ENV_EMAIL_HASH_KEY, gk.generar_claves_servidor()[1])
     gk.reiniciar()
     with pytest.raises(gk.ErrorGestorClaves):
         gk.email_hash("a@b.c")
@@ -204,7 +205,7 @@ def test_sin_clave_de_admin_no_se_entra(client, engine, headers):
 
 
 def test_sin_admin_api_key_configurada_queda_cerrado(client, monkeypatch):
-    monkeypatch.delenv(admin_claves.ENV_ADMIN_API_KEY)
+    monkeypatch.delenv(config.ENV_ADMIN_API_KEY)
     assert client.get("/api/admin/claves", headers=HEADERS).status_code == 401
     assert client.get("/api/admin/claves", headers={"X-API-Key": ""}).status_code == 401
 
@@ -496,19 +497,19 @@ def test_script_genera_las_claves_del_servidor(monkeypatch):
                          capture_output=True, text=True, env=entorno, cwd=raiz, timeout=60)
     assert res.returncode == 0, res.stderr
     valores = dict(linea.split("=", 1) for linea in res.stdout.splitlines())
-    assert set(valores) == {gk.ENV_KEM_PRIVATE, gk.ENV_EMAIL_HASH_KEY}
-    assert valores[gk.ENV_KEM_PRIVATE] not in res.stderr
-    monkeypatch.setenv(gk.ENV_KEM_PRIVATE, valores[gk.ENV_KEM_PRIVATE])
-    monkeypatch.setenv(gk.ENV_EMAIL_HASH_KEY, valores[gk.ENV_EMAIL_HASH_KEY])
+    assert set(valores) == {config.ENV_KEM_PRIVATE, config.ENV_EMAIL_HASH_KEY}
+    assert valores[config.ENV_KEM_PRIVATE] not in res.stderr
+    monkeypatch.setenv(config.ENV_KEM_PRIVATE, valores[config.ENV_KEM_PRIVATE])
+    monkeypatch.setenv(config.ENV_EMAIL_HASH_KEY, valores[config.ENV_EMAIL_HASH_KEY])
     gk.reiniciar()
     assert gk.descifrar_email(gk.cifrar_email("ana@example.org")) == "ana@example.org"
 
 
 # ------------------------------------------------------------------ rotación de claves del servidor
 def _configurar(monkeypatch, semilla, clave_hash, previas="", hash_previas=""):
-    monkeypatch.setenv(gk.ENV_KEM_PRIVATE, semilla)
-    monkeypatch.setenv(gk.ENV_EMAIL_HASH_KEY, clave_hash)
-    for nombre, valor in ((gk.ENV_KEM_PREVIOUS, previas), (gk.ENV_EMAIL_HASH_PREVIOUS, hash_previas)):
+    monkeypatch.setenv(config.ENV_KEM_PRIVATE, semilla)
+    monkeypatch.setenv(config.ENV_EMAIL_HASH_KEY, clave_hash)
+    for nombre, valor in ((config.ENV_KEM_PREVIOUS, previas), (config.ENV_EMAIL_HASH_PREVIOUS, hash_previas)):
         monkeypatch.setenv(nombre, valor) if valor else monkeypatch.delenv(nombre, raising=False)
     gk.reiniciar()
 
@@ -517,7 +518,7 @@ def test_el_blob_lleva_el_id_de_la_clave_que_lo_cifro():
     par = gk.generar_par("kem")
     blob = gk.kem_dem_cifrar(par.publica, b"x")
     assert gk.id_del_blob(blob) == gk.id_de_clave(par.publica) and len(gk.id_de_clave(par.publica)) == 8
-    assert len(blob) == gk.KEM_DEM_HEADER_BYTES + 1 + 16
+    assert len(blob) == config.KEM_DEM_HEADER_BYTES + 1 + 16
 
 
 def test_rotar_la_clave_kem_sin_perder_los_emails_ya_cifrados(monkeypatch):
@@ -554,7 +555,7 @@ def test_rotar_la_clave_de_hash_con_busqueda_en_la_transicion(monkeypatch):
     assert guardado not in gk.email_hash_candidatos("ana@example.org")
 
 
-@pytest.mark.parametrize("variable", [gk.ENV_KEM_PREVIOUS, gk.ENV_EMAIL_HASH_PREVIOUS])
+@pytest.mark.parametrize("variable", [config.ENV_KEM_PREVIOUS, config.ENV_EMAIL_HASH_PREVIOUS])
 def test_claves_anteriores_invalidas(monkeypatch, variable):
     semilla, clave_hash = gk.generar_claves_servidor()
     _configurar(monkeypatch, semilla, clave_hash)
@@ -562,3 +563,95 @@ def test_claves_anteriores_invalidas(monkeypatch, variable):
     gk.reiniciar()
     with pytest.raises(gk.ErrorGestorClaves):
         gk.email_hash("a@b.c")
+
+
+# ------------------------------------------------------------------ correcciones de la revisión del PR
+def test_admin_api_key_igual_a_la_de_carga_deja_el_gestor_cerrado(client, monkeypatch):
+    monkeypatch.setenv(config.ENV_UPLOAD_API_KEY, ADMIN_KEY)         # la misma clave para las dos cosas
+    assert client.get("/api/admin/claves", headers=HEADERS).status_code == 401
+
+
+def test_la_comparacion_de_claves_se_reutiliza_de_core_security():
+    from app.core.security import matches_api_key
+    assert matches_api_key("clave", "clave") and not matches_api_key("otra", "clave")
+    assert not matches_api_key("clave", "") and not matches_api_key(None, "clave") and not matches_api_key("", "")
+    assert matches_api_key("é".encode("utf-8").decode("latin-1"), "é")      # cabecera UTF-8 leída como latin-1
+
+
+def test_carrera_en_generar_da_409_y_no_500(client, engine, monkeypatch):
+    usuario = _usuario(engine)
+
+    original = Session.flush
+
+    def choque(self, *a, **k):
+        if any(isinstance(o, ClaveUsuario) for o in self.new):
+            raise IntegrityError("INSERT", {}, Exception("índice único: ya hay una activa"))
+        return original(self, *a, **k)
+
+    with monkeypatch.context() as parche:
+        parche.setattr(Session, "flush", choque)
+        r = _generar(client, usuario)
+    assert r.status_code == 409 and "PRIVATE" not in r.text
+    with Session(engine) as s:
+        assert s.query(ClaveUsuario).count() == 0
+
+
+def test_carrera_en_rotar_da_409_y_no_cambia_la_clave(client, engine, monkeypatch):
+    clave = _por_tipo(_generar(client, _usuario(engine)))["kem"]
+    original = Session.flush
+
+    def choque_al_insertar(self, *a, **k):
+        if any(isinstance(o, ClaveUsuario) for o in self.new):
+            raise IntegrityError("INSERT", {}, Exception("índice único"))
+        return original(self, *a, **k)
+
+    with monkeypatch.context() as parche:
+        parche.setattr(Session, "flush", choque_al_insertar)
+        r = client.post(f"/api/admin/claves/{clave['id']}/rotar", headers=HEADERS)
+    assert r.status_code == 409
+    estados = {i["id"]: i["estado"] for i in client.get("/api/admin/claves", headers=HEADERS).json()["items"]}
+    assert estados[clave["id"]] == "activa"
+
+
+def test_revocar_y_rotar_piden_bloqueo_de_fila(engine, monkeypatch):
+    pedidos = []
+    original = Session.scalar
+
+    def espia(self, statement, *a, **k):
+        pedidos.append(getattr(statement, "_for_update_arg", None) is not None)
+        return original(self, statement, *a, **k)
+
+    monkeypatch.setattr(Session, "scalar", espia)
+    with Session(engine) as s:
+        with pytest.raises(Exception):
+            admin_claves._get(s, uuid.uuid4(), bloquear=True)
+        with pytest.raises(Exception):
+            admin_claves._get(s, uuid.uuid4())
+    assert pedidos == [True, False]
+
+
+def test_las_lecturas_dejan_rastro_en_el_log_sin_emails(client, engine, caplog):
+    usuario = _usuario(engine, "secreta@example.org", "Persona Secreta")
+    clave = _por_tipo(_generar(client, usuario))["kem"]
+    with caplog.at_level("INFO", logger=config.KEYS_LOGGER):
+        client.get("/api/admin/claves?q=secreta", headers=HEADERS)
+        client.get(f"/api/admin/claves/{clave['id']}/publica", headers=HEADERS)
+        client.get(f"/api/admin/claves/{clave['id']}/huella", headers=HEADERS)
+    texto = "\n".join(r.getMessage() for r in caplog.records)
+    for operacion in ("lectura:listar", "lectura:publica", "lectura:huella"):
+        assert operacion in texto
+    assert "secreta@example.org" not in texto and "Persona Secreta" not in texto and "secreta" not in texto.replace("lectura:", "")
+
+
+def test_si_falla_el_contador_la_entrega_sigue_y_backups_queda_en_0(client, engine, monkeypatch):
+    class _SinBase:
+        @staticmethod
+        def session_scope():
+            raise RuntimeError("base caída solo para el contador")
+
+    with monkeypatch.context() as parche:
+        parche.setattr(admin_claves, "db_session", _SinBase)
+        r = _generar(client, _usuario(engine))
+    assert r.status_code == 201 and r.json()["claves"][0]["privada_pem"].startswith("-----BEGIN PRIVATE KEY-----")
+    with Session(engine) as s:
+        assert [k.backups for k in s.scalars(select(ClaveUsuario))] == [0, 0]
