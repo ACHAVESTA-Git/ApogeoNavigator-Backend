@@ -98,7 +98,7 @@ All sunlight and Earth-visibility figures come from **NASA/JPL Horizons** (https
 | [LROC (Lunar Reconnaissance Orbiter Camera)](https://www.lroc.asu.edu/) | Positions of recent landers measured on LRO images |
 | [NASA LRO mission page](https://science.nasa.gov/mission/lro/) | IM-1 Odysseus coordinates |
 
-Moon Trek, QuickMap and the PGDA products were **not** used as data. Exact queries, per-site sources, exclusions and findings: [`docs/datos/informe-fuentes.md`](docs/datos/informe-fuentes.md) (in Spanish). NASA does not endorse or sponsor this project.
+Moon Trek, QuickMap and the PGDA products were **not** used as data. Exact queries, per-site sources, exclusions and findings: [`docs/datos/informe-fuentes.md`](docs/datos/informe-fuentes.md) (English first, with the original Spanish report below). NASA does not endorse or sponsor this project.
 
 ## Integrity and security
 The goal is that anyone can check that the data they are shown have not been altered, and that every change to the data is on record. This is **tamper evidence, not tamper prevention**.
