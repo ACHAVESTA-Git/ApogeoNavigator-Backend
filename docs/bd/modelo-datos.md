@@ -15,7 +15,8 @@ erDiagram
 
     usuarios {
         uuid id PK
-        varchar email UK
+        bytea email_cifrado "ML-KEM-1024 + AES-GCM"
+        varchar email_hash UK "HMAC-SHA256 del email normalizado"
         varchar nombre
         varchar proveedor_oauth
         varchar sub_oauth "UK con proveedor_oauth"
@@ -74,7 +75,7 @@ erDiagram
 
 | Tabla | Para qué sirve | Índices y restricciones |
 |---|---|---|
-| `usuarios` | Cuentas. El login OAuth aún no se implementa; el modelo ya está listo. | `email` único; `(proveedor_oauth, sub_oauth)` único |
+| `usuarios` | Cuentas. El login OAuth aún no se implementa; el modelo ya está listo. El email va **cifrado** (`email_cifrado`) y se busca por `email_hash`. | `email_hash` único (CHECK de 64 caracteres); `(proveedor_oauth, sub_oauth)` único |
 | `sesiones` | Sesiones emitidas tras el login. Se borran con el usuario. | `usuario_id`, `expira_utc` |
 | `cargas_archivo` | Una fila por validación o carga de CSV, con su huella SHA3-256 y firma. Si se borra el usuario, `usuario_id` pasa a `NULL` y se conserva `actor`. | `creado_utc`, `sha3_256`, `usuario_id` |
 | `eventos_auditoria` | Registro encadenado con manipulación detectable. Solo se inserta (trigger en PostgreSQL). Sin FK a usuarios. | `ts_utc`, `usuario_id`, `accion`; `secuencia`, `hash_prev` y `hash_actual` únicos; CHECK de firma y longitud de hashes |
@@ -107,6 +108,9 @@ firma_pqc       = ML-DSA-65( JSON canónico de documento_firmado, contexto="audi
 - `detalle` solo admite `str`, `int`, `bool`, `None`, listas y dicts con claves de texto (sin floats ni fechas) y hasta 4 KB; `actor`, `recurso`, `nombre_archivo` y `user_agent` se limpian de caracteres de control y se recortan.
 
 ## Privacidad
+- **El email de los usuarios se guarda cifrado en reposo** (Ley 29733): `email_cifrado` (ML-KEM-1024 con AES-GCM, clave KEM del servidor) y `email_hash` (HMAC-SHA256 del email normalizado, para búsquedas exactas sin descifrar). No hay búsqueda parcial por email. Todo acceso pasa por `app/services/usuarios.py` (`crear_usuario`, `buscar_por_email`, `email_de`). Las claves son `PQC_KEM_PRIVATE_KEY` y `EMAIL_HASH_KEY` (obligatorias en producción, en el gestor de secretos). **Si se pierden la clave KEM y sus anteriores, los emails son irrecuperables:** guarda versiones del secreto.
+- **Rotación:** despliega la clave nueva en `PQC_KEM_PRIVATE_KEY` / `EMAIL_HASH_KEY` y la vieja en `PQC_KEM_PRIVATE_KEY_ANTERIORES` / `EMAIL_HASH_KEY_ANTERIORES`; ejecuta `rotar_cifrado(session)` (vuelve a cifrar y recalcula el hash; es idempotente); cuando devuelva 0 y 0, retira las anteriores.
+- **Migraciones 0003 y 0004:** la 0003 añade las columnas, cifra los emails existentes y comprueba fila a fila que descifrar devuelve el original; la 0004 vuelve a comprobarlo y solo entonces borra `email`. Si algo no coincide aborta sin tocar nada. Con filas existentes hacen falta `PQC_KEM_PRIVATE_KEY` y `EMAIL_HASH_KEY` al migrar (también al bajar la 0004): si falta alguna, la migración aborta antes de tocar nada para no cifrar con claves de desarrollo autogeneradas; sin filas no hacen falta. En SQLite (solo pruebas) una migración fallida a mitad no se revierte; en PostgreSQL sí. El downgrade restituye el email normalizado (minúsculas, sin espacios). El downgrade restituye `email` descifrando.
 - **Nunca se guarda la IP en claro.** `ip_hash = HMAC-SHA256(IP_HASH_SALT, ip)` en hexadecimal. Sin `IP_HASH_SALT` no se guarda ningún hash de IP (queda `NULL`). En producción, con base de datos, el arranque **falla** si falta la sal.
 - Es **seudonimización**, no anonimización: con una sal fija, un hash de IPv4 se puede invertir probando los 2^32 valores si alguien obtiene la sal. Guarda la sal en Secret Manager y trata `ip_hash` como dato personal.
 - Detrás de Firebase Hosting y Cloud Run la IP del cliente llega en `X-Forwarded-For`; se toma el primer valor. Es un dato informativo (puede falsearse), no una prueba de identidad. Los logs no contienen la IP.

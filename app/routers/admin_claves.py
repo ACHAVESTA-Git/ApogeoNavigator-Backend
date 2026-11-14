@@ -122,6 +122,16 @@ class HuellaOut(BaseModel):
 
 
 # ---------------------------------------------------------------- utilidades
+def _email(usuario: Usuario | None) -> str | None:
+    """Email descifrado del usuario (se guarda cifrado). None si no hay usuario o su clave ya no está configurada."""
+    if usuario is None:
+        return None
+    try:
+        return gk.descifrar_email(usuario.email_cifrado)
+    except gk.ErrorGestorClaves:
+        return None
+
+
 def _out(clave: ClaveUsuario, usuario: Usuario | None = None) -> dict:
     """Campos públicos de una clave. Nunca incluye material privado (no existe en la base)."""
     return {"id": clave.id, "usuario_id": clave.usuario_id, "tipo": clave.tipo, "algoritmo": clave.algoritmo,
@@ -130,7 +140,7 @@ def _out(clave: ClaveUsuario, usuario: Usuario | None = None) -> dict:
             "creada_utc": clave.creada_utc, "revocada_utc": clave.revocada_utc,
             "motivo_revocacion": clave.motivo_revocacion, "reemplazada_por": clave.reemplazada_por,
             "backups": clave.backups,
-            "usuario_email": usuario.email if usuario else None, "usuario_nombre": usuario.nombre if usuario else None}
+            "usuario_email": _email(usuario), "usuario_nombre": usuario.nombre if usuario else None}
 
 
 def _auditar(db: Session, operacion: str, clave: ClaveUsuario, motivo: str | None = None, extra: dict | None = None) -> None:
@@ -233,7 +243,7 @@ def _usuario_activo(db: Session, usuario_id: uuid.UUID) -> Usuario:
 # ---------------------------------------------------------------- endpoints
 @router.get("", response_model=PaginaClaves)
 def listar(usuario_id: uuid.UUID | None = None, estado: EstadoClave | None = None, tipo: TipoClave | None = None,
-           q: str | None = Query(None, max_length=c.KEYS_Q_MAX, description="Texto en el email o el nombre del usuario"),
+           q: str | None = Query(None, max_length=c.KEYS_Q_MAX, description="Texto en el nombre del usuario, o su email completo (exacto: el email se guarda cifrado)"),
            limite: int = Query(c.KEYS_PAGE_DEFAULT, ge=1, le=c.KEYS_PAGE_MAX), offset: int = Query(0, ge=0),
            db: Session = Depends(get_db)):
     consulta = select(ClaveUsuario, Usuario).join(Usuario, Usuario.id == ClaveUsuario.usuario_id)
@@ -246,7 +256,11 @@ def listar(usuario_id: uuid.UUID | None = None, estado: EstadoClave | None = Non
     if q:
         escape = c.LIKE_ESCAPE
         patron = "%" + q.replace(escape, escape * 2).replace("%", escape + "%").replace("_", escape + "_") + "%"
-        consulta = consulta.where(or_(Usuario.email.ilike(patron, escape=escape), Usuario.nombre.ilike(patron, escape=escape)))
+        try:
+            hashes = gk.email_hash_candidatos(q)
+        except gk.ErrorGestorClaves:         # sin claves del servidor (producción mal configurada): solo por nombre
+            hashes = []
+        consulta = consulta.where(or_(Usuario.email_hash.in_(hashes), Usuario.nombre.ilike(patron, escape=escape)))
     total = db.scalar(select(func.count()).select_from(consulta.subquery()))
     filas = db.execute(consulta.order_by(ClaveUsuario.creada_utc.desc(), ClaveUsuario.id).limit(limite).offset(offset)).all()
     _log_lectura(c.OP_KEY_READ + ":listar",
