@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 
 from app.core import config
+from app.core.cors import add_cors
 from app.core.limits import upload_guard
 from app.db.session import db_enabled
 from app.routers import auditoria, datos, lectura, seguridad
@@ -19,6 +20,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title=config.API_TITLE, version=config.API_VERSION, lifespan=lifespan)
 app.middleware("http")(upload_guard)
+add_cors(app)      # el último en añadirse es el más externo
 app.include_router(datos.router)
 app.include_router(lectura.router)
 app.include_router(auditoria.router)
