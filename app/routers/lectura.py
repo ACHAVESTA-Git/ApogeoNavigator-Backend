@@ -2,9 +2,9 @@
 from typing import Annotated, Callable
 
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel
 
 from app.core import config as c
+from app.schemas.lectura import EphemerisOut, MetricsOut, SunsetsOut
 from app.services import lectura
 
 router = APIRouter(prefix="/api", tags=[c.ROUTER_TAG_LECTURA])
@@ -14,65 +14,6 @@ RESPONSES = {
     422: {"description": "Rango o parámetros no válidos"},
     503: {"description": "Faltan datos o no cumplen el estándar de CSV"},
 }
-
-
-class EphemerisRow(BaseModel):
-    utc: str
-    sol_az_deg: float
-    sol_el_deg: float
-    tierra_az_deg: float
-    tierra_el_deg: float
-
-
-class EphemerisOut(BaseModel):
-    site_id: str
-    inicio_utc: str
-    fin_utc: str
-    paso_horas: float
-    filas: list[EphemerisRow]
-
-
-class Reference(BaseModel):
-    horas_sol: float
-    pct_sol: float
-    sol_el_max_deg: float
-    sol_el_media_deg: float | None
-    horas_tierra_visible: float
-    pct_tierra: float
-    coincide: bool
-
-
-class MetricsItem(BaseModel):
-    site_id: str
-    inicio_utc: str
-    fin_utc: str
-    horas_sol: float
-    pct_sol: float
-    sol_el_max_deg: float
-    sol_el_media_deg: float | None
-    horas_tierra_visible: float
-    pct_tierra: float
-    semaforo: dict[str, str]
-    origen: str
-    referencia: Reference | None
-
-
-class MetricsOut(BaseModel):
-    resultados: list[MetricsItem]
-
-
-class BodyEvents(BaseModel):
-    visible: bool
-    proxima_puesta_utc: str | None
-    proxima_salida_utc: str | None
-    horas_restantes: float | None
-
-
-class SunsetsOut(BaseModel):
-    site_id: str
-    desde_utc: str
-    sol: BodyEvents
-    tierra: BodyEvents
 
 
 def _run(fn: Callable, *args):
