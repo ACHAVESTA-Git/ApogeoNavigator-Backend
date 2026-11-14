@@ -13,6 +13,7 @@ ENV_DATA_DIR = "DATA_DIR"
 ENV_UPLOAD_API_KEY = "UPLOAD_API_KEY"
 DEFAULT_DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 HISTORY_DIRNAME = "_historial"
+HISTORY_STAMP = "%Y%m%dT%H%M%SZ"
 API_KEY_HEADER = "X-API-Key"
 
 
@@ -28,19 +29,24 @@ def get_upload_api_key() -> str:
 # ---------------------------------------------------------------- archivo
 CSV_EXTENSION = ".csv"
 CSV_ENCODING = "utf-8-sig"          # acepta y elimina el BOM
-MAX_FILE_BYTES = 5 * 1024 * 1024    # 5 MB
+MAX_FILE_MB = 5
+MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024
 MAX_DATA_ROWS = 10_000
-MAX_COLUMNS = 20
 READ_CHUNK_BYTES = 64 * 1024
 CSV_DELIMITER = ","
 BINARY_MAGIC_PREFIXES = (b"PK\x03\x04", b"%PDF", b"\x89PNG", b"\x1f\x8b", b"\xff\xd8\xff", b"GIF8")
 NUL_BYTE = b"\x00"
+UTF16_BOMS = (b"\xff\xfe", b"\xfe\xff")
+UTF8_BOM = b"\xef\xbb\xbf"
+BYTES_PER_MB = 1024 * 1024
 MAX_REPORTED_ERRORS = 100
 MAX_VALUE_CHARS = 50                # recorte de `valor` en el informe
+MAX_FILENAME_CHARS = 120            # recorte de `archivo` en el informe
 FIRST_DATA_ROW = 2                  # la fila 1 es la cabecera (como en Excel)
 HEADER_ROW = 1
 
 # ---------------------------------------------------------------- texto
+NULL_TOKENS = ("NULL", "NAN", "N/A", "-")   # nulos disfrazados (se comparan en mayúsculas)
 FORBIDDEN_TEXT_CHARS = "<>"
 FORMULA_PREFIXES = ("=", "+", "-", "@")
 ALLOWED_CONTROL_CHARS = ("\t",)
@@ -77,9 +83,29 @@ FILENAME_PATTERNS = {
 SITES_FILENAME = "sites.csv"
 HTTPS_URL_RE = re.compile(r"https://\S+")   # fullmatch
 
+# Longitudes (mín, máx) de las columnas de texto
+LEN_NOMBRE = (3, 120)
+LEN_MISION = (2, 80)
+LEN_AGENCIA = (2, 40)
+LEN_URL = (10, 300)
+LEN_NOTAS = (0, 500)
+ALT_KM_DEFAULT = 0.0                   # alt_km vacío = 0
+
+# Columnas exactas y en orden (estándar §2-§4)
+SITES_COLUMNS = ("site_id", "nombre", "categoria", "mision", "agencia", "lat_deg", "lon_este_deg",
+                 "alt_km", "fuente_url", "notas")
+EPHEM_COLUMNS = ("utc", "sol_az_deg", "sol_el_deg", "tierra_az_deg", "tierra_el_deg")
+METRICS_COLUMNS = ("site_id", "inicio_utc", "fin_utc", "horas_sol", "pct_sol", "sol_el_max_deg",
+                   "sol_el_media_deg", "horas_tierra_visible", "pct_tierra")
+
 SITE_CATEGORIAS = ("apolo", "artemis", "clps", "internacional", "historico", "personalizado")
 CATEGORIA_ARTEMIS = "artemis"
 ARTEMIS_MAX_LAT = -80.0               # una región Artemis más al norte es sospechosa
+
+# ---------------------------------------------------------------- tiempo
+MINUTES_PER_DAY = 24 * 60
+SECONDS_PER_HOUR = 3600
+HOURS_PER_DAY = 24
 
 # ---------------------------------------------------------------- coherencia
 COORD_DUPLICATE_TOL_DEG = 0.0001
@@ -87,7 +113,8 @@ COORD_DUPLICATE_TOL_DEG = 0.0001
 EPHEM_MIN_ROWS = 24
 EPHEM_MAX_RANGE_DAYS = 366
 EPHEM_MIN_STEP_MINUTES = 10
-EPHEM_MAX_STEP_MINUTES = 24 * 60
+EPHEM_MAX_STEP_MINUTES = MINUTES_PER_DAY
+EPHEM_REFERENCE_STEP_MINUTES = 60
 EPHEM_MAX_ELEVATION_RATE_DEG_H = 1.0   # |Δ elevación| por hora, Sol y Tierra
 
 METRICS_MAX_RANGE_DAYS = 35
@@ -123,3 +150,56 @@ W_ARTEMIS_LATITUD = "W_ARTEMIS_LATITUD"
 HTTP_BY_CODE = {E_TAMANO: 413, E_TIPO_ARCHIVO: 415}
 HTTP_DEFAULT_ERROR = 422
 HTTP_UNAUTHORIZED = 401
+
+# ---------------------------------------------------------------- mensajes (plantillas str.format)
+MSG_CONTROL_CHAR = "Contiene un caracter de control"
+MSG_FORBIDDEN_CHAR = "Caracter no permitido: {char}"
+MSG_FORMULA = "No puede empezar por = + - @ (posible fórmula)"
+MSG_LENGTH = "Debe tener entre {lo} y {hi} caracteres"
+MSG_NOT_NUMBER = "No es un número decimal (sin notación científica, inf ni nan)"
+MSG_DECIMALS = "Máximo {max} decimales"
+MSG_RANGE = "Debe estar entre {lo:g} y {hi:g}"
+MSG_RANGE_EXCLUDED = "Debe estar entre {lo:g} y {hi:g} (excluido)"
+MSG_RANGE_HOURS = "Debe estar entre 0 y {hi:g} (horas del rango)"
+MSG_DATE_FORMAT = "Formato esperado: YYYY-MM-DDTHH:MMZ (UTC)"
+MSG_DATE_INVALID = "No es una fecha válida"
+MSG_ENUM = "Valores permitidos: {values}"
+MSG_REGEX = "No cumple el formato {pattern}"
+MSG_NULL_TOKEN = "Nulo disfrazado: deja el campo vacío"
+MSG_REQUIRED = "Campo obligatorio vacío"
+MSG_DUPLICATE_VALUE = "Valor repetido"
+MSG_BAD_EXTENSION = "La extensión debe ser {ext}"
+MSG_TOO_BIG = "Máximo {mb} MB"
+MSG_TOO_MANY_ROWS = "Máximo {max} filas de datos"
+MSG_BINARY = "El contenido es binario, no texto CSV"
+MSG_EMPTY = "El archivo está vacío"
+MSG_ONLY_HEADER = "El archivo solo tiene cabecera"
+MSG_ENCODING = "No es UTF-8 válido"
+MSG_BAD_NAME = "El nombre debe cumplir {pattern}"
+MSG_BAD_CSV = "CSV mal formado: {detail}"
+MSG_HEADER_DUPLICATE = "Columna duplicada"
+MSG_HEADER_UNKNOWN = "Columna que no existe en el estándar"
+MSG_HEADER_MISSING = "Falta la columna obligatoria"
+MSG_HEADER_ORDER = "Orden incorrecto; esperado: {expected}"
+MSG_ROW_EMPTY = "Fila vacía"
+MSG_ROW_WIDTH = "Tiene {found} campos; se esperaban {expected}"
+MSG_API_KEY_INVALID = "API key inválida o ausente"
+MSG_UNKNOWN_TIPO = "Tipo desconocido; usa uno de {tipos}"
+MSG_NO_SITES = "No se encontró sites.csv"
+MSG_SITES_INVALID = "sites.csv no cumple el estándar de CSV"
+MSG_NO_SITES_FILE = "No existe sites.csv: cárgalo primero"
+MSG_SITE_NOT_FOUND = "El site_id no está en sites.csv"
+MSG_ARTEMIS_LAT = "Una región Artemis debería estar al sur de {lat:g}°"
+MSG_COORD_DUPLICATE = "Coordenadas casi idénticas a otro sitio"
+MSG_EPHEM_MIN_ROWS = "Se necesitan al menos {min} filas"
+MSG_UTC_DUPLICATE = "utc repetido"
+MSG_UTC_ORDER = "utc debe ser estrictamente creciente"
+MSG_STEP_RANGE = "El paso debe estar entre {min} min y 24 h"
+MSG_STEP_CONSTANT = "El paso temporal no es constante"
+MSG_RANGE_DAYS = "El rango máximo es {max} días"
+MSG_PHYSICAL_JUMP = "Variación de {rate:.2f}°/h; el máximo es {max:g}°/h"
+MSG_METRICS_DUPLICATE = "Fila repetida (site_id, inicio_utc, fin_utc)"
+MSG_END_BEFORE_START = "fin_utc debe ser posterior a inicio_utc"
+MSG_PCT_MISMATCH = "No coincide con {hours} / horas del rango × 100"
+MSG_MEAN_GT_MAX = "La media no puede superar al máximo"
+MSG_MEAN_NOT_EMPTY = "Debe ir vacía si horas_sol = 0"
