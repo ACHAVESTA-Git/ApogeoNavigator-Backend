@@ -15,7 +15,7 @@ from app.validation.specs import DATE, DECIMAL, ENUM, REGEX, SCHEMAS, TEXT, URL,
 class ValidationResult:
     report: Report
     records: list[Record] = field(default_factory=list)
-    http_status: int = 200
+    http_status: int = c.HTTP_OK
     content: bytes = b""            # bytes sin BOM, listos para guardar
     target_filename: str = ""       # nombre seguro (del patrón validado), nunca el crudo
 
@@ -102,7 +102,7 @@ def validate_csv(tipo: str, filename: str | None, raw: bytes, ctx: Context | Non
         records = _check_rows(rows, schema, out)
     if not out.has_errors:
         COHERENCE[tipo](records, ctx, out)
-    status = c.HTTP_DEFAULT_ERROR if out.has_errors else 200
+    status = c.HTTP_DEFAULT_ERROR if out.has_errors else c.HTTP_OK
     content = raw.removeprefix(c.UTF8_BOM)
     return ValidationResult(_report(tipo, shown_name, out, len(rows)), records, status, content, match.group(0))
 

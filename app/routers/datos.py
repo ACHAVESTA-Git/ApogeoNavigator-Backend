@@ -9,7 +9,7 @@ from app.services import storage
 from app.utils.csv_reader import read_limited
 from app.validation.engine import ValidationResult, validate_csv
 
-router = APIRouter(prefix=config.UPLOAD_ROUTER_PREFIX, tags=["datos"], dependencies=[Depends(require_api_key)])
+router = APIRouter(prefix=config.UPLOAD_ROUTER_PREFIX, tags=[config.ROUTER_TAG], dependencies=[Depends(require_api_key)])
 
 RESPONSES = {
     401: {"description": "API key inválida o ausente"},
@@ -21,7 +21,7 @@ RESPONSES = {
 
 def _check_tipo(tipo: str) -> None:
     if tipo not in config.TIPOS_ARCHIVO:
-        raise HTTPException(status_code=404, detail=config.MSG_UNKNOWN_TIPO.format(tipos=list(config.TIPOS_ARCHIVO)))
+        raise HTTPException(status_code=config.HTTP_NOT_FOUND, detail=config.MSG_UNKNOWN_TIPO.format(tipos=list(config.TIPOS_ARCHIVO)))
 
 
 def _validate(tipo: str, file: UploadFile) -> ValidationResult:

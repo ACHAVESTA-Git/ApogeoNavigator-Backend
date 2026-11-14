@@ -37,8 +37,9 @@ def get_upload_api_key() -> str:
 # ---------------------------------------------------------------- archivo
 CSV_EXTENSION = ".csv"
 CSV_ENCODING = "utf-8-sig"          # acepta y elimina el BOM
+BYTES_PER_MB = 1024 * 1024
 MAX_FILE_MB = 5
-MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024
+MAX_FILE_BYTES = MAX_FILE_MB * BYTES_PER_MB
 MAX_DATA_ROWS = 10_000
 ROW_READ_SLACK = 3                  # cabecera + línea final en blanco + 1 fila para detectar exceso
 READ_CHUNK_BYTES = 64 * 1024
@@ -47,11 +48,9 @@ BINARY_MAGIC_PREFIXES = (b"PK\x03\x04", b"%PDF", b"\x89PNG", b"\x1f\x8b", b"\xff
 NUL_BYTE = b"\x00"
 UTF16_BOMS = (b"\xff\xfe", b"\xfe\xff")
 UTF8_BOM = b"\xef\xbb\xbf"
-BYTES_PER_MB = 1024 * 1024
 MAX_REPORTED_ERRORS = 100
 MAX_VALUE_CHARS = 50                # recorte de `valor` en el informe
 MAX_FILENAME_CHARS = 120            # recorte de `archivo` en el informe
-FIRST_DATA_ROW = 2                  # la fila 1 es la cabecera (como en Excel)
 HEADER_ROW = 1
 
 # ---------------------------------------------------------------- texto
@@ -100,12 +99,38 @@ LEN_URL = (10, 300)
 LEN_NOTAS = (0, 500)
 ALT_KM_DEFAULT = 0.0                   # alt_km vacío = 0
 
-# Columnas exactas y en orden (estándar §2-§4)
-SITES_COLUMNS = ("site_id", "nombre", "categoria", "mision", "agencia", "lat_deg", "lon_este_deg",
-                 "alt_km", "fuente_url", "notas")
-EPHEM_COLUMNS = ("utc", "sol_az_deg", "sol_el_deg", "tierra_az_deg", "tierra_el_deg")
-METRICS_COLUMNS = ("site_id", "inicio_utc", "fin_utc", "horas_sol", "pct_sol", "sol_el_max_deg",
-                   "sol_el_media_deg", "horas_tierra_visible", "pct_tierra")
+# Nombres de columna (estándar §2-§4)
+COL_SITE_ID = "site_id"
+COL_NOMBRE = "nombre"
+COL_CATEGORIA = "categoria"
+COL_MISION = "mision"
+COL_AGENCIA = "agencia"
+COL_LAT = "lat_deg"
+COL_LON = "lon_este_deg"
+COL_ALT = "alt_km"
+COL_FUENTE = "fuente_url"
+COL_NOTAS = "notas"
+COL_UTC = "utc"
+COL_SOL_AZ = "sol_az_deg"
+COL_SOL_EL = "sol_el_deg"
+COL_TIERRA_AZ = "tierra_az_deg"
+COL_TIERRA_EL = "tierra_el_deg"
+COL_INICIO = "inicio_utc"
+COL_FIN = "fin_utc"
+COL_HORAS_SOL = "horas_sol"
+COL_PCT_SOL = "pct_sol"
+COL_SOL_EL_MAX = "sol_el_max_deg"
+COL_SOL_EL_MEDIA = "sol_el_media_deg"
+COL_HORAS_TIERRA = "horas_tierra_visible"
+COL_PCT_TIERRA = "pct_tierra"
+COL_ARCHIVO = "archivo"
+
+# Columnas exactas y en orden
+SITES_COLUMNS = (COL_SITE_ID, COL_NOMBRE, COL_CATEGORIA, COL_MISION, COL_AGENCIA, COL_LAT, COL_LON, COL_ALT,
+                 COL_FUENTE, COL_NOTAS)
+EPHEM_COLUMNS = (COL_UTC, COL_SOL_AZ, COL_SOL_EL, COL_TIERRA_AZ, COL_TIERRA_EL)
+METRICS_COLUMNS = (COL_SITE_ID, COL_INICIO, COL_FIN, COL_HORAS_SOL, COL_PCT_SOL, COL_SOL_EL_MAX,
+                   COL_SOL_EL_MEDIA, COL_HORAS_TIERRA, COL_PCT_TIERRA)
 
 SITE_CATEGORIAS = ("apolo", "artemis", "clps", "internacional", "historico", "personalizado")
 CATEGORIA_ARTEMIS = "artemis"
@@ -114,6 +139,7 @@ ARTEMIS_MAX_LAT = -80.0               # una región Artemis más al norte es sos
 # ---------------------------------------------------------------- tiempo
 MINUTES_PER_DAY = 24 * 60
 SECONDS_PER_HOUR = 3600
+SECONDS_PER_MINUTE = 60
 HOURS_PER_DAY = 24
 
 # ---------------------------------------------------------------- coherencia
@@ -128,6 +154,8 @@ EPHEM_MAX_ELEVATION_RATE_DEG_H = 1.0   # |Δ elevación| por hora, Sol y Tierra
 
 METRICS_MAX_RANGE_DAYS = 35
 METRICS_PCT_TOL = 0.5
+PCT_FULL_SCALE = 100
+ELEVATION_RATE_TOL = 1e-9
 HOURS_TOL = 1e-6
 
 # ---------------------------------------------------------------- códigos de error
@@ -159,6 +187,9 @@ W_ARTEMIS_LATITUD = "W_ARTEMIS_LATITUD"
 HTTP_BY_CODE = {E_TAMANO: 413, E_TIPO_ARCHIVO: 415}
 HTTP_DEFAULT_ERROR = 422
 HTTP_UNAUTHORIZED = 401
+HTTP_OK = 200
+HTTP_NOT_FOUND = 404
+HTTP_UNAVAILABLE = 503
 
 # ---------------------------------------------------------------- mensajes (plantillas str.format)
 MSG_CONTROL_CHAR = "Contiene un caracter de control"
@@ -212,3 +243,11 @@ MSG_END_BEFORE_START = "fin_utc debe ser posterior a inicio_utc"
 MSG_PCT_MISMATCH = "No coincide con {hours} / horas del rango × 100"
 MSG_MEAN_GT_MAX = "La media no puede superar al máximo"
 MSG_MEAN_NOT_EMPTY = "Debe ir vacía si horas_sol = 0"
+
+# ---------------------------------------------------------------- aplicación
+API_TITLE = "Apogeo API"
+API_VERSION = "0.2.0"
+ROUTE_HEALTH = "/api/health"
+ROUTE_SITES = "/api/sites"
+ROUTER_TAG = "datos"
+HEALTH_OK = {"status": "ok"}
