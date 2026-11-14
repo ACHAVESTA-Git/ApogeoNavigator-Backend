@@ -1,11 +1,13 @@
 from fastapi import FastAPI, HTTPException
 
 from app.core import config
+from app.core.limits import upload_guard
 from app.routers import datos
 from app.schemas.sites import Site
 from app.services import storage
 
 app = FastAPI(title="Apogeo API", version="0.2.0")
+app.middleware("http")(upload_guard)
 app.include_router(datos.router)
 
 
