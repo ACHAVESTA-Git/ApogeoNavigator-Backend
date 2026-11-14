@@ -35,6 +35,7 @@ import tempfile
 import threading
 import warnings
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 
 from cryptography.exceptions import InvalidSignature
@@ -65,6 +66,30 @@ DEV_FILE_MODE = 0o600
 DEV_TMP_SUFFIX = ".tmp"
 TEXT_ENCODING = "utf-8"
 DEFAULT_DEV_KEY_DIR = Path(__file__).resolve().parents[2] / DEV_KEY_DIRNAME
+
+MANIFEST_CONTEXT = b"manifiesto-datos"
+MANIFEST_FILENAME = "manifest.json"
+MANIFEST_VERSION = 1
+MANIFEST_SUFFIX = ".csv"
+MANIFEST_GLOB = f"*{MANIFEST_SUFFIX}"
+MANIFEST_TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+MANIFEST_FILE_MODE = 0o644
+MANIFEST_SIGNATURE_FIELD = "firma_b64"
+MANIFEST_TMP_SUFFIX = ".tmp"
+MANIFEST_HASH_ALGORITHM = "sha3_256"
+JSON_SEPARATORS = (",", ":")
+
+MSG_MANIFEST_VERSION = "Versión de manifiesto no soportada: {version}."
+MSG_MANIFEST_ALGORITHM = f"El algoritmo del manifiesto no es {ALGORITMO}."
+MSG_MANIFEST_NO_SIGNATURE = "El manifiesto no trae firma."
+MSG_MANIFEST_BAD_SIGNATURE = "La firma del manifiesto NO es válida para la clave pública dada."
+MSG_MANIFEST_FINGERPRINT = "La huella de la clave pública del manifiesto no coincide con la clave usada."
+MSG_MANIFEST_MALFORMED = "El manifiesto está mal formado: {detalle}."
+MSG_MANIFEST_MISSING_FILE = "{nombre}: figura en el manifiesto pero no existe."
+MSG_MANIFEST_SIZE = "{nombre}: el tamaño no coincide (manifiesto {esperado}, real {real})."
+MSG_MANIFEST_HASH = "{nombre}: el SHA3-256 no coincide; el archivo fue modificado."
+MSG_MANIFEST_UNLISTED = "{nombre}: existe en la carpeta pero no figura en el manifiesto."
+MSG_MANIFEST_BAD_NAME = "Nombre de archivo no permitido en el manifiesto: {nombre!r}."
 
 MSG_NO_PRIVATE = (
     f"No hay clave privada ({ENV_PRIVATE_KEY}); este proceso solo puede verificar firmas."
@@ -271,3 +296,107 @@ def reiniciar() -> None:
     global _claves
     with _lock:
         _claves = None
+
+
+# ---------------------------------------------------------------- manifiesto firmado de data/
+def canonicalizar(objeto) -> bytes:
+    """JSON canónico (claves ordenadas, sin espacios, UTF-8): los bytes que se firman."""
+    return json.dumps(objeto, sort_keys=True, separators=JSON_SEPARATORS,
+                      ensure_ascii=False).encode(TEXT_ENCODING)
+
+
+def _hash_hex(contenido: bytes) -> str:
+    return hashlib.new(MANIFEST_HASH_ALGORITHM, contenido).hexdigest()
+
+
+def _entrada(nombre: str, contenido: bytes) -> dict:
+    return {"nombre": nombre, "bytes": len(contenido), MANIFEST_HASH_ALGORITHM: _hash_hex(contenido)}
+
+
+def _csv_de(carpeta: Path) -> list[Path]:
+    return sorted(p for p in Path(carpeta).glob(MANIFEST_GLOB) if p.is_file() and not p.is_symlink())
+
+
+def generar_manifiesto(carpeta: Path, *, contenidos_nuevos: dict[str, bytes] | None = None,
+                       ahora: datetime | None = None) -> dict:
+    """Manifiesto firmado de los CSV de ``carpeta`` (sin recursión; ``_historial`` no entra).
+
+    ``contenidos_nuevos`` permite incluir un archivo que todavía no está en disco o que se
+    va a reemplazar (nombre -> bytes), para firmar antes del ``os.replace``.
+    """
+    contenidos = {p.name: p.read_bytes() for p in _csv_de(carpeta)}
+    for nombre, contenido in (contenidos_nuevos or {}).items():
+        if Path(nombre).name != nombre or not nombre.endswith(MANIFEST_SUFFIX):
+            raise ValueError(MSG_MANIFEST_BAD_NAME.format(nombre=nombre))
+        contenidos[nombre] = _como_bytes(contenido, nombre)
+    sello = (ahora or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    manifiesto = {
+        "version": MANIFEST_VERSION,
+        "algoritmo": ALGORITMO,
+        "generado_utc": sello.strftime(MANIFEST_TIME_FORMAT),
+        "huella_clave_publica": huella_clave_publica(),
+        "archivos": [_entrada(n, contenidos[n]) for n in sorted(contenidos)],
+    }
+    firma = firmar(canonicalizar(manifiesto), contexto=MANIFEST_CONTEXT)
+    manifiesto[MANIFEST_SIGNATURE_FIELD] = _codificar(firma)
+    return manifiesto
+
+
+def escribir_manifiesto(carpeta: Path, manifiesto: dict) -> Path:
+    """Escribe ``manifest.json`` de forma atómica (temporal + os.replace)."""
+    destino = Path(carpeta) / MANIFEST_FILENAME
+    fd, tmp = tempfile.mkstemp(dir=carpeta, prefix=MANIFEST_FILENAME, suffix=MANIFEST_TMP_SUFFIX)
+    try:
+        with os.fdopen(fd, "w", encoding=TEXT_ENCODING) as f:
+            json.dump(manifiesto, f, ensure_ascii=False, indent=2)
+            f.write("\n")
+        os.chmod(tmp, MANIFEST_FILE_MODE)
+        os.replace(tmp, destino)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
+    return destino
+
+
+def verificar_manifiesto(manifiesto: dict, carpeta: Path | None = None,
+                         clave_publica_bytes: bytes | None = None) -> list[str]:
+    """Devuelve la lista de problemas encontrados; lista vacía = todo correcto.
+
+    Comprueba versión, algoritmo, huella y firma (con ``clave_publica_bytes`` o la del
+    proceso) y, si se da ``carpeta``, tamaño y SHA3-256 de cada CSV y que no sobren CSV.
+    """
+    problemas: list[str] = []
+    try:
+        if manifiesto["version"] != MANIFEST_VERSION:
+            return [MSG_MANIFEST_VERSION.format(version=manifiesto["version"])]
+        if manifiesto["algoritmo"] != ALGORITMO:
+            return [MSG_MANIFEST_ALGORITHM]
+        firma_b64 = manifiesto.get(MANIFEST_SIGNATURE_FIELD)
+        if not firma_b64:
+            return [MSG_MANIFEST_NO_SIGNATURE]
+        firma = base64.b64decode(firma_b64, validate=True)
+        sin_firma = {k: v for k, v in manifiesto.items() if k != MANIFEST_SIGNATURE_FIELD}
+        clave = clave_publica_bytes if clave_publica_bytes is not None else clave_publica()
+        if manifiesto["huella_clave_publica"] != huella_clave_publica(clave):
+            problemas.append(MSG_MANIFEST_FINGERPRINT)
+        if not verificar_con_clave(clave, canonicalizar(sin_firma), firma, contexto=MANIFEST_CONTEXT):
+            problemas.append(MSG_MANIFEST_BAD_SIGNATURE)
+        entradas = {e["nombre"]: e for e in manifiesto["archivos"]}
+    except (KeyError, TypeError, ValueError, binascii.Error) as exc:
+        return [MSG_MANIFEST_MALFORMED.format(detalle=type(exc).__name__)]
+    if carpeta is not None:
+        carpeta = Path(carpeta)
+        for nombre, entrada in sorted(entradas.items()):
+            ruta = carpeta / nombre
+            if Path(nombre).name != nombre or not ruta.is_file():
+                problemas.append(MSG_MANIFEST_MISSING_FILE.format(nombre=nombre))
+                continue
+            contenido = ruta.read_bytes()
+            if len(contenido) != entrada.get("bytes"):
+                problemas.append(MSG_MANIFEST_SIZE.format(nombre=nombre, esperado=entrada.get("bytes"),
+                                                          real=len(contenido)))
+            if _hash_hex(contenido) != entrada.get(MANIFEST_HASH_ALGORITHM):
+                problemas.append(MSG_MANIFEST_HASH.format(nombre=nombre))
+        problemas += [MSG_MANIFEST_UNLISTED.format(nombre=p.name) for p in _csv_de(carpeta)
+                      if p.name not in entradas]
+    return problemas
