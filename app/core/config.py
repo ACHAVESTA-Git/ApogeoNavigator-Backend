@@ -13,8 +13,16 @@ ENV_DATA_DIR = "DATA_DIR"
 ENV_UPLOAD_API_KEY = "UPLOAD_API_KEY"
 DEFAULT_DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 HISTORY_DIRNAME = "_historial"
-HISTORY_STAMP = "%Y%m%dT%H%M%SZ"
+HISTORY_STAMP = "%Y%m%dT%H%M%S%fZ"
+FILE_MODE = 0o644
+TMP_PREFIX = ".tmp_"
+TMP_SUFFIX = ".tmp"
 API_KEY_HEADER = "X-API-Key"
+UPLOAD_ROUTER_PREFIX = "/api/datos"
+MULTIPART_OVERHEAD_BYTES = 64 * 1024
+CONTENT_LENGTH_HEADER = "content-length"
+KEY_ENCODING = "utf-8"
+HEADER_ENCODING = "latin-1"
 
 
 def get_data_dir() -> Path:
@@ -32,6 +40,7 @@ CSV_ENCODING = "utf-8-sig"          # acepta y elimina el BOM
 MAX_FILE_MB = 5
 MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024
 MAX_DATA_ROWS = 10_000
+ROW_READ_SLACK = 3                  # cabecera + línea final en blanco + 1 fila para detectar exceso
 READ_CHUNK_BYTES = 64 * 1024
 CSV_DELIMITER = ","
 BINARY_MAGIC_PREFIXES = (b"PK\x03\x04", b"%PDF", b"\x89PNG", b"\x1f\x8b", b"\xff\xd8\xff", b"GIF8")
