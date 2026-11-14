@@ -33,6 +33,25 @@ Notas de implementación: los errores de archivo (sin fila propia) se informan c
 | `PORT` | `8080` | Puerto de escucha (lo fija Cloud Run) |
 | `DATA_DIR` | `data/` junto a `app/` | Carpeta con los CSV |
 | `UPLOAD_API_KEY` | vacía (carga cerrada) | Clave para `/api/datos/**` |
+| `DATABASE_URL` | vacía (BD y auditoría desactivadas) | URL de SQLAlchemy; ver `docs/bd/modelo-datos.md` (local, Supabase, Cloud SQL) |
+| `IP_HASH_SALT` | vacía | Sal del HMAC de la IP (obligatoria en producción con base de datos) |
+| `DATA_BUCKET` | vacía | Bucket de Cloud Storage con los datos. **Obligatorio en producción** (si falta, el arranque falla) |
+| `DATA_BUCKET_PREFIX` | vacía | Carpeta dentro del bucket (opcional) |
+| `DATA_SEED_DIR` | vacía (`/srv/seed-data` en la imagen) | Semilla: se copia al bucket solo si está vacío, o a `DATA_DIR` sin bucket si está vacío |
+| `DATA_REFRESH_SECONDS` | `30` | Cada cuánto se comprueba si el bucket cambió (lecturas) |
+| `ADMIN_API_KEY` | vacía | Clave del gestor de claves (`/api/admin/**`), distinta de `UPLOAD_API_KEY` |
+| `PQC_PRIVATE_KEY`, `PQC_PUBLIC_KEY` | par de desarrollo en `.pqc_dev/` | Firma ML-DSA-65 (obligatorias en producción) |
+| `PQC_KEM_PRIVATE_KEY`, `EMAIL_HASH_KEY` | — | Cifrado del email y su huella de búsqueda (obligatorias en producción) |
+
+## Datos en producción (Cloud Storage)
+En Cloud Run el disco es efímero, así que **en producción el bucket es la fuente de verdad**:
+- Con `K_SERVICE` o `ENVIRONMENT=production` y sin `DATA_BUCKET`, el arranque **falla** con un error claro.
+- Al arrancar se descargan los datos a `DATA_DIR` (réplica local, la que leen los endpoints). Si el bucket está vacío se siembra con la semilla de la imagen (`data/` del repositorio) y su manifiesto firmado; si ya tiene datos, la semilla se ignora.
+- Cada carga válida se guarda en local (con su manifiesto firmado) y se publica en el bucket (CSV, `manifest.json` y la copia anterior en `_historial/`) con precondición de generación: si otro proceso cambió el mismo objeto, responde **409** y recarga la versión vigente. Si el bucket no responde, **503** y no queda nada guardado.
+- Las lecturas comprueban el bucket como mucho cada `DATA_REFRESH_SECONDS`, así que otra instancia ve una carga en menos de ese tiempo.
+- Límite: con varias instancias escribiendo a la vez puede haber una ventana entre subir el CSV y el manifiesto. Para la demo, `--max-instances=1`.
+- Permisos: la cuenta de servicio de Cloud Run necesita `roles/storage.objectUser` sobre el bucket (credenciales por defecto del entorno, sin claves en el código).
+La imagen corre como usuario sin privilegios (uid 10001), incluye la semilla y un `HEALTHCHECK` sobre `/api/health`. `DATA_DIR` es `/srv/data` y debe ser escribible; con un volumen montado en otro sitio, comprueba que el usuario 10001 puede escribir en él.
 
 ## Estructura
 ```

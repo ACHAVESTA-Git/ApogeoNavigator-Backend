@@ -135,8 +135,38 @@ Formatos de `DATABASE_URL`:
 - Local (Docker): `postgresql+psycopg://apogeo:apogeo_dev@postgres:5432/apogeo`
 - Cloud Run + Cloud SQL (socket Unix): `postgresql+psycopg://APP_USER:CLAVE@/apogeo?host=/cloudsql/PROYECTO:REGION:INSTANCIA` (si la clave tiene caracteres especiales, codifícala como URL). Por **IP pública** (no recomendado) exige TLS añadiendo `?sslmode=verify-full&sslrootcert=…`; por el socket Unix del proxy el tráfico ya va cifrado.
 
-## Producción en Cloud SQL
-Decisión del usuario: PostgreSQL 16 en **Cloud SQL para PostgreSQL**, pagado con el crédito del proyecto «Apogeo». Esta sección es referencia: **no se ha creado ningún recurso**. Los comandos crean recursos con coste: ejecútalos solo con confirmación del usuario y con `PROYECTO`, `REGION` e `INSTANCIA` sustituidos.
+## Producción en Supabase (mini-producción)
+Decisión actual del usuario: la base de datos de la mini-producción va en **Supabase (PostgreSQL)** y el frontend en Cloudflare. El código es el mismo (SQLAlchemy + psycopg 3); solo cambia `DATABASE_URL`. Esta sección es referencia: **no se ha creado ningún proyecto** de Supabase.
+
+### Cadena de conexión
+Supabase ofrece tres puntos de entrada (consulta los datos exactos en el panel del proyecto → *Connect*):
+
+| Modo | Host y puerto (típicos) | Úsalo para |
+|---|---|---|
+| Conexión directa | `db.<ref>.supabase.co:5432` | Migraciones. Por defecto solo IPv6; con IPv4 hace falta el complemento de pago |
+| Pooler en modo sesión | `<region>.pooler.supabase.com:5432` | Migraciones o la aplicación si no hay IPv6 |
+| Pooler en modo transacción | `<region>.pooler.supabase.com:6543` | La aplicación (muchas conexiones cortas, p. ej. Cloud Run) |
+
+```
+# aplicación (pooler en modo transacción; el usuario del pooler es postgres.<ref>)
+DATABASE_URL=postgresql+psycopg://postgres.<ref>:<CLAVE>@<region>.pooler.supabase.com:6543/postgres?sslmode=require
+# migraciones (conexión directa o pooler en modo sesión)
+DATABASE_URL=postgresql+psycopg://postgres:<CLAVE>@db.<ref>.supabase.co:5432/postgres?sslmode=require
+```
+- **TLS:** `sslmode=require` cifra la conexión sin validar el servidor. Para validarlo, descarga el certificado de la CA desde el panel y usa `sslmode=verify-full&sslrootcert=/ruta/ca.crt`. Si la clave tiene caracteres especiales, codifícala como URL.
+- **Sentencias preparadas:** el pooler en modo transacción **no las admite**. `app/db/session.py` (`engine_options`) y `alembic/env.py` pasan `prepare_threshold=None` a psycopg 3 en todas las conexiones: con la conexión directa es inocuo y el coste de rendimiento es mínimo.
+- **Bloqueos y triggers:** `pg_advisory_xact_lock` (cadena de auditoría) es de transacción y funciona con el pooler en modo transacción; el trigger de inmutabilidad es plpgsql estándar.
+- **Pool:** el pool de SQLAlchemy es pequeño (`DB_POOL_SIZE=2`, `DB_MAX_OVERFLOW=2`) porque Supavisor ya agrupa conexiones y el plan gratuito limita las simultáneas.
+- **Versión:** el proyecto se desarrolló y probó contra PostgreSQL 16; comprueba la versión mayor de tu proyecto de Supabase (el esquema usa solo funciones estándar de PostgreSQL 14 o superior).
+
+### Seguridad específica de Supabase
+- **Row Level Security:** Supabase expone las tablas del esquema `public` por su API REST (PostgREST) con las claves `anon` y `service_role`. Nuestras tablas no deben ser accesibles por ahí: activa `ENABLE ROW LEVEL SECURITY` en `usuarios`, `sesiones`, `cargas_archivo`, `eventos_auditoria` y `claves_usuario` **sin políticas** (el backend se conecta con un rol propietario o con `BYPASSRLS`, que las ignora), o retira los permisos a `anon` y `authenticated`. Va en una migración de Alembic (pendiente de encadenar tras la `0002_claves`); hasta entonces, hazlo a mano antes de abrir el servicio.
+- No uses la clave `service_role` ni la `anon` en el backend: solo la cadena de conexión de Postgres.
+- La clave de la base de datos va en el gestor de secretos del despliegue, no en el repositorio.
+- Mismas reglas de mínimo privilegio que en Cloud SQL (rol de migraciones propietario, rol de aplicación sin DDL ni `UPDATE`/`DELETE`/`TRUNCATE` sobre `eventos_auditoria`).
+
+## Producción en Cloud SQL (alternativa)
+Decisión previa del usuario: PostgreSQL 16 en **Cloud SQL para PostgreSQL**, pagado con el crédito del proyecto «Apogeo». Esta sección es referencia: **no se ha creado ningún recurso**. Los comandos crean recursos con coste: ejecútalos solo con confirmación del usuario y con `PROYECTO`, `REGION` e `INSTANCIA` sustituidos.
 
 ### Conexión desde Cloud Run (la opción más simple)
 Se usa el **socket Unix** que Cloud Run monta en `/cloudsql/…`; no hace falta ninguna librería extra (psycopg ya lo entiende con `host=/cloudsql/…`). El Cloud SQL Python Connector añadiría una dependencia y no aporta nada a este proyecto.
