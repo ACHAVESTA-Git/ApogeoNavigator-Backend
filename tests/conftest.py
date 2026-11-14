@@ -67,3 +67,22 @@ def make_ephem(n=48, step_min=60, start="2026-12-01T00:00", mutate=None) -> byte
         mutate(rows)
     return ("utc,sol_az_deg,sol_el_deg,tierra_az_deg,tierra_el_deg\n"
             + "\n".join(",".join(r) for r in rows) + "\n").encode()
+
+
+@pytest.fixture
+def bd():
+    """Base de datos SQLite en memoria configurada como motor global, con la firma restablecida."""
+    from sqlalchemy import create_engine
+    from sqlalchemy.pool import StaticPool
+
+    from app.db import session as db_session
+    from app.db.base import Base
+    from app.db import models  # noqa: F401
+    from app.utils import auditoria_util
+
+    engine = create_engine("sqlite://", poolclass=StaticPool, connect_args={"check_same_thread": False})
+    Base.metadata.create_all(engine)
+    db_session.configure(engine)
+    yield engine
+    db_session.configure(None)
+    auditoria_util.set_firmante()
