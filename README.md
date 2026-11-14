@@ -33,6 +33,10 @@ Notas de implementación: los errores de archivo (sin fila propia) se informan c
 | `PORT` | `8080` | Puerto de escucha (lo fija Cloud Run) |
 | `DATA_DIR` | `data/` junto a `app/` | Carpeta con los CSV |
 | `UPLOAD_API_KEY` | vacía (carga cerrada) | Clave para `/api/datos/**` |
+| `CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Orígenes permitidos, separados por comas (no admite `*`) |
+| `CORS_ORIGIN_REGEX` | vacía | Regex adicional, p. ej. las previsualizaciones de Cloudflare Pages: `^https://([a-z0-9-]+\.)?MI-PROYECTO\.pages\.dev$` |
+
+CORS: solo GET, POST y OPTIONS, con las cabeceras `X-API-Key` y `Content-Type` y sin credenciales. Define `CORS_ORIGINS` con el dominio de producción y, si usas Cloudflare Pages, `CORS_ORIGIN_REGEX` con el nombre real del proyecto; no uses `*`.
 
 ## Estructura
 ```
