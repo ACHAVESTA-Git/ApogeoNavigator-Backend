@@ -1,23 +1,26 @@
 from fastapi import FastAPI, HTTPException
 
+from app.core import config
+from app.core.limits import upload_guard
 from app.routers import datos
 from app.schemas.sites import Site
 from app.services import storage
 
-app = FastAPI(title="Apogeo API", version="0.2.0")
+app = FastAPI(title=config.API_TITLE, version=config.API_VERSION)
+app.middleware("http")(upload_guard)
 app.include_router(datos.router)
 
 
-@app.get("/api/health")
+@app.get(config.ROUTE_HEALTH)
 def health() -> dict:
-    return {"status": "ok"}
+    return dict(config.HEALTH_OK)
 
 
-@app.get("/api/sites", response_model=list[Site])
+@app.get(config.ROUTE_SITES, response_model=list[Site])
 def sites() -> list[dict]:
     result = storage.read_sites()
     if result is None:
-        raise HTTPException(status_code=503, detail="No se encontró sites.csv")
+        raise HTTPException(status_code=config.HTTP_UNAVAILABLE, detail=config.MSG_NO_SITES)
     if not result.report.valido:
-        raise HTTPException(status_code=503, detail="sites.csv no cumple el estándar de CSV")
+        raise HTTPException(status_code=config.HTTP_UNAVAILABLE, detail=config.MSG_SITES_INVALID)
     return [r.values for r in result.records]

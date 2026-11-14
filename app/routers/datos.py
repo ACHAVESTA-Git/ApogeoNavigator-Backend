@@ -9,7 +9,7 @@ from app.services import storage
 from app.utils.csv_reader import read_limited
 from app.validation.engine import ValidationResult, validate_csv
 
-router = APIRouter(prefix="/api/datos", tags=["datos"], dependencies=[Depends(require_api_key)])
+router = APIRouter(prefix=config.UPLOAD_ROUTER_PREFIX, tags=[config.ROUTER_TAG], dependencies=[Depends(require_api_key)])
 
 RESPONSES = {
     401: {"description": "API key inválida o ausente"},
@@ -21,10 +21,10 @@ RESPONSES = {
 
 def _check_tipo(tipo: str) -> None:
     if tipo not in config.TIPOS_ARCHIVO:
-        raise HTTPException(status_code=404, detail=f"Tipo desconocido; usa uno de {list(config.TIPOS_ARCHIVO)}")
+        raise HTTPException(status_code=config.HTTP_NOT_FOUND, detail=config.MSG_UNKNOWN_TIPO.format(tipos=list(config.TIPOS_ARCHIVO)))
 
 
-async def _validate(tipo: str, file: UploadFile) -> ValidationResult:
+def _validate(tipo: str, file: UploadFile) -> ValidationResult:
     _check_tipo(tipo)
     raw = read_limited(file.file)
     return validate_csv(tipo, file.filename, raw, storage.build_context())
@@ -35,18 +35,18 @@ def _fail(result: ValidationResult) -> JSONResponse:
 
 
 @router.post("/validar/{tipo}", response_model=Report, responses=RESPONSES)
-async def validar(tipo: str, file: UploadFile):
+def validar(tipo: str, file: UploadFile):
     """Dry-run: valida y devuelve el informe sin guardar nada."""
-    result = await _validate(tipo, file)
+    result = _validate(tipo, file)
     return result.report if result.report.valido else _fail(result)
 
 
 @router.post("/{tipo}", response_model=SaveResult, responses=RESPONSES)
-async def guardar(tipo: str, file: UploadFile):
+def guardar(tipo: str, file: UploadFile):
     """Valida y, si no hay errores, guarda de forma atómica con copia en data/_historial/."""
-    result = await _validate(tipo, file)
+    result = _validate(tipo, file)
     if not result.report.valido:
         return _fail(result)
-    backup = storage.save_atomic(result.report.archivo, result.content)
+    backup = storage.save_atomic(result.target_filename, result.content)
     return SaveResult(**result.report.model_dump(), guardado=True,
                       copia_historial=backup.name if backup else None)

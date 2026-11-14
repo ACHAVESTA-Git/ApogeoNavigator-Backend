@@ -1,7 +1,7 @@
 """Al menos una prueba por código de error del estándar (docs/plan/estandar-csv.md §5)."""
 import pytest
 
-from tests.conftest import find, report_of, upload
+from tests.conftest import find, fixture_bytes, report_of, upload
 
 # (tipo, fixture, nombre subido, código, HTTP, [(fila, columna), ...] esperados)
 CASOS = [
@@ -91,11 +91,59 @@ def test_exactamente_10000_filas_es_valido(client):
     assert response.json()["total_filas"] == 10_000
 
 
-def test_E_NUM_COLUMNAS_cabecera_con_demasiadas_columnas(client):
+def test_10000_filas_mas_linea_final_en_blanco_no_es_E_TAMANO(client):
+    header = "site_id,nombre,categoria,mision,agencia,lat_deg,lon_este_deg,alt_km,fuente_url,notas\n"
+    rows = "".join(f"s{i:05d},Sitio {i},apolo,Apollo,NASA,1,1,,https://nssdc.gsfc.nasa.gov/x,\n" for i in range(10_000))
+    assert upload(client, "sites", (header + rows + "\n").encode(), "sites.csv").status_code == 200
+
+
+def test_cabecera_ancha_se_reporta_como_columnas_desconocidas(client):
     header = ",".join(f"c{i}" for i in range(21))
     response = upload(client, "sites", (header + "\n" + ",".join("x" * 21) + "\n").encode(), "sites.csv")
     assert response.status_code == 422
-    assert find(report_of(response), "E_NUM_COLUMNAS")
+    assert find(report_of(response), "E_COLUMNA_DESCONOCIDA", 1, "c20")
+
+
+def test_solo_bom_es_archivo_vacio(client):
+    response = upload(client, "sites", b"\xef\xbb\xbf", "sites.csv")
+    assert response.status_code == 422 and find(report_of(response), "E_ARCHIVO_VACIO")
+
+
+def test_utf16_es_codificacion_no_binario(client):
+    response = upload(client, "sites", "site_id,nombre\n1,2\n".encode("utf-16"), "sites.csv")
+    assert response.status_code == 422 and find(report_of(response), "E_CODIFICACION")
+
+
+def test_delimitador_punto_y_coma_se_rechaza(client):
+    content = fixture_bytes("sites_valido.csv").replace(b",", b";")
+    response = upload(client, "sites", content, "sites.csv")
+    assert response.status_code == 422
+    assert find(report_of(response), "E_COLUMNA_DESCONOCIDA", 1)
+
+
+def test_nulo_disfrazado_en_texto_opcional(client):
+    header = "site_id,nombre,categoria,mision,agencia,lat_deg,lon_este_deg,alt_km,fuente_url,notas\n"
+    row = "sitio_uno,Sitio uno,apolo,Apollo,NASA,1,1,,https://nssdc.gsfc.nasa.gov/x,N/A\n"
+    response = upload(client, "sites", (header + row).encode(), "sites.csv")
+    assert response.status_code == 422 and find(report_of(response), "E_FORMATO", 2, "notas")
+
+
+def test_nombre_con_salto_de_linea_final_se_rechaza(client):
+    response = upload(client, "sites", "sites_valido.csv", "sites.csv\n")
+    assert response.status_code in (415, 422)   # no termina en .csv: se rechaza antes del patrón
+    assert not response.json().get("valido", False)
+
+
+def test_nombre_del_informe_se_sanea(client):
+    response = upload(client, "sites", "sites_valido.csv", "si\x07tes.csv")
+    assert "\x07" not in report_of(response)["archivo"]
+
+
+def test_http_status_de_FileError():
+    from app.utils.errors import FileError
+    assert FileError("E_TAMANO", "x").http_status == 413
+    assert FileError("E_TIPO_ARCHIVO", "x").http_status == 415
+    assert FileError("E_ARCHIVO_VACIO", "x").http_status == 422
 
 
 def test_informe_limita_a_100_errores_pero_cuenta_todos(client):

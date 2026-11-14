@@ -21,6 +21,7 @@ def test_decimal_validos(value, expected):
 @pytest.mark.parametrize("value,code", [
     ("NaN", "E_TIPO"), ("inf", "E_TIPO"), ("1e3", "E_TIPO"), ("N/A", "E_TIPO"), ("-", "E_TIPO"), (".5", "E_TIPO"),
     ("90.000001", "E_RANGO"), ("-90.1", "E_RANGO"), ("0.1234567", "E_DECIMALES"),
+    ("٣", "E_TIPO"), ("1.5\n", "E_TIPO"), ("nan", "E_TIPO"), ("-inf", "E_TIPO"), ("--1", "E_TIPO"), ("1,5", "E_TIPO"),
 ])
 def test_decimal_invalidos(value, code):
     assert code_of(numbers.validate_decimal, value, -90, 90) == code
@@ -52,7 +53,7 @@ def test_texto_tab_permitido_y_formula_si_se_autoriza():
 
 @pytest.mark.parametrize("value,code", [
     ("2026-12-01T00:00+01:00", "E_FORMATO"), ("2026-12-01 00:00", "E_FORMATO"), ("2026-12-01T00:00:00Z", "E_FORMATO"),
-    ("2026-12-01T00:00z", "E_FORMATO"), ("2026-02-30T00:00Z", "E_TIPO"), ("2026-12-01T24:00Z", "E_TIPO"),
+    ("2026-12-01T00:00z", "E_FORMATO"), ("2026-12-01T00:00", "E_FORMATO"), ("2026-12-01T00:00Z\n", "E_FORMATO"), ("٢٠٢٦-12-01T00:00Z", "E_FORMATO"), ("2026-02-30T00:00Z", "E_TIPO"), ("2026-12-01T24:00Z", "E_TIPO"),
 ])
 def test_fecha_invalida(value, code):
     assert code_of(dates.parse_utc, value) == code
@@ -98,3 +99,44 @@ def test_lector_comillas_mal_cerradas():
     with pytest.raises(FileError) as exc:
         csv_reader.parse_rows('a,b\n"1,2\n3,4"x\n')
     assert exc.value.code == "E_FORMATO"
+
+
+def test_decimal_limites_de_latitud_y_azimut():
+    assert numbers.validate_decimal("90", -90, 90) == 90.0
+    assert code_of(numbers.validate_decimal, "90.000001", -90, 90) == "E_RANGO"
+    assert code_of(numbers.validate_decimal, "-90.000001", -90, 90) == "E_RANGO"
+    assert numbers.validate_decimal("0", 0, 360, hi_inclusive=False) == 0.0
+
+
+def test_decimales_exactos_6_si_7_no():
+    assert numbers.validate_decimal("0.123456", 0, 1) == 0.123456
+    assert code_of(numbers.validate_decimal, "0.1234567", 0, 1) == "E_DECIMALES"
+
+
+def test_nombre_de_archivo_usa_fullmatch():
+    from app.core import config
+    pattern = config.FILENAME_PATTERNS["sites"]
+    assert csv_reader.check_filename("sites.csv", pattern)
+    with pytest.raises(FileError):
+        csv_reader.check_filename("sites.csv\n", pattern)
+
+
+def test_nulos_disfrazados_y_recortes():
+    for token in ("NULL", "nan", "N/A", "-"):
+        assert code_of(text.check_not_null_token, token) == "E_FORMATO"
+    assert text.clip_value("x" * 80) == "x" * 50 and text.clip_value(None) is None
+    assert text.sanitize_filename("a\x00b.csv") == "ab.csv"
+
+
+def test_cabecera_exacta():
+    assert list(csv_reader.header_issues(["a", "b"], ["a", "b"])) == []
+    codes = {i.code for i in csv_reader.header_issues(["b", "a", "a", "z"], ["a", "b", "c"])}
+    assert codes == {"E_CABECERA", "E_COLUMNA_DESCONOCIDA"}
+    assert next(csv_reader.header_issues(["b", "a"], ["a", "b"])).code == "E_CABECERA"
+    assert csv_reader.row_width_issue([], 3) and csv_reader.row_width_issue(["x"], 3)
+    assert csv_reader.row_width_issue(["x", "y", "z"], 3) is None
+
+
+def test_lector_numera_filas_logicas_y_no_cuenta_la_linea_final_vacia():
+    header, rows = csv_reader.parse_rows("a,b\n1,2\n\n")
+    assert [n for n, _ in rows] == [2]

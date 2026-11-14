@@ -25,7 +25,7 @@ El nombre del archivo debe ser `sites.csv`, `metricas.csv` o `efemerides_<site_i
   "errores": [{"fila": 2, "columna": "lat_deg", "codigo": "E_RANGO", "mensaje": "Debe estar entre -90 y 90", "valor": "91"}],
   "advertencias": []}}
 ```
-Notas de implementación: una fecha con forma correcta pero imposible (`2026-02-30T00:00Z`) da `E_TIPO`; una con forma incorrecta o zona distinta de `Z` da `E_FORMATO`. Los errores de celda se informan primero; las reglas de coherencia entre filas y con `sites.csv` solo se evalúan cuando no hay errores de celda.
+Notas de implementación: los errores de archivo (sin fila propia) se informan con `fila: 1`; un UTF-16 con BOM da `E_CODIFICACION`; un nulo disfrazado (`NULL`, `NaN`, `N/A`, `-`) en una columna de texto da `E_FORMATO` y en una numérica `E_TIPO`; el nombre del archivo guardado sale del patrón validado, nunca del nombre crudo. Además: una fecha con forma correcta pero imposible (`2026-02-30T00:00Z`) da `E_TIPO`; una con forma incorrecta o zona distinta de `Z` da `E_FORMATO`. Los errores de celda se informan primero; las reglas de coherencia entre filas y con `sites.csv` solo se evalúan cuando no hay errores de celda.
 
 ## Variables de entorno
 | Variable | Defecto | Uso |

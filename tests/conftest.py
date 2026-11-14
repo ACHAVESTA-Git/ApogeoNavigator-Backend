@@ -49,3 +49,21 @@ def find(report: dict, code: str, fila: int | None = None, columna: str | None =
         and (fila is None or e["fila"] == fila)
         and (columna is None or e["columna"] == columna)
     ]
+
+
+def make_ephem(n=48, step_min=60, start="2026-12-01T00:00", mutate=None) -> bytes:
+    """Efemérides sintéticas válidas (Sol suave, Tierra casi fija); `mutate` edita las filas."""
+    import math
+    from datetime import datetime, timedelta
+
+    t0 = datetime.strptime(start, "%Y-%m-%dT%H:%M")
+    rows = []
+    for i in range(n):
+        t = t0 + timedelta(minutes=step_min * i)
+        sun_el = 3 * math.sin(i * step_min / 1440 * 2 * math.pi)
+        rows.append([t.strftime("%Y-%m-%dT%H:%MZ"), f"{(i * 7.5) % 360:.3f}", f"{sun_el:.3f}",
+                     f"{(180 + i * 0.1) % 360:.3f}", "5.000"])
+    if mutate:
+        mutate(rows)
+    return ("utc,sol_az_deg,sol_el_deg,tierra_az_deg,tierra_el_deg\n"
+            + "\n".join(",".join(r) for r in rows) + "\n").encode()

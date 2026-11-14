@@ -15,16 +15,17 @@ from app.validation.specs import DATE, DECIMAL, ENUM, REGEX, SCHEMAS, TEXT, URL,
 class ValidationResult:
     report: Report
     records: list[Record] = field(default_factory=list)
-    http_status: int = 200
+    http_status: int = c.HTTP_OK
     content: bytes = b""            # bytes sin BOM, listos para guardar
+    target_filename: str = ""       # nombre seguro (del patrón validado), nunca el crudo
 
 
 def validate_cell(spec: ColumnSpec, value: str) -> Any:
-    """Valida una celda ya recortada y devuelve su valor tipado."""
+    """Valida una celda ya recortada y no vacía; devuelve su valor tipado."""
     if spec.kind == DECIMAL:
         return numbers.validate_decimal(value, spec.lo, spec.hi, spec.hi_inclusive)
-    # Todo lo que no es número se revisa contra control, <>, y fórmulas.
-    text.check_safe_chars(value)
+    text.check_not_null_token(value)
+    text.check_safe_chars(value)   # control, <>, fórmulas
     if spec.kind == TEXT:
         text.check_length(value, spec.min_len, spec.max_len)
         return value
@@ -41,26 +42,17 @@ def validate_cell(spec: ColumnSpec, value: str) -> Any:
 
 
 def _check_header(header: list[str], schema: list[ColumnSpec], out: Collector) -> None:
-    expected = [s.name for s in schema]
-    for name in dict.fromkeys(n for n in header if header.count(n) > 1):
-        out.error(c.HEADER_ROW, name, c.E_CABECERA, "Columna duplicada", name)
-    for name in header:
-        if name not in expected:
-            out.error(c.HEADER_ROW, name, c.E_COLUMNA_DESCONOCIDA, "Columna que no existe en el estándar", name)
-    for name in expected:
-        if name not in header:
-            out.error(c.HEADER_ROW, name, c.E_CABECERA, "Falta la columna obligatoria", None)
-    if not out.has_errors and header != expected:
-        out.error(c.HEADER_ROW, None, c.E_CABECERA, "Orden incorrecto; esperado: " + ",".join(expected))
+    for issue in csv_reader.header_issues(header, [s.name for s in schema]):
+        out.error(c.HEADER_ROW, issue.column, issue.code, issue.message, issue.value)
 
 
 def _check_rows(rows, schema: list[ColumnSpec], out: Collector) -> list[Record]:
     records: list[Record] = []
     unique_seen: dict[str, set] = {s.name: set() for s in schema if s.unique}
     for row_no, fields in rows:
-        if len(fields) != len(schema):
-            msg = "Fila vacía" if not fields else f"Tiene {len(fields)} campos; se esperaban {len(schema)}"
-            out.error(row_no, None, c.E_NUM_COLUMNAS, msg)
+        width_problem = csv_reader.row_width_issue(fields, len(schema))
+        if width_problem:
+            out.error(row_no, None, c.E_NUM_COLUMNAS, width_problem)
             continue
         values: dict[str, Any] = {}
         row_ok = True
@@ -68,7 +60,7 @@ def _check_rows(rows, schema: list[ColumnSpec], out: Collector) -> list[Record]:
             value = raw.strip()
             if not value:
                 if spec.required:
-                    out.error(row_no, spec.name, c.E_REQUERIDO, "Campo obligatorio vacío")
+                    out.error(row_no, spec.name, c.E_REQUERIDO, c.MSG_REQUIRED)
                     row_ok = False
                 values[spec.name] = spec.default
                 continue
@@ -80,7 +72,7 @@ def _check_rows(rows, schema: list[ColumnSpec], out: Collector) -> list[Record]:
                 continue
             if spec.unique:
                 if value in unique_seen[spec.name]:
-                    out.error(row_no, spec.name, c.E_DUPLICADO, "Valor repetido", value)
+                    out.error(row_no, spec.name, c.E_DUPLICADO, c.MSG_DUPLICATE_VALUE, value)
                     row_ok = False
                 unique_seen[spec.name].add(value)
         if row_ok:
@@ -91,17 +83,17 @@ def _check_rows(rows, schema: list[ColumnSpec], out: Collector) -> list[Record]:
 def validate_csv(tipo: str, filename: str | None, raw: bytes, ctx: Context | None = None) -> ValidationResult:
     """Valida un archivo completo. No guarda nada."""
     ctx = ctx or Context()
-    name = filename or ""
+    shown_name = text.sanitize_filename(filename)
     out = Collector()
     try:
         csv_reader.check_raw(filename, raw)
         match = csv_reader.check_filename(filename, c.FILENAME_PATTERNS[tipo])
         header, rows = csv_reader.parse_rows(csv_reader.decode(raw))
-        if tipo == c.TIPO_EFEMERIDES:
-            ctx.file_site_id = match.group(1)
     except FileError as exc:
         out.error(c.HEADER_ROW, None, exc.code, exc.message)
-        return ValidationResult(_report(tipo, name, out, 0), http_status=exc.http_status)
+        return ValidationResult(_report(tipo, shown_name, out, 0), http_status=exc.http_status)
+    if tipo == c.TIPO_EFEMERIDES:
+        ctx.file_site_id = match.group(1)
 
     schema = SCHEMAS[tipo]
     _check_header(header, schema, out)
@@ -110,9 +102,9 @@ def validate_csv(tipo: str, filename: str | None, raw: bytes, ctx: Context | Non
         records = _check_rows(rows, schema, out)
     if not out.has_errors:
         COHERENCE[tipo](records, ctx, out)
-    status = c.HTTP_DEFAULT_ERROR if out.has_errors else 200
-    content = raw[len(b"\xef\xbb\xbf"):] if raw.startswith(b"\xef\xbb\xbf") else raw
-    return ValidationResult(_report(tipo, name, out, len(rows)), records, status, content)
+    status = c.HTTP_DEFAULT_ERROR if out.has_errors else c.HTTP_OK
+    content = raw.removeprefix(c.UTF8_BOM)
+    return ValidationResult(_report(tipo, shown_name, out, len(rows)), records, status, content, match.group(0))
 
 
 def _report(tipo: str, name: str, out: Collector, total_rows: int) -> Report:
