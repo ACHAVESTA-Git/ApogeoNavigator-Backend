@@ -39,14 +39,14 @@ Seis meses de efemérides reales de Horizons (2026-12-01 → 2027-06-01, 10 siti
 
 - **Ventanas de luz:** en los 9 sitios que no son polares, cada ventana de Sol dura unas **345–356 h (≈14,4–14,8 días)** y cada noche otras 353–359 h: justo medio día lunar de 29,53 días. Son 6 ventanas de Sol y 5 o 6 noches completas en 6 meses. Cada sitio tiene su propio desfase.
 - **Tierra:** en los 7 sitios de la cara visible no hay ninguna ventana: está sobre el horizonte las 4369 h. En Chang'e 4 y 6 (cara oculta) nunca sale. **Shackleton es el único con ventanas de Tierra**: 6 tramos visibles de unas 300 h y 6 ocultos de unas 352 h, alternando cada ~27 días.
-- **Polo sur:** Shackleton tiene **una sola ventana de Sol completa (413 h)** y una noche completa de 54 h; el resto es noche hasta el final de los datos. El Sol pasa de 100 % en diciembre a 0 % de marzo a mayo (ver §3.1). IM-1 (80°S) tuvo Sol el 56 % del tiempo en diciembre de 2026, pero muy bajo en el cielo.
+- **Polo sur:** Shackleton tiene **una sola ventana de Sol completa (413 h)** y una noche completa de 54 h; el resto es noche hasta el final de los datos. El Sol pasa de 100 % en diciembre a casi nada de marzo a julio (0 % de marzo a junio y 1,2 % en julio; ver §3.1). IM-1 (80°S) tuvo Sol el 56 % del tiempo en diciembre de 2026, pero muy bajo en el cielo.
 - **Por día lunar:** las horas de Sol de un día lunar completo van de 299 h (Shackleton) a 356 h; en latitudes medias son estables de un día lunar a otro (355 h de media).
 
 ### 3.1 Estacionalidad en el polo: la inclinación del eje
 
 ![Estacionalidad en Shackleton](img/estacionalidad_polo.png)
 
-La elevación solar máxima diaria en Shackleton oscila entre **−1,88° y +1,88°**. Coincide con lo esperable: la inclinación del eje lunar (**1,54°**) más la colatitud del punto (90° − 89,66° = **0,34°**). Con horizonte ideal, el Sol no sale nunca de marzo a mayo de 2027 y de marzo a mayo de 2028, y brilla de forma continua de agosto a diciembre de 2027 (100 % de Sol cinco meses seguidos). El ciclo es coherente con el «año de eclipses» (346,6 días), no con un año de 365 días.
+La elevación solar máxima diaria en Shackleton oscila entre **−1,88° y +1,88°**. Coincide con lo esperable: la inclinación del eje lunar (**1,54°**) más la colatitud del punto (90° − 89,66° = **0,34°**). Con horizonte ideal, el Sol no sale (0 %) de marzo a junio de 2027 y apenas en julio (1,2 %), y vuelve a faltar de marzo a mayo de 2028; brilla de forma continua de agosto a diciembre de 2027 (100 % de Sol cinco meses seguidos). El ciclo es coherente con el «año de eclipses» (346,6 días), no con un año de 365 días.
 
 ### 3.2 Libración: la Tierra «baila»
 
@@ -79,7 +79,12 @@ Verdad de terreno: `scripts/datos/validacion/horizons_verdad.parquet` (2027-06-0
 
 ![Proyección frente a la verdad](img/proyeccion_vs_verdad.png)
 
-**Revisión de datos: APROBADA.** Una verificación independiente confirmó el esquema y la continuidad del Parquet (la primera fila de cada sitio es idéntica a la última de los datos de entrenamiento), 16 consultas propias a Horizons sin diferencias, y recalculó el error con su propio código con el mismo resultado hasta el 4.º decimal.
+**Revisión de datos: APROBADA, y reproducible.** Una verificación independiente (el agente revisor) confirmó el esquema y la continuidad del Parquet (la primera fila de cada sitio es idéntica a la última de los datos de entrenamiento), 16 consultas propias a Horizons sin diferencias, y recalculó el error con su propio código con el mismo resultado hasta el 4.º decimal. Las comprobaciones están en un script que cualquiera puede repetir; imprime una línea por comprobación y termina con `APROBADO` (código 0) o `CORREGIR` (código 1):
+
+```bash
+python scripts/datos/revisar_validacion.py              # esquema, filas, paso de 1 h, rangos, saltos, continuidad con los CSV y tabla de errores
+python scripts/datos/revisar_validacion.py --horizons   # además, 6 consultas de control propias a JPL Horizons (necesita red)
+```
 
 ### 5.1 Error en grados (RMSE; entre paréntesis, la referencia ingenua «repetir el último ciclo»)
 
@@ -139,9 +144,9 @@ Excluye el azimut solar de Apolo 11. El error **no crece de forma monótona**: o
 
 ## 6. Endpoint `GET /api/simulacion/{site_id}?desde=&hasta=&paso_horas=`
 - Devuelve una serie de azimut y elevación del Sol y de la Tierra para animar el cielo.
-- Dentro del rango de datos cada punto lleva `"origen": "datos"` (los datos reales, interpolados si el paso no coincide). Después del último dato, y hasta 366 días, `"origen": "proyeccion"` con `incertidumbre_deg`: el RMSE de la validación de ese sitio y variable para el mes de horizonte del punto (`data/proyeccion_errores.json`).
-- Límites en `config.py`: paso de 0,25 a 24 h, 5000 puntos como máximo y 30 días por defecto. Errores `{"detail"}`: 404 sitio o archivo inexistente, 422 rango o paso no válidos, 503 datos inválidos.
-- Avisos: `proyeccion_estadistica` siempre que haya puntos proyectados, y `azimut_solar_cenit` si el Sol supera los 85° (Apolo 11).
+- Dentro del rango de datos cada punto lleva `"origen": "datos"` (los datos reales, interpolados si el paso no coincide). Después del último dato, y hasta 366 días, `"origen": "proyeccion"` con `incertidumbre_deg`: el **RMSE de validación** de ese sitio y variable para el mes de horizonte del punto. Es una cifra **optimista y no un intervalo de confianza**: el error real puede superarla. La tabla (`app/analysis/proyeccion_errores.json`) viaja con el código y no con `data/`, porque en producción solo se sincronizan los CSV y el manifiesto.
+- Límites en `config.py`: paso de 0,25 a 24 h, **9000 puntos como máximo** y 30 días por defecto. Un año a paso de 1 h son 8785 puntos (≈ 75 ms y 2 MiB) y cabe; un rango mayor (por ejemplo datos más proyección a 1 h) da un 422 que dice el máximo y pide subir `paso_horas` o acortar el rango. Errores `{"detail"}`: 404 sitio o archivo inexistente, 422 rango o paso no válidos, 503 datos inválidos.
+- Avisos: `proyeccion_estadistica` siempre que haya puntos proyectados; `azimut_solar_cenit` si el Sol supera los 85° (Apolo 11); y `sin_incertidumbre` si el sitio no está en la tabla de errores (nunca se devuelve `null` en silencio). Si la tabla falta o está corrupta, la API responde 503 con `{"detail"}`.
 - El modelo se ajusta una vez por archivo (menos de 0,1 s) y se guarda en la caché por `mtime` de `services/lectura.py`, así que se reajusta solo cuando se sube un CSV nuevo.
 - Si cambian los datos hay que regenerar la tabla de errores con `scripts/datos/analizar_proyeccion.py`; una prueba comprueba que está al día.
 
