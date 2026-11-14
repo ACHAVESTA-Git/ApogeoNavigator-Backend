@@ -25,6 +25,8 @@ class MemoryStore:
         self._next = 0
         self.list_calls = self.upload_calls = 0
         self.fail = None                     # excepción a lanzar en la próxima operación (simula caídas)
+        self.fail_uploads: dict[int, Exception] = {}   # nº de subida (1, 2, 3…) -> excepción: falla SOLO en upload
+        self.on_upload = None                # callback antes de cada subida (simula a otro escritor)
         for name, data in (objects or {}).items():
             self._put(name, data)
 
@@ -51,6 +53,12 @@ class MemoryStore:
     def upload(self, name, data, *, if_generation_match=None):
         from app.services.blobstore import StoreConflict
         self._maybe_fail()
+        attempt = self.upload_calls + 1
+        if self.on_upload:
+            self.on_upload(name)
+        if attempt in self.fail_uploads:
+            self.upload_calls += 1
+            raise self.fail_uploads[attempt]
         current = self.objects.get(name, (None, 0))[1]
         if if_generation_match is not None and if_generation_match != current:
             raise StoreConflict(name)

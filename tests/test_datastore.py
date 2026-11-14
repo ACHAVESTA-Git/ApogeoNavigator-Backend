@@ -9,7 +9,7 @@ from app.core import config as c
 from app.main import app
 from app.security import pqc
 from app.services import datastore
-from app.services.blobstore import StoreError
+from app.services.blobstore import StoreConflict, StoreError
 from tests.conftest import FIXTURES, MemoryStore, fixture_bytes, report_of, upload
 
 SEED_FILES = {"sites.csv": fixture_bytes("sites_valido.csv"), "efemerides_sitio_uno.csv": fixture_bytes("efemerides_valido.csv")}
@@ -256,3 +256,81 @@ def test_arranque_de_la_aplicacion_en_produccion_con_bucket_y_sin_el_falla(bd, d
     with pytest.raises(RuntimeError, match="DATA_BUCKET"):
         with TestClient(app):
             pass
+
+
+# ------------------------------------------------------------------ fallos SOLO en la subida (revisión del PR)
+def _local_igual_al_bucket(store, folder):
+    locales = {p.name: p.read_bytes() for p in folder.glob("*") if p.is_file() and not p.name.startswith(".")}
+    remotos = {n: d for n, (d, _) in store.objects.items() if "/" not in n}
+    return locales == remotos
+
+
+@pytest.mark.parametrize("n_subida", [1, 2, 3], ids=["historial", "csv", "manifiesto"])
+def test_si_falla_una_subida_la_replica_local_vuelve_a_ser_la_del_bucket(local, monkeypatch, n_subida):
+    store = with_store(monkeypatch, MemoryStore({"sites.csv": fixture_bytes("sites_valido.csv")}))
+    datastore.startup()
+    store.fail_uploads = {n_subida: StoreError("caído a mitad")}
+    with pytest.raises(StoreError):
+        datastore.guardar("sites.csv", fixture_bytes("sites_limites.csv"))
+    assert _local_igual_al_bucket(store, local)
+    datastore.pull()                                       # un pull posterior tampoco deja datos que el bucket no tiene
+    assert _local_igual_al_bucket(store, local)
+
+
+def test_fallo_en_la_subida_del_csv_deja_el_bucket_intacto(local, monkeypatch):
+    store = with_store(monkeypatch, MemoryStore({"sites.csv": fixture_bytes("sites_valido.csv")}))
+    datastore.startup()
+    store.fail_uploads = {2: StoreError("caído")}           # 1.ª = historial, 2.ª = CSV
+    with pytest.raises(StoreError):
+        datastore.guardar("sites.csv", fixture_bytes("sites_limites.csv"))
+    assert store.objects["sites.csv"][0] == fixture_bytes("sites_valido.csv")
+    assert (local / "sites.csv").read_bytes() == fixture_bytes("sites_valido.csv")
+
+
+def test_si_tambien_falla_el_restablecimiento_se_conserva_el_error_original(local, monkeypatch, caplog):
+    store = with_store(monkeypatch, MemoryStore({"sites.csv": fixture_bytes("sites_valido.csv")}))
+    datastore.startup()
+    store.fail_uploads = {1: StoreError("subida")}
+    original_list = store.list
+    llamadas = []
+
+    def lista_caida():
+        llamadas.append(1)
+        if len(llamadas) >= 2:                              # la 1.ª es el pull previo al guardado; la 2.ª, el restablecimiento
+            raise StoreError("sigue caído")
+        return original_list()
+    store.list = lista_caida
+    with pytest.raises(StoreError, match="subida"):
+        datastore.guardar("sites.csv", fixture_bytes("sites_limites.csv"))
+    assert "No se pudo restablecer" in caplog.text
+
+
+def test_siembra_concurrente_no_tumba_el_arranque(local, seed, monkeypatch):
+    store = with_store(monkeypatch, MemoryStore())
+    store.on_upload = lambda name: store._put(name, b"sembrado por otra instancia") if name == "sites.csv" and "sites.csv" not in store.objects else None
+    datastore.startup()                                    # la subida choca con la precondición (objeto ya creado): no lanza
+    assert store.objects["sites.csv"][0] == b"sembrado por otra instancia"
+    assert (local / "sites.csv").read_bytes() == b"sembrado por otra instancia"
+
+
+def test_siembra_con_conflicto_en_el_manifiesto_tambien_continua(local, seed, monkeypatch):
+    store = with_store(monkeypatch, MemoryStore())
+    store.fail_uploads = {3: StoreConflict("manifest")}     # 1-2 = CSV de la semilla, 3 = manifiesto
+    datastore.startup()
+    assert sorted(p.name for p in local.glob("*.csv")) == sorted(SEED_FILES)
+
+
+def test_api_con_fallo_solo_en_la_subida_responde_503_y_las_lecturas_no_mienten(bd, data_dir, monkeypatch):
+    monkeypatch.delenv("K_SERVICE", raising=False)
+    store = with_store(monkeypatch, MemoryStore({"sites.csv": fixture_bytes("sites_valido.csv")}))
+    monkeypatch.setenv("DATA_REFRESH_SECONDS", "0")
+    datastore.startup()
+    client = TestClient(app)
+    store.fail_uploads = {1: StoreError("caído")}
+    r = upload(client, "sites", "sites_limites.csv", "sites.csv", dry_run=False)
+    assert r.status_code == 503 and r.json()["detail"] == c.MSG_BUCKET_UNAVAILABLE
+    assert {s["site_id"] for s in client.get("/api/sites").json()} == {"sitio_uno", "sitio_dos", "sitio_tres"}
+    from app.db import session as db_session
+    from app.db.models import EventoAuditoria
+    with db_session.session_scope() as s:
+        assert s.query(EventoAuditoria).count() == 0
