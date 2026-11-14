@@ -334,3 +334,37 @@ def test_api_con_fallo_solo_en_la_subida_responde_503_y_las_lecturas_no_mienten(
     from app.db.models import EventoAuditoria
     with db_session.session_scope() as s:
         assert s.query(EventoAuditoria).count() == 0
+
+
+def test_bucket_caido_en_la_subida_y_en_el_restablecimiento_se_corrige_cuando_vuelve(local, monkeypatch):
+    """El bucket cae al subir y sigue caído al restablecer: la réplica conserva un dato no publicado hasta que vuelve."""
+    store = with_store(monkeypatch, MemoryStore({"sites.csv": fixture_bytes("sites_valido.csv")}))
+    monkeypatch.setenv("DATA_REFRESH_SECONDS", "3600")                    # el intervalo normal no ayudaría
+    datastore.startup()
+    store.fail_uploads = {1: StoreError("subida")}
+    list_ok = store.list
+    llamadas = []
+
+    def lista_caida():
+        llamadas.append(1)
+        if len(llamadas) >= 2:                                            # 1.ª: pull previo al guardado; 2.ª: restablecimiento
+            raise StoreError("sigue caído")
+        return list_ok()
+    store.list = lista_caida
+    with pytest.raises(StoreError, match="subida"):
+        datastore.guardar("sites.csv", fixture_bytes("sites_limites.csv"))
+    assert (local / "sites.csv").read_bytes() == fixture_bytes("sites_limites.csv")      # réplica sucia: dato no publicado
+    assert store.objects["sites.csv"][0] == fixture_bytes("sites_valido.csv")
+    store.list = list_ok                                                  # el bucket vuelve
+    datastore.refresh_if_stale()                                          # sin esperar al intervalo
+    assert _local_igual_al_bucket(store, local)
+    assert (local / "sites.csv").read_bytes() == fixture_bytes("sites_valido.csv")
+
+
+def test_el_restablecimiento_fallido_olvida_las_generaciones_y_el_ultimo_refresco(local, monkeypatch):
+    store = with_store(monkeypatch, MemoryStore({"sites.csv": b"a"}))
+    datastore.startup()
+    assert datastore._generations
+    store.fail = StoreError("caído")
+    datastore._reset_replica()
+    assert datastore._generations == {} and datastore._last_check == float("-inf")
