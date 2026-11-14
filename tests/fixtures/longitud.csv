@@ -1,0 +1,6 @@
+site_id,nombre,categoria,mision,agencia,lat_deg,lon_este_deg,alt_km,fuente_url,notas
+nombre_corto,ab,apolo,Apollo 11,NASA,0.674,23.473,,https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html,
+nombre_largo,nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn,apolo,Apollo 11,NASA,0.674,23.473,,https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html,
+mision_corta,Sitio de prueba uno,apolo,A,NASA,0.674,23.473,,https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html,
+notas_largas,Sitio de prueba uno,apolo,Apollo 11,NASA,0.674,23.473,,https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html,nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn
+url_corta,Sitio de prueba uno,apolo,Apollo 11,NASA,0.674,23.473,,https://a,

@@ -1,0 +1,4 @@
+site_id,nombre,categoria,mision,agencia,lat_deg,lon_este_deg,alt_km,fuente_url,notas
+cerca_uno,Sitio de prueba uno,clps,CLPS 1,Empresa,-85.5,10.0,,https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html,
+cerca_dos,Sitio de prueba uno,clps,CLPS 2,Empresa,-85.50005,10.00005,,https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html,
+artemis_norte,Sitio de prueba uno,artemis,Apollo 11,NASA,-45,20,,https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html,

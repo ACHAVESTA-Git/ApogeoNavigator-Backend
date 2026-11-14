@@ -1,0 +1,5 @@
+site_id,nombre,categoria,mision,agencia,lat_deg,lon_este_deg,alt_km,fuente_url,notas
+lim_norte,Sitio de prueba uno,apolo,Apollo 11,NASA,90,180,,https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html,
+lim_sur,Sitio de prueba uno,apolo,Apollo 11,NASA,-90,-180,,https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html,
+lim_cero,Sitio de prueba uno,apolo,Apollo 11,NASA,-0,0,11,https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html,
+lim_min,Abc,apolo,Ab,Ab,-0.000001,0.000001,-10,https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html,
