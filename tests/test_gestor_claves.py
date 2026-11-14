@@ -318,6 +318,21 @@ def test_una_sola_clave_activa_por_usuario_y_tipo_en_la_base(engine):
 
 
 # ------------------------------------------------------------------ listar
+def test_listar_con_q_sin_claves_del_servidor_busca_solo_por_nombre(client, engine, monkeypatch):
+    ana, luis = _usuario(engine, "ana@example.org", "Ana Ruiz"), _usuario(engine, "luis@example.org", "Luis Paz")
+    _generar(client, ana)
+    _generar(client, luis, ["kem"])
+    monkeypatch.setenv("K_SERVICE", "apogeo-backend")                    # producción sin PQC_KEM_PRIVATE_KEY ni EMAIL_HASH_KEY
+    monkeypatch.delenv(config.ENV_KEM_PRIVATE, raising=False)
+    monkeypatch.delenv(config.ENV_EMAIL_HASH_KEY, raising=False)
+    gk.reiniciar()
+    r = client.get("/api/admin/claves?q=Ruiz", headers=HEADERS)
+    assert r.status_code == 200 and r.json()["total"] == 2
+    assert all(i["usuario_email"] is None for i in r.json()["items"])     # no se pueden descifrar, pero no hay 500
+    assert client.get("/api/admin/claves?q=ana@example.org", headers=HEADERS).json()["total"] == 0   # el email exacto necesita las claves
+    assert client.get("/api/admin/claves", headers=HEADERS).status_code == 200
+
+
 def test_listar_con_filtros_y_paginacion(client, engine):
     ana, luis = _usuario(engine, "ana@example.org", "Ana Ruiz"), _usuario(engine, "luis@example.org", "Luis_Paz")
     _generar(client, ana)

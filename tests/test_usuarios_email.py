@@ -201,3 +201,69 @@ def test_el_downgrade_restituye_el_email_descifrando(tmp_path):
         assert conn.execute(text("SELECT email FROM usuarios")).scalar() == "ana@example.org"
     command.downgrade(cfg, "0002_claves")
     assert "email_cifrado" not in {c["name"] for c in inspect(create_engine(url)).get_columns("usuarios")}
+
+
+# ------------------------------------------------------------------ sin claves del servidor: abortar antes de tocar nada
+def columnas(url):
+    return {c["name"] for c in inspect(create_engine(url)).get_columns("usuarios")}
+
+
+@pytest.mark.parametrize("faltan", [(config.ENV_KEM_PRIVATE,), (config.ENV_EMAIL_HASH_KEY,),
+                                     (config.ENV_KEM_PRIVATE, config.ENV_EMAIL_HASH_KEY)], ids=["kem", "hash", "ambas"])
+def test_0003_con_usuarios_y_sin_claves_aborta_antes_de_tocar_nada(tmp_path, monkeypatch, faltan):
+    cfg, url = alembic_cfg(tmp_path)
+    command.upgrade(cfg, "0002_claves")
+    insertar_en_claro(url, "ana@example.org")
+    for nombre in faltan:
+        monkeypatch.delenv(nombre)
+    gk.reiniciar()
+    with pytest.raises(RuntimeError, match="No se ha modificado nada"):
+        command.upgrade(cfg, "0003_email_cifrado")
+    assert "email_cifrado" not in columnas(url) and "email" in columnas(url)               # esquema intacto
+    with create_engine(url).connect() as conn:
+        assert conn.execute(text("SELECT email FROM usuarios")).scalar() == "ana@example.org"
+    assert not list(tmp_path.glob("**/claves_servidor.json"))                              # y no se generaron claves de desarrollo
+
+
+def test_0004_sin_claves_aborta_y_no_borra_el_email(tmp_path, monkeypatch):
+    cfg, url = alembic_cfg(tmp_path)
+    command.upgrade(cfg, "0002_claves")
+    insertar_en_claro(url, "ana@example.org")
+    command.upgrade(cfg, "0003_email_cifrado")
+    monkeypatch.delenv(config.ENV_EMAIL_HASH_KEY)
+    gk.reiniciar()
+    with pytest.raises(RuntimeError, match="No se ha modificado nada"):
+        command.upgrade(cfg, "head")
+    assert "email" in columnas(url)
+
+
+def test_downgrade_de_0004_sin_claves_aborta_y_no_deja_la_tabla_a_medias(tmp_path, monkeypatch):
+    cfg, url = alembic_cfg(tmp_path)
+    command.upgrade(cfg, "0002_claves")
+    insertar_en_claro(url, "ana@example.org")
+    command.upgrade(cfg, "head")
+    monkeypatch.delenv(config.ENV_KEM_PRIVATE)
+    gk.reiniciar()
+    with pytest.raises(RuntimeError, match="No se ha modificado nada"):
+        command.downgrade(cfg, "0003_email_cifrado")
+    assert "email" not in columnas(url) and "email_cifrado" in columnas(url)               # sigue en 0004, intacto
+
+
+def test_el_downgrade_restituye_el_email_normalizado(tmp_path):
+    cfg, url = alembic_cfg(tmp_path)
+    command.upgrade(cfg, "0002_claves")
+    insertar_en_claro(url, "  Ana@Example.ORG ")
+    command.upgrade(cfg, "head")
+    command.downgrade(cfg, "0003_email_cifrado")
+    with create_engine(url).connect() as conn:
+        assert conn.execute(text("SELECT email FROM usuarios")).scalar() == "ana@example.org"      # minúsculas y sin espacios
+
+
+def test_la_copia_cifrada_funciona_por_lotes(tmp_path):
+    cfg, url = alembic_cfg(tmp_path)
+    command.upgrade(cfg, "0002_claves")
+    insertar_en_claro(url, *[f"usuario{i}@example.org" for i in range(1100)])              # más de dos lotes de 500
+    command.upgrade(cfg, "head")
+    with create_engine(url).connect() as conn:
+        assert conn.execute(text("SELECT count(*) FROM usuarios WHERE email_cifrado IS NOT NULL")).scalar() == 1100
+        assert conn.execute(text("SELECT count(DISTINCT email_hash) FROM usuarios")).scalar() == 1100

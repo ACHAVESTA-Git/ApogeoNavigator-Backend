@@ -171,3 +171,23 @@ def test_migracion_del_email_cifrado_con_datos_en_postgres(pg, monkeypatch):
     with engine.connect() as conn:
         assert sorted(r[0] for r in conn.execute(text("SELECT email FROM usuarios"))) == ["ana@example.org", "luis@example.org"]
     gk.reiniciar()
+
+
+def test_migrar_usuarios_sin_claves_del_servidor_aborta_en_postgres(pg, monkeypatch):
+    import uuid
+    from app.core import config
+    from app.security import gestor_claves as gk
+    monkeypatch.delenv(config.ENV_KEM_PRIVATE, raising=False)
+    monkeypatch.delenv(config.ENV_EMAIL_HASH_KEY, raising=False)
+    gk.reiniciar()
+    engine, cfg = pg
+    command.downgrade(cfg, "0002_claves")
+    with engine.begin() as conn:
+        conn.execute(text("INSERT INTO usuarios (id, email, nombre, rol, activo, creado_utc) "
+                          "VALUES (:i, 'ana@example.org', 'Ana', 'analista', true, now())"), {"i": uuid.uuid4()})
+    with pytest.raises(RuntimeError, match="No se ha modificado nada"):
+        command.upgrade(cfg, "head")
+    with engine.connect() as conn:
+        assert "email_cifrado" not in {c["name"] for c in inspect(conn).get_columns("usuarios")}
+        assert conn.execute(text("SELECT email FROM usuarios")).scalar() == "ana@example.org"
+    gk.reiniciar()
