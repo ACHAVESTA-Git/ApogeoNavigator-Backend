@@ -81,7 +81,7 @@ def test_carga_archivo_guarda_firma_binaria(engine):
 
 def test_evento_detalle_json_y_enum(engine):
     with Session(engine) as s:
-        s.add(models.EventoAuditoria(ts_utc=datetime.now(timezone.utc), actor="api-key", accion=AccionAuditoria.CARGA_GUARDADA,
+        s.add(models.EventoAuditoria(secuencia=1, ts_utc=datetime.now(timezone.utc), actor="api-key", accion=AccionAuditoria.CARGA_GUARDADA,
                                      detalle={"archivo": "sites.csv", "filas": 3}, hash_prev="0" * 64, hash_actual=HASH,
                                      algoritmo_firma="NINGUNO"))
         s.commit()
@@ -92,22 +92,79 @@ def test_evento_detalle_json_y_enum(engine):
 def test_hash_prev_unico_impide_bifurcar_la_cadena(engine):
     with Session(engine) as s:
         for i in range(2):
-            s.add(models.EventoAuditoria(ts_utc=datetime.now(timezone.utc), actor="x", accion=AccionAuditoria.LOGIN,
-                                         detalle={}, hash_prev="0" * 64, hash_actual=f"{i}" * 64, algoritmo_firma="NINGUNO"))
+            s.add(models.EventoAuditoria(secuencia=i + 1, ts_utc=datetime.now(timezone.utc), actor="x",
+                                         accion=AccionAuditoria.LOGIN, detalle={}, hash_prev="0" * 64,
+                                         hash_actual=f"{i}" * 64, algoritmo_firma="NINGUNO"))
         with pytest.raises(IntegrityError):
             s.commit()
 
 
 def test_evento_sin_firma_exige_declararlo_con_NINGUNO(engine):
     with Session(engine) as s:
-        s.add(models.EventoAuditoria(ts_utc=datetime.now(timezone.utc), actor="x", accion=AccionAuditoria.LOGIN,
+        s.add(models.EventoAuditoria(secuencia=1, ts_utc=datetime.now(timezone.utc), actor="x", accion=AccionAuditoria.LOGIN,
                                      detalle={}, hash_prev="0" * 64, hash_actual=HASH))     # ni firma ni NINGUNO
         with pytest.raises(IntegrityError):
             s.commit()
         s.rollback()
-        s.add(models.EventoAuditoria(ts_utc=datetime.now(timezone.utc), actor="x", accion=AccionAuditoria.LOGIN,
+        s.add(models.EventoAuditoria(secuencia=1, ts_utc=datetime.now(timezone.utc), actor="x", accion=AccionAuditoria.LOGIN,
                                      detalle={}, hash_prev="0" * 64, hash_actual=HASH, firma_pqc=b"x", algoritmo_firma="ML-DSA-65"))
         s.commit()
+
+
+def test_evento_con_firma_no_puede_declararse_NINGUNO(engine):
+    with Session(engine) as s:
+        s.add(models.EventoAuditoria(secuencia=1, ts_utc=datetime.now(timezone.utc), actor="x", accion=AccionAuditoria.LOGIN,
+                                     detalle={}, hash_prev="0" * 64, hash_actual=HASH, firma_pqc=b"x", algoritmo_firma="NINGUNO"))
+        with pytest.raises(IntegrityError):
+            s.commit()
+
+
+def test_restricciones_de_longitud_y_no_negativos(engine):
+    with Session(engine) as s:
+        s.add(models.EventoAuditoria(secuencia=1, ts_utc=datetime.now(timezone.utc), actor="x", accion=AccionAuditoria.LOGIN,
+                                     detalle={}, hash_prev="corto", hash_actual=HASH, algoritmo_firma="NINGUNO"))
+        with pytest.raises(IntegrityError):
+            s.commit()
+        s.rollback()
+        s.add(models.CargaArchivo(actor="x", tipo=TipoCarga.SITES, nombre_archivo="sites.csv", sha3_256=HASH, tamano_bytes=-1,
+                                  filas=1, valido=True, total_errores=0, firma_pqc=b"x", algoritmo_firma="ML-DSA-65"))
+        with pytest.raises(IntegrityError):
+            s.commit()
+
+
+def test_secuencia_unica(engine):
+    with Session(engine) as s:
+        for i in range(2):
+            s.add(models.EventoAuditoria(secuencia=1, ts_utc=datetime.now(timezone.utc), actor="x", accion=AccionAuditoria.LOGIN,
+                                         detalle={}, hash_prev=f"{i}" * 64, hash_actual=f"{i + 5}" * 64, algoritmo_firma="NINGUNO"))
+        with pytest.raises(IntegrityError):
+            s.commit()
+
+
+def test_borrar_usuario_no_toca_la_auditoria(engine):
+    from sqlalchemy import event as sa_event, text
+    sa_event.listen(engine, "connect", lambda c, _: c.execute("PRAGMA foreign_keys=ON"))
+    with Session(engine) as s:
+        u = _user()
+        s.add(u)
+        s.commit()
+        s.add(models.EventoAuditoria(secuencia=1, usuario_id=u.id, ts_utc=datetime.now(timezone.utc), actor="x",
+                                     accion=AccionAuditoria.LOGIN, detalle={}, hash_prev="0" * 64, hash_actual=HASH,
+                                     algoritmo_firma="NINGUNO"))
+        s.commit()
+        s.delete(u)
+        s.commit()
+        assert s.query(models.EventoAuditoria).one().usuario_id == u.id    # la fila no cambió
+
+
+def test_enums_de_la_migracion_coinciden_con_enums_py():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("m0001", ROOT / "alembic" / "versions" / "0001_modelo_inicial.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    assert mod.ROLES == tuple(m.value for m in RolUsuario)
+    assert mod.TIPOS == tuple(m.value for m in TipoCarga)
+    assert mod.ACCIONES == tuple(m.value for m in AccionAuditoria)
 
 
 def test_indices_de_auditoria(engine):

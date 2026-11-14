@@ -17,7 +17,7 @@ UTC = sa.DateTime(timezone=True)
 JSON_TYPE = sa.JSON().with_variant(postgresql.JSONB(), "postgresql")
 BIGINT_PK = sa.BigInteger().with_variant(sa.Integer(), "sqlite")
 
-SIGNED_OR_NONE = "firma_pqc IS NOT NULL OR COALESCE(algoritmo_firma, '') = 'NINGUNO'"
+SIGNED_OR_NONE = "(firma_pqc IS NULL) = (COALESCE(algoritmo_firma, '') = 'NINGUNO')"
 ROLES = ("analista", "revisor", "admin")
 TIPOS = ("sites", "efemerides", "metricas")
 ACCIONES = ("LOGIN", "LOGIN_FALLIDO", "LOGOUT", "CARGA_VALIDADA", "CARGA_GUARDADA", "CARGA_RECHAZADA",
@@ -69,6 +69,8 @@ def upgrade() -> None:
         sa.Column("algoritmo_firma", sa.String(40)),
         sa.Column("huella_clave", sa.String(64)),
         sa.CheckConstraint(SIGNED_OR_NONE, name="ck_cargas_archivo_firma_o_ninguno"),
+        sa.CheckConstraint("length(sha3_256) = 64", name="ck_cargas_archivo_sha3_longitud"),
+        sa.CheckConstraint("tamano_bytes >= 0 AND filas >= 0 AND total_errores >= 0", name="ck_cargas_archivo_no_negativos"),
     )
     op.create_index("ix_cargas_archivo_creado_utc", "cargas_archivo", ["creado_utc"])
     op.create_index("ix_cargas_archivo_sha3_256", "cargas_archivo", ["sha3_256"])
@@ -76,8 +78,9 @@ def upgrade() -> None:
     op.create_table(
         "eventos_auditoria",
         sa.Column("id", BIGINT_PK, primary_key=True, autoincrement=True),
+        sa.Column("secuencia", sa.BigInteger(), nullable=False, unique=True),
         sa.Column("ts_utc", UTC, nullable=False),
-        sa.Column("usuario_id", sa.Uuid(), sa.ForeignKey("usuarios.id", ondelete="SET NULL")),
+        sa.Column("usuario_id", sa.Uuid()),   # sin FK: el registro de auditoría es inmutable
         sa.Column("actor", sa.String(80), nullable=False),
         sa.Column("accion", sa.Enum(*ACCIONES, name="accion_auditoria"), nullable=False),
         sa.Column("recurso", sa.String(200)),
@@ -90,13 +93,36 @@ def upgrade() -> None:
         sa.Column("algoritmo_firma", sa.String(40)),
         sa.Column("huella_clave", sa.String(64)),
         sa.CheckConstraint(SIGNED_OR_NONE, name="ck_eventos_auditoria_firma_o_ninguno"),
+        sa.CheckConstraint("length(hash_prev) = 64 AND length(hash_actual) = 64", name="ck_eventos_auditoria_hash_longitud"),
+        sa.CheckConstraint("secuencia >= 1", name="ck_eventos_auditoria_secuencia"),
     )
     op.create_index("ix_eventos_auditoria_ts_utc", "eventos_auditoria", ["ts_utc"])
     op.create_index("ix_eventos_auditoria_usuario_id", "eventos_auditoria", ["usuario_id"])
     op.create_index("ix_eventos_auditoria_accion", "eventos_auditoria", ["accion"])
+    if op.get_bind().dialect.name == "postgresql":
+        # La auditoría es append-only: ni el propietario puede modificarla o borrarla sin quitar el trigger.
+        op.execute("""
+            CREATE FUNCTION eventos_auditoria_inmutable() RETURNS trigger LANGUAGE plpgsql AS $$
+            BEGIN
+                RAISE EXCEPTION 'eventos_auditoria es de solo inserción (% no permitido)', TG_OP;
+            END;
+            $$
+        """)
+        op.execute("""
+            CREATE TRIGGER eventos_auditoria_solo_insercion BEFORE UPDATE OR DELETE ON eventos_auditoria
+            FOR EACH ROW EXECUTE FUNCTION eventos_auditoria_inmutable()
+        """)
+        op.execute("""
+            CREATE TRIGGER eventos_auditoria_sin_truncate BEFORE TRUNCATE ON eventos_auditoria
+            FOR EACH STATEMENT EXECUTE FUNCTION eventos_auditoria_inmutable()
+        """)
 
 
 def downgrade() -> None:
+    if op.get_bind().dialect.name == "postgresql":
+        op.execute("DROP TRIGGER IF EXISTS eventos_auditoria_sin_truncate ON eventos_auditoria")
+        op.execute("DROP TRIGGER IF EXISTS eventos_auditoria_solo_insercion ON eventos_auditoria")
+        op.execute("DROP FUNCTION IF EXISTS eventos_auditoria_inmutable()")
     op.drop_table("eventos_auditoria")
     op.drop_table("cargas_archivo")
     op.drop_table("sesiones")

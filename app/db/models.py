@@ -12,7 +12,7 @@ from app.db.enums import AccionAuditoria, RolUsuario, TipoCarga
 
 
 # Un registro sin firma debe declararlo: no hay medias tintas (firma nula solo con algoritmo NINGUNO).
-SIGNED_OR_NONE = f"firma_pqc IS NOT NULL OR COALESCE(algoritmo_firma, '') = '{c.UNSIGNED_ALGORITHM}'"
+SIGNED_OR_NONE = f"(firma_pqc IS NULL) = (COALESCE(algoritmo_firma, '') = '{c.UNSIGNED_ALGORITHM}')"
 
 
 def utcnow() -> datetime:
@@ -56,7 +56,9 @@ class CargaArchivo(Base):
     __tablename__ = "cargas_archivo"
     __table_args__ = (Index("ix_cargas_archivo_creado_utc", "creado_utc"), Index("ix_cargas_archivo_sha3_256", "sha3_256"),
                       Index("ix_cargas_archivo_usuario_id", "usuario_id"),
-                      CheckConstraint(SIGNED_OR_NONE, name=c.CK_SIGNED_OR_NONE.format(tabla="cargas_archivo")))
+                      CheckConstraint(SIGNED_OR_NONE, name=c.CK_SIGNED_OR_NONE.format(tabla="cargas_archivo")),
+                      CheckConstraint(f"length(sha3_256) = {c.HASH_HEX_LENGTH}", name="ck_cargas_archivo_sha3_longitud"),
+                      CheckConstraint("tamano_bytes >= 0 AND filas >= 0 AND total_errores >= 0", name="ck_cargas_archivo_no_negativos"))
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     usuario_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("usuarios.id", ondelete="SET NULL"))
@@ -81,13 +83,19 @@ class EventoAuditoria(Base):
     __tablename__ = "eventos_auditoria"
     __table_args__ = (Index("ix_eventos_auditoria_ts_utc", "ts_utc"), Index("ix_eventos_auditoria_usuario_id", "usuario_id"),
                       Index("ix_eventos_auditoria_accion", "accion"),
-                      CheckConstraint(SIGNED_OR_NONE, name=c.CK_SIGNED_OR_NONE.format(tabla="eventos_auditoria")))
+                      CheckConstraint(SIGNED_OR_NONE, name=c.CK_SIGNED_OR_NONE.format(tabla="eventos_auditoria")),
+                      CheckConstraint(f"length(hash_prev) = {c.HASH_HEX_LENGTH} AND length(hash_actual) = {c.HASH_HEX_LENGTH}",
+                                      name="ck_eventos_auditoria_hash_longitud"),
+                      CheckConstraint("secuencia >= 1", name="ck_eventos_auditoria_secuencia"))
 
     id: Mapped[int] = mapped_column(BIGINT_PK, primary_key=True, autoincrement=True)
     ts_utc: Mapped[datetime] = mapped_column(UTC_DATETIME)
-    usuario_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("usuarios.id", ondelete="SET NULL"))
+    secuencia: Mapped[int] = mapped_column(BigInteger, unique=True)   # 1, 2, 3...: entra en el hash y la firma
+    # Sin FK a propósito: el registro de auditoría no puede cambiar si se toca un usuario (se desactivan, no se borran).
+    usuario_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
     actor: Mapped[str] = mapped_column(String(c.DB_ACTOR_MAX))
-    accion: Mapped[AccionAuditoria] = mapped_column(Enum(AccionAuditoria, name="accion_auditoria"))
+    accion: Mapped[AccionAuditoria] = mapped_column(Enum(AccionAuditoria, name="accion_auditoria",
+                                                         values_callable=lambda e: [m.value for m in e]))
     recurso: Mapped[str | None] = mapped_column(String(c.DB_RESOURCE_MAX))
     detalle: Mapped[dict] = mapped_column(JSON_TYPE, default=dict)
     ip_hash: Mapped[str | None] = mapped_column(String(c.HASH_HEX_LENGTH))
