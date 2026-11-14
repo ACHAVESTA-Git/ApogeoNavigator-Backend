@@ -527,3 +527,58 @@ def get_cors_origins() -> list[str]:
 
 def get_cors_origin_regex() -> str | None:
     return os.getenv(ENV_CORS_ORIGIN_REGEX) or None
+
+# ---------------------------------------------------------------- análisis y proyección (Polars + numpy)
+# Periodos físicos de la Luna (días). La FFT de 6 meses no separa el anomalístico del dracónico (resolución
+# P²/T ≈ 4 d), así que el modelo los toma como constantes y la FFT solo los confirma y afina el sinódico.
+SYNODIC_MONTH_DAYS = 29.530589          # día lunar: de un amanecer al siguiente
+ANOMALISTIC_MONTH_DAYS = 27.554550      # libración en longitud (azimut de la Tierra)
+DRACONIC_MONTH_DAYS = 27.212221         # libración en latitud (elevación de la Tierra)
+ECLIPSE_YEAR_DAYS = 346.62              # inclinación del eje (~1,54°): estacionalidad del Sol en los polos
+KNOWN_PERIODS_DAYS = {"sinodico": SYNODIC_MONTH_DAYS, "anomalistico": ANOMALISTIC_MONTH_DAYS,
+                      "draconico": DRACONIC_MONTH_DAYS, "anio_de_eclipses": ECLIPSE_YEAR_DAYS}
+LUNAR_DAY_DAYS = SYNODIC_MONTH_DAYS
+FFT_PAD_FACTOR = 16                      # relleno de ceros para interpolar los picos
+FFT_TOP_PEAKS = 5
+FFT_MIN_PERIOD_DAYS = 2.0
+FFT_SYNODIC_BAND_DAYS = (24.0, 36.0)     # banda donde se busca el pico del mes sinódico
+FFT_MATCH_RESOLUTION_FRACTION = 0.5      # un pico "coincide" con un periodo conocido si dista < ½ P²/T
+HARMONIC_RIDGE = 1e-8                    # regularización relativa de los mínimos cuadrados
+SUN_SYNODIC_HARMONICS = 8                # k·f_sinódico, k = 1..8 (la elevación no es una senoide)
+SUN_SIDEBAND_HARMONICS = 2               # k·f_sinódico ± f_anomalístico para k = 1..2
+SUN_ANOMALISTIC_HARMONICS = 2
+EARTH_LIBRATION_HARMONICS = 1            # f_anomalístico y f_dracónico
+LONG_PERIOD_WINDOW_FRACTION = 0.5        # no se ajusta un periodo mayor que la mitad de la ventana
+PROJECTION_MIN_WINDOW_DAYS = 2 * SYNODIC_MONTH_DAYS
+REFINE_GRID_POINTS = 41
+REFINE_ITERATIONS = 4
+REFINE_HALF_BAND_DAYS = 0.6
+MONTH_DAYS = 30.4375                     # mes medio, para agrupar el error por meses de horizonte
+PROJECTION_MAX_DAYS = 366                # hasta dónde se proyecta tras el último dato
+PROJECTION_MONTHS_AHEAD = 12
+EVENT_MATCH_MAX_HOURS = 24.0             # una puesta proyectada solo empareja con una real a menos de 24 h
+ERRORS_FILENAME = "proyeccion_errores.json"
+ERRORS_VERSION = 1
+SIM_DEFAULT_DAYS = 30
+SIM_MIN_STEP_HOURS = 0.25
+SIM_MAX_STEP_HOURS = 24.0
+SIM_DEFAULT_STEP_HOURS = 1.0
+SIM_MAX_POINTS = 5000
+SIM_AZIMUTH_MAX_SUN_EL_DEG = 85.0        # con el Sol casi en el cénit el azimut gira de golpe y no se proyecta bien
+ORIGEN_DATOS = "datos"
+ORIGEN_PROYECCION = "proyeccion"
+ROUTE_SIMULACION = "/simulacion/{site_id}"
+ROUTER_TAG_SIMULACION = "simulacion"
+PARAM_PASO_HORAS = "paso_horas"
+KEY_PUNTOS = "puntos"
+KEY_FIN_DATOS = "fin_datos_utc"
+KEY_INCERTIDUMBRE = "incertidumbre_deg"
+KEY_AVISO = "aviso"
+MSG_SIM_BEFORE_DATA = "'desde' es anterior al primer dato disponible"
+MSG_SIM_BEYOND_PROJECTION = "'hasta' supera el máximo proyectable ({days} días tras el último dato)"
+MSG_SIM_STEP = "'paso_horas' debe estar entre {min:g} y {max:g}"
+MSG_SIM_TOO_MANY_POINTS = "El rango pedido da {points} puntos; el máximo es {max} (sube paso_horas o acorta el rango)"
+MSG_SIM_NOT_ENOUGH_DATA = "No hay datos suficientes para proyectar (se necesitan al menos {days:.0f} días)"
+MSG_SIM_WARNING = ("Los puntos con origen «proyeccion» son una estimación estadística, no efemérides físicas: "
+                   "sirven para explorar tendencias y animar el cielo. La incertidumbre sale de la validación contra Horizons.")
+MSG_SIM_AZIMUTH_WARNING = "Con el Sol cerca del cénit el azimut solar proyectado no es fiable."
