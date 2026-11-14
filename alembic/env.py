@@ -7,6 +7,7 @@ from sqlalchemy import create_engine, pool
 from app.core import config as app_config
 from app.db import models  # noqa: F401  (registra las tablas en Base.metadata)
 from app.db.base import Base
+from app.db.session import engine_options
 
 config = context.config
 if config.config_file_name is not None:
@@ -29,7 +30,9 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    engine = create_engine(_url(), poolclass=pool.NullPool)
+    url = _url()
+    options = {"connect_args": engine_options(url).get("connect_args", {})}
+    engine = create_engine(url, poolclass=pool.NullPool, **options)
     with engine.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
         with context.begin_transaction():
