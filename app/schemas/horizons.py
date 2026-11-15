@@ -5,8 +5,8 @@ from app.schemas.lectura import EphemerisRow, MetricsItem, SunsetsOut
 
 
 class HorizonsOut(BaseModel):
-    """Mismo formato que `/api/efemerides/{site_id}` (`site_id`, `inicio_utc`, `fin_utc`, `paso_horas`, `filas`) más la
-    posición consultada, la fuente, las métricas del rango y las puestas desde `inicio_utc`."""
+    """Same format as `/api/efemerides/{site_id}` (`site_id`, `inicio_utc`, `fin_utc`, `paso_horas`, `filas`) plus the
+    queried position, the source, the metrics of the range and the sunsets from `inicio_utc`."""
     site_id: str
     inicio_utc: str
     fin_utc: str
