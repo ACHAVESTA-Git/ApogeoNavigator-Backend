@@ -50,10 +50,14 @@ def _audit(tipo: str, result: ValidationResult, raw: bytes, accion: AccionAudito
         raise HTTPException(status_code=config.HTTP_UNAVAILABLE, detail=config.MSG_AUDIT_UNAVAILABLE) from None
 
 
+def _resumen(n: int) -> str:
+    return config.MSG_CSV_SUMMARY_ONE if n == 1 else config.MSG_CSV_SUMMARY_MANY.format(n=n)
+
+
 def _fail(result: ValidationResult, request: Request) -> JSONResponse:
     informe = result.report
     return respuesta_error(request, result.http_status, informe.model_dump(), codigo=config.CODE_CSV_INVALID,
-                           resumen=config.MSG_CSV_SUMMARY.format(n=informe.total_errores))
+                           resumen=_resumen(informe.total_errores))
 
 
 @router.post("/validar/{tipo}", response_model=Report, responses=RESPONSES, summary="Validate a CSV file without saving it (dry run)")

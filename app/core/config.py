@@ -764,7 +764,8 @@ MSG_VALIDATION_FIELDS = "Hay {n} campo(s) con valores no válidos: {campos}."
 MSG_VALIDATION_GENERIC = "La petición no tiene el formato esperado."
 MSG_STORE_ERROR_LOG = "[%s] Error del almacenamiento en %s %s (%s)"
 CODE_CSV_INVALID = "CSV_INVALIDO"
-MSG_CSV_SUMMARY = "El archivo tiene {n} error(es) de validación; el informe completo va en `detail`."
+MSG_CSV_SUMMARY_ONE = "El archivo tiene 1 error de validación."
+MSG_CSV_SUMMARY_MANY = "El archivo tiene {n} errores de validación."
 
 
 # ---------------------------------------------------------------- transparencia del análisis (GET /api/analisis/{site_id})
