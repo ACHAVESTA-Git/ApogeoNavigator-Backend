@@ -462,8 +462,8 @@ MSG_PROD_NEEDS_BUCKET = ("En producción hay que configurar DATA_BUCKET: el disc
 MSG_DB_UNAVAILABLE = "La base de datos no está disponible; inténtalo de nuevo en unos minutos"
 MSG_INTERNAL_ERROR = "Error interno"
 LOGGER_ERRORS = "apogeo.errores"
-MSG_UNHANDLED_LOG = "Error no controlado en %s %s"
-MSG_DB_ERROR_LOG = "Error de base de datos en %s %s (%s)"
+MSG_UNHANDLED_LOG = "[%s] Error no controlado en %s %s"
+MSG_DB_ERROR_LOG = "[%s] Error de base de datos en %s %s (%s)"
 UTC_FIELD_PATTERN = rf"^{UTC_RE.pattern}$"      # patrón anclado para campos UTC de los DTO
 MSG_BUCKET_UNAVAILABLE = "No se pudo acceder al almacenamiento de datos; no se guardó nada"
 MSG_DATA_CONFLICT = "Otro proceso modificó los datos a la vez; se recargó la versión vigente. Reintenta la carga"
@@ -558,11 +558,23 @@ ENV_CORS_ORIGINS = "CORS_ORIGINS"                 # lista separada por comas
 ENV_CORS_ORIGIN_REGEX = "CORS_ORIGIN_REGEX"       # p. ej. ^https://([a-z0-9-]+\.)?mi-proyecto\.pages\.dev$
 CORS_DEFAULT_ORIGINS = ("http://localhost:5173", "http://127.0.0.1:5173")
 CORS_ALLOW_METHODS = ("GET", "POST", "OPTIONS")
-CORS_ALLOW_HEADERS = (API_KEY_HEADER, "Content-Type")
+CORS_ALLOW_HEADERS = (API_KEY_HEADER, "Content-Type", "X-Request-ID")
 CORS_ALLOW_CREDENTIALS = False                    # nunca credenciales con orígenes comodín
 CORS_MAX_AGE_SECONDS = 600
 CORS_WILDCARD = "*"
 MSG_CORS_WILDCARD = "CORS_ORIGINS no admite «*»: lista los orígenes permitidos"
+
+
+ENV_TRUSTED_PROXY_HOPS = "TRUSTED_PROXY_HOPS"     # proxies de confianza delante de la app (Cloud Run directo: 1)
+DEFAULT_TRUSTED_PROXY_HOPS = 1
+
+
+def get_trusted_proxy_hops() -> int:
+    """Cuántas entradas del final de X-Forwarded-For añaden proxies propios (solo esas son fiables)."""
+    try:
+        return max(1, int(os.getenv(ENV_TRUSTED_PROXY_HOPS, DEFAULT_TRUSTED_PROXY_HOPS)))
+    except ValueError:
+        return DEFAULT_TRUSTED_PROXY_HOPS
 
 
 def get_cors_origins() -> list[str]:
@@ -578,6 +590,41 @@ def get_cors_origins() -> list[str]:
 
 def get_cors_origin_regex() -> str | None:
     return os.getenv(ENV_CORS_ORIGIN_REGEX) or None
+
+# ---------------------------------------------------------------- documentación OpenAPI (/docs)
+ROUTER_TAG_ANALISIS = "analisis"                # etiqueta de la transparencia del análisis (la usa OPENAPI_TAGS)
+ROUTER_TAG_SIMULACION = "simulacion"          # etiqueta de la simulación (declarada aquí porque OPENAPI_TAGS la usa)
+ROUTER_TAG_SIMULACION = "simulacion"          # etiquetas declaradas aquí porque OPENAPI_TAGS las usa
+ROUTER_TAG_HORIZONS = "horizons"
+TAG_SYSTEM = "sistema"
+TAG_SITES = "sitios"
+API_DESCRIPTION = """
+**Lunar Landing Site Navigator** answers one question for ten lunar landing sites: *where are the Sun and the Earth in the
+sky, hour by hour?* Built by Apogeo Team for the NASA Space Apps Challenge 2026.
+
+* **Data:** hourly Sun and Earth azimuth and elevation from **NASA/JPL Horizons** (observer on the Moon, DE441, no refraction),
+  2026-12-01 to 2027-06-01. Site coordinates come from NSSDC, LROC and NASA/LRO. NASA does not endorse this project.
+* **Time:** every timestamp is **UTC** in the form `YYYY-MM-DDTHH:MMZ` (no seconds). Angles are in degrees; elevation is measured
+  against the *ideal* horizon (a smooth Moon, no terrain).
+* **Reading** (`lectura`, `sitios`, `seguridad`) is public. **Uploads and the audit log** need the `X-API-Key` header;
+  the key manager (`admin-claves`) needs the administration key.
+* **Errors** are JSON `{"detail": ...}`: a text, a list (request validation) or a CSV report (rejected uploads).
+"""
+OPENAPI_TAGS = [
+    {"name": TAG_SYSTEM, "description": "Service health."},
+    {"name": TAG_SITES, "description": "Catalogue of the ten landing sites with their coordinates and NASA source."},
+    {"name": ROUTER_TAG_LECTURA, "description": "Ephemerides, sunlight and Earth-visibility metrics with a traffic light, and next sunset/sunrise."},
+    {"name": ROUTER_TAG_HORIZONS, "description": "Sun and Earth azimuth and elevation for custom coordinates, queried live from NASA/JPL Horizons."},
+    {"name": ROUTER_TAG_SIMULACION, "description": "Sky simulation: real data inside the range and a statistical projection beyond it (with its uncertainty)."},
+    {"name": ROUTER_TAG_ANALISIS, "description": "Analysis transparency: how a site's data is analysed, step by step (input origin and quality, "
+                                                  "FFT spectrum, harmonic model, validation against Horizons and known limitations)."},
+    {"name": ROUTER_TAG, "description": "Validate and upload CSV data (`X-API-Key`). Strict validation, atomic save, audited."},
+    {"name": ROUTER_TAG_SECURITY, "description": "Public ML-DSA-65 key and the signed manifest of the data files, for independent verification."},
+    {"name": ROUTER_TAG_AUDIT, "description": "Hash-chained, signed audit log of validations and uploads (`X-API-Key`)."},
+    {"name": KEYS_ROUTER_TAG, "description": "Per-user key manager: generate, revoke and rotate ML-KEM/ML-DSA key pairs (administration key)."},
+]
+API_CONTACT = {"name": "Apogeo Team", "url": "https://github.com/ACHAVESTA-Git/ApogeoNavigator-Backend"}
+API_LICENSE = {"name": "MIT", "url": "https://opensource.org/license/mit"}
 
 # ---------------------------------------------------------------- análisis y proyección (Polars + numpy)
 # Periodos físicos de la Luna (días). La FFT de 6 meses no separa el anomalístico del dracónico (resolución
@@ -662,7 +709,6 @@ SIM_AZIMUTH_MAX_SUN_EL_DEG = 85.0        # con el Sol casi en el cénit el azimu
 ORIGEN_DATOS = "datos"
 ORIGEN_PROYECCION = "proyeccion"
 ROUTE_SIMULACION = "/simulacion/{site_id}"
-ROUTER_TAG_SIMULACION = "simulacion"
 PARAM_PASO_HORAS = "paso_horas"
 KEY_PUNTOS = "puntos"
 KEY_FIN_DATOS = "fin_datos_utc"
@@ -687,3 +733,209 @@ SIM_COS_FLOOR = 1e-6                     # evita dividir por cero justo en el c�
 KEY_AZIMUT_FIABLE = "azimut_solar_fiable"
 MSG_SIM_AZIMUTH_POINTS = ("En {n} de {total} puntos proyectados el Sol está a más de {deg:g}° de elevación (cénit) o por debajo de "
                           "−{deg:g}° (nadir): su azimut es poco fiable y su incertidumbre es grande.")
+
+# ---------------------------------------------------------------- respuestas HTTP estandarizadas y logs
+REQUEST_ID_HEADER = "X-Request-ID"
+REQUEST_ID_RE = r"[A-Za-z0-9._-]{8,64}"           # un X-Request-ID del cliente solo se reutiliza si cumple esto
+REQUEST_ID_BYTES = 5                              # 5 bytes -> 10 caracteres hexadecimales
+ERROR_TS_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+CONTEXT_MISSING = "(no válido)"
+CONTEXT_SAFE_ID_RE = r"[A-Za-z0-9_-]{1,60}"          # solo se cita del cliente lo que parece un identificador
+LOGGER_ROOT = "apogeo"
+LOGGER_ACCESS = "apogeo.acceso"
+ENV_LOG_FORMAT = "LOG_FORMAT"                     # texto | json
+ENV_LOG_LEVEL = "LOG_LEVEL"
+LOG_FORMATS = ("texto", "json")
+DEFAULT_LOG_FORMAT = "texto"
+DEFAULT_LOG_LEVEL = "INFO"
+LOG_TS_FORMAT = ERROR_TS_FORMAT
+LOG_PATH_MAX = 200                                # recorte de la ruta en la línea de log
+UNSAFE_CHAR_CATEGORIES = ("Cc", "Cf", "Zl", "Zp")  # controles, formato (bidi, ancho cero) y separadores de línea
+LOG_ESCAPES = {"\r": "\\r", "\n": "\\n", "\t": "\\t", "\x7f": "\\x7f"}
+LOG_QUIET_STATUSES = (401, 404)                   # son normales: se registran en INFO y no en WARNING
+RETRY_AFTER_HEADER = "Retry-After"
+CORS_EXPOSE_HEADERS = (REQUEST_ID_HEADER, RETRY_AFTER_HEADER)    # el frontend de otro origen puede leerlos
+VALIDATION_LOC_NOISE = ("query", "path", "body", "header", "cookie")
+MSG_VALIDATION_FIELDS = "Hay {n} campo(s) con valores no válidos: {campos}."
+MSG_VALIDATION_GENERIC = "La petición no tiene el formato esperado."
+MSG_STORE_ERROR_LOG = "[%s] Error del almacenamiento en %s %s (%s)"
+CODE_CSV_INVALID = "CSV_INVALIDO"
+MSG_CSV_SUMMARY = "El archivo tiene {n} error(es) de validación; el informe completo va en `detail`."
+
+
+# ---------------------------------------------------------------- transparencia del análisis (GET /api/analisis/{site_id})
+ROUTE_ANALISIS = "/analisis/{site_id}"
+PARAM_VARIABLE = "variable"
+CACHE_KIND_ANALYSIS = "analisis"
+CACHE_KIND_MANIFEST = "manifiesto"
+CACHE_KIND_SHA3 = "sha3"
+ANALISIS_DEFAULT_VARIABLE = "sol_el_deg"                 # variable de la serie «observado, ajustado y proyectado»
+ANALISIS_SERIES_POINTS = 300                              # puntos como mucho de la serie para graficar (submuestreada)
+ANALISIS_DEFAULT_PROJECTION_DAYS = 90                     # sin `hasta`: los datos y 90 días de proyección
+ANALISIS_SPECTRUM_PEAKS = 5
+RESIDUAL_ROUND = ROUND_DEG
+ORIGIN_NASA_SEED, ORIGIN_UPLOADED, ORIGIN_MODIFIED, ORIGIN_UNRECORDED = "semilla_nasa", "subido", "modificado", "sin_registro"
+UPLOADER_API_KEY, UPLOADER_USER, UPLOADER_ANONYMOUS = "clave de API", "usuario registrado", "anónimo"
+STEP_OK, STEP_UNAVAILABLE, STEP_WARNING = "ok", "no_disponible", "advertencia"
+KEY_SUMMARY = "resumen"                                   # bloque extra de cada sitio en proyeccion_errores.json
+KEY_DATA_SHA3 = "datos_sha3_256"
+KEY_TRAINING = "entrenamiento"
+KEY_VALIDATION_PERIOD = "validacion"
+KEY_ROWS = "filas"
+KEY_START, KEY_END = "inicio", "fin"
+SPECTRUM_SERIES = (("sol_el_deg", "Elevación del Sol"), ("tierra_az_deg", "Azimut de la Tierra"))
+ROLE_SUN_HARMONIC = "armónico {k} del mes sinódico"
+ROLE_ANOMALISTIC = "mes anomalístico (libración en longitud)"
+ROLE_ANOMALISTIC_2 = "2.º armónico del mes anomalístico"
+ROLE_SIDEBAND = "banda lateral {k}·sinódico {sign} anomalístico (incluye el batido de ~411 días)"
+ROLE_DRACONIC = "mes dracónico (libración en latitud)"
+ROLE_VARIATION = "variación lunar: 2·sinódico"
+ROLE_EVECTION = "evección: 2·sinódico {sign} anomalístico"
+ROLE_FALLBACK = "combinación de periodos lunares"
+DESC_VALIDATION_CURRENT = ("El modelo, entrenado solo con estos datos, predijo 12 meses que luego se compararon con los de JPL "
+                           "Horizons.")
+DESC_VALIDATION_STALE = ("Estas cifras son de otra validación: se entrenó con los datos de la semilla y no con los tuyos. Con tus datos "
+                         "el modelo todavía no se ha comparado con JPL Horizons.")
+DESC_VALIDATION_MISSING = "No hay una validación contra JPL Horizons de este sitio."
+DESC_PROJECTION_CURRENT = "El modelo se extiende más allá del último dato, con la incertidumbre medida en esa validación."
+DESC_PROJECTION_STALE = ("El modelo se extiende más allá del último dato. La incertidumbre mostrada es de referencia (de la validación "
+                         "con otros datos): con tus datos puede ser mayor.")
+DESC_PROJECTION_MISSING = "El modelo se extiende más allá del último dato, pero sin incertidumbre medida para este sitio."
+ANALISIS_STEPS = (
+    ("carga", "Carga del archivo", "Se lee el CSV de efemérides del sitio, con la misma lectura segura que usa la carga de datos."),
+    ("validacion_csv", "Validación del archivo", "Se comprueba el estándar de CSV: cabecera, tipos, rangos, fechas en UTC, paso constante y saltos físicos."),
+    ("features", "Cálculo de características con Polars",
+     "Se miden las ventanas de luz solar y de Tierra visible, las horas de Sol por día lunar y la libración."),
+    ("fft", "Búsqueda de periodicidades (FFT)",
+     "Una transformada de Fourier busca los ritmos de la serie; el más fuerte es el mes sinódico, de unos 29,5 días."),
+    ("ajuste", "Ajuste del modelo armónico",
+     "Se ajusta una suma de senos y cosenos con los periodos lunares. Su R² mide cuánto explica de estos datos; "
+     "no mide cuánto acierta fuera de ellos (eso lo mide la validación)."),
+    ("validacion_horizons", "Validación contra Horizons", DESC_VALIDATION_CURRENT),   # el texto real depende de la vigencia
+    ("proyeccion", "Proyección", DESC_PROJECTION_CURRENT),
+)
+LIMIT_IDEAL_HORIZON = "horizonte_ideal"
+LIMIT_NOT_EPHEMERIS = "no_sustituye_efemerides"
+LIMIT_SHORT_WINDOW = "ventana_corta"
+LIMIT_POLAR_SUN = "sol_rasante_polo"
+LIMIT_ZENITH = "cenit_ecuador"
+LIMIT_NOT_BLIND = "validacion_no_ciega"
+LIMIT_STALE_VALIDATION = "validacion_de_otros_datos"
+LIMITS_TEXT = {
+    LIMIT_IDEAL_HORIZON: "Horizonte ideal: se supone una Luna lisa. El relieve real (montañas, cráteres) puede tapar un Sol bajo.",
+    LIMIT_NOT_EPHEMERIS: "La proyección es una estimación estadística y no sustituye a las efemérides físicas de Horizons.",
+    LIMIT_SHORT_WINDOW: ("La ventana de datos es de {days:.0f} días, menos que el año de eclipses ({year:.1f} d): los ciclos largos "
+                         "no se pueden identificar y el modelo no los ajusta."),
+    LIMIT_POLAR_SUN: "Sol rasante: si el Sol no supera 3° de elevación, un error de 1° cambia el resultado y las puestas casi no se predicen.",
+    LIMIT_ZENITH: "Sol cerca del cénit: el azimut solar gira de golpe y su proyección no es fiable.",
+    LIMIT_NOT_BLIND: "Se descartaron versiones del modelo mirando el error de validación: las cifras no son una prueba ciega estricta.",
+    LIMIT_STALE_VALIDATION: "Estos datos no son los de la validación: sus errores son de referencia y no se han medido con tus datos.",
+}
+MSG_ANALYSIS_VARIABLE = "'variable' debe ser una de: {values}"
+MSG_ANALYSIS_NO_VALIDATION = "Este sitio no tiene validación contra Horizons"
+MSG_ANALYSIS_ZERO_VARIANCE = "La serie es constante: el R² no está definido"
+DESC_ORIGIN = {
+    ORIGIN_NASA_SEED: "El archivo es idéntico a la semilla del proyecto, generada con JPL Horizons.",
+    ORIGIN_UPLOADED: "El archivo coincide con la última carga guardada por un usuario.",
+    ORIGIN_MODIFIED: "El archivo difiere de la semilla y no coincide con ninguna carga registrada: se subió sin registro o se editó a mano.",
+    ORIGIN_UNRECORDED: "No hay semilla ni registro de cargas con los que comparar: solo se puede dar la huella del archivo.",
+}
+UNIT_ROWS, UNIT_BYTES, UNIT_HOURS, UNIT_DAYS, UNIT_DEG, UNIT_PCT, UNIT_MONTHS, UNIT_TERMS, UNIT_NONE = (
+    "filas", "bytes", "h", "días", "°", "%", "meses", "términos", "")
+LBL_ROWS, LBL_BYTES = "Filas leídas", "Tamaño del archivo"
+LBL_VALID_ROWS, LBL_ERROR_ROWS, LBL_GAPS = "Filas válidas", "Filas con error", "Huecos de tiempo"
+LBL_STEP_H, LBL_RANGE_DAYS = "Paso entre filas", "Rango cubierto"
+LBL_SUN_WINDOWS, LBL_SUN_WINDOW_MEAN = "Ventanas de Sol completas", "Duración media de una ventana de Sol"
+LBL_LUNAR_DAYS, LBL_SUN_HOURS_DAY = "Días lunares completos", "Horas de Sol por día lunar (media)"
+LBL_LIB_AZ, LBL_LIB_EL = "Oscilación de la Tierra en azimut", "Oscilación de la Tierra en elevación"
+LBL_PEAK_PERIOD, LBL_PEAK_AMPLITUDE = "Periodo del pico más fuerte", "Amplitud relativa del pico más fuerte"
+LBL_SYNODIC_PEAK, LBL_RESOLUTION = "Pico del mes sinódico (elevación del Sol)", "Resolución de la FFT en el mes sinódico"
+LBL_SYNODIC_REFINED, LBL_TERMS = "Mes sinódico afinado", "Términos del modelo (cos y sen)"
+LBL_R2_MEAN, LBL_RMSE_FIT = "R² medio del ajuste", "RMSE medio del ajuste dentro de los datos"
+LBL_RMSE_SUN_EL, LBL_RMSE_EARTH_AZ = "RMSE de la elevación del Sol", "RMSE del azimut de la Tierra"
+LBL_TRAFFIC_HITS, LBL_EVENT_MAE = "Meses con el semáforo bien predicho", "Error medio de las puestas del Sol"
+LBL_UNC_FIRST, LBL_UNC_LAST = "Incertidumbre del mes 1 (elevación del Sol)", "Incertidumbre del mes 12 (elevación del Sol)"
+LBL_PROJECTABLE = "Meses proyectables"
+LBL_VALID_STALE = "Validación vigente"
+PROJECTION_BODY_NAMES = {KEY_SOL: "Sol", KEY_TIERRA: "Tierra"}
+ANALISIS_SPECTRUM_NOTE = ("Con la ventana de datos disponible, la FFT no separa el mes sinódico (29,53 d) del anomalístico "
+                          "(27,55 d) ni del dracónico (27,21 d): por eso el modelo toma esos periodos físicos y la FFT solo los confirma.")
+ANALISIS_VARIABLE_NAMES = {COL_SOL_AZ: "Azimut del Sol", COL_SOL_EL: "Elevación del Sol",
+                           COL_TIERRA_AZ: "Azimut de la Tierra", COL_TIERRA_EL: "Elevación de la Tierra"}
+MSG_ANALYSIS_BEFORE_DATA = "'desde' es anterior al primer dato disponible"
+KEY_MANIFEST_FILES, KEY_MANIFEST_NAME, KEY_MANIFEST_GENERATED = "archivos", "nombre", "generado_utc"   # forma de data/manifest.json
+MSG_MANIFEST_UNVERIFIABLE = "No se pudo verificar la firma del manifiesto: este servidor no tiene la clave pública de firma."
+MSG_MANIFEST_NO_VERIFY_DETAIL = "La firma del manifiesto no es válida: {problems}"
+NOTE_FIT_IN_SAMPLE = ("R² y residuos son del ajuste DENTRO de los datos, que el modelo ya ha visto: pueden acercarse a 1 y no miden "
+                      "cuánto acierta fuera de ellos. Eso lo mide la validación (validacion.rmse_deg).")
+# ---------------------------------------------------------------- Horizons en vivo: coordenadas propias (app/services/horizons.py)
+ROUTE_HORIZONS = "/horizons"
+PARAM_LAT = "lat"
+PARAM_LON = "lon"
+HORIZONS_URL = "https://ssd.jpl.nasa.gov/api/horizons.api"
+HORIZONS_SOURCE = "NASA/JPL Horizons"
+HORIZONS_USER_AGENT = "ApogeoNavigator/1.0 (NASA Space Apps 2026; proyecto abierto)"   # genérico: sin datos personales
+HORIZONS_TIMEOUT_S = 20.0
+HORIZONS_CONNECT_TIMEOUT_S = 5.0
+HORIZONS_RETRIES = 1                      # reintentos tras el primer intento (timeouts, caídas de red y 5xx de JPL)
+HORIZONS_RETRY_BACKOFF_S = 0.5
+HORIZONS_RETRY_STATUS = (500, 502, 503, 504)
+HORIZONS_BODY_SUN = "10"
+HORIZONS_BODY_EARTH = "399"
+HORIZONS_CENTER = "coord@301"             # observador en la superficie de la Luna (301)
+HORIZONS_COORD_TYPE = "GEODETIC"
+HORIZONS_QUANTITIES = "4"                 # azimut y elevación aparentes
+HORIZONS_SOE = "$$SOE"
+HORIZONS_EOE = "$$EOE"
+HORIZONS_HEADER_MOON = "Center body name: Moon (301)"
+HORIZONS_HEADER_AIRLESS = "Atmos refraction: NO (AIRLESS)"
+HORIZONS_TIME_FORMAT = "%Y-%m-%d %H:%M"
+HORIZONS_MONTHS = {"Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6,
+                   "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12}
+HORIZONS_STEP_MIN_H = 1                   # paso mínimo: 1 h (la API no es para alta resolución)
+HORIZONS_STEP_MAX_H = 24
+HORIZONS_STEP_DEFAULT_H = 1
+HORIZONS_MIN_YEAR = 1900
+HORIZONS_MAX_YEAR = 2100
+HORIZONS_COORD_DECIMALS = 4               # ≈ 3 m en la Luna: dos consultas casi iguales comparten caché
+HORIZONS_CACHE_TTL_S = 86_400             # las efemérides no cambian: 24 h
+HORIZONS_CACHE_MAX_ENTRIES = 64
+HORIZONS_MAX_CONCURRENT = 2               # consultas simultáneas a JPL
+HORIZONS_GATE_WAIT_S = 5.0                # cuánto espera una petición un hueco antes de responder 503 (no bloquea hilos)
+HORIZONS_GATE_RETRY_AFTER_S = 5
+HORIZONS_MAX_RESPONSE_BYTES = 2_000_000   # tope de lo que se lee de JPL (ya descomprimido); una consulta normal pesa < 100 KB
+HORIZONS_HEADER_COLUMNS = ("Azi_(a-app)", "Elev_(a-app)")   # columnas que Horizons rotula con QUANTITIES=4
+HORIZONS_RATE_GLOBAL = (30, 60.0)         # consultas en vivo por ventana (segundos), entre todos los clientes
+HORIZONS_RATE_CLIENT = (6, 60.0)          # ídem por cliente (según X-Forwarded-For o el socket)
+HORIZONS_RATE_MAX_KEYS = 10_000           # clientes distintos que recuerda el limitador (los más antiguos se expulsan)
+HORIZONS_RETRY_AFTER_HEADER = RETRY_AFTER_HEADER
+HORIZONS_LOGGER = "apogeo.horizons"
+HORIZONS_LOG_SNIPPET_CHARS = 160           # cuánto de una respuesta rara de JPL va al log (nunca al cliente)
+CUSTOM_SITE_ID = "personalizado"
+HTTP_TOO_MANY_REQUESTS = 429
+HTTP_BAD_GATEWAY = 502
+HTTP_GATEWAY_TIMEOUT = 504
+KEY_FUENTE = "fuente"
+KEY_EN_CACHE = "en_cache"
+KEY_CONSULTA_UTC = "consultado_utc"
+KEY_METRICAS = "metricas"
+KEY_PUESTAS = "puestas"
+ORIGEN_HORIZONS = "horizons_en_vivo"
+DESC_TOO_MANY = "Demasiadas consultas en vivo a JPL Horizons"
+DESC_BAD_GATEWAY = "JPL Horizons falló o devolvió algo inesperado"
+DESC_GATEWAY_TIMEOUT = "JPL Horizons tardó demasiado en responder"
+MSG_HORIZONS_YEARS = "Las fechas deben estar entre los años {min} y {max}"
+MSG_HORIZONS_TOO_MANY = "Hay demasiadas consultas en vivo a JPL Horizons; espera {seconds} s y reintenta"
+MSG_HORIZONS_TIMEOUT = "JPL Horizons tardó demasiado en responder; reduce el rango de fechas o reintenta en unos minutos"
+MSG_HORIZONS_FAILED = "JPL Horizons no está disponible ahora; reintenta en unos minutos"
+MSG_HORIZONS_UNEXPECTED = "JPL Horizons devolvió una respuesta que no se pudo interpretar; reintenta en unos minutos"
+MSG_HORIZONS_BUSY = "El servicio de consultas en vivo está ocupado; reintenta en {seconds} s"
+MSG_HORIZONS_NOT_MOON = "JPL Horizons no calculó la posición desde la superficie de la Luna sin refracción; no se devuelven datos"
+MSG_HORIZONS_LOG_FAILED = "JPL Horizons: fallo %s en la consulta de %s"
+MSG_HORIZONS_BAD_ROW_LOG = "fila de efemérides ilegible"
+MSG_HORIZONS_LOG_REJECTED = "JPL Horizons rechazó la consulta de %s: %s"
+NOTE_FIT_IN_SAMPLE_DOC = ("In-sample fit: the model has already seen these data, so R² can approach 1. It does not measure how well the "
+                         "model predicts beyond them; that is validacion.rmse_deg.")
+AVISO_INCERTIDUMBRE_OTROS_DATOS = "incertidumbre_de_otros_datos"
+MSG_SIM_STALE_UNCERTAINTY = ("La incertidumbre mostrada viene de la validación con los datos de la semilla, no con los datos actuales de "
+                             "este sitio (se subieron o cambiaron): es de referencia y con tus datos puede ser mayor.")

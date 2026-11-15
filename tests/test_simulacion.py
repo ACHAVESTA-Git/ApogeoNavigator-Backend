@@ -120,13 +120,13 @@ def _with_errors_file(monkeypatch, tmp_path, content: str | None):
 def test_tabla_de_errores_corrupta_da_503_con_detail(api, monkeypatch, tmp_path, content):
     _with_errors_file(monkeypatch, tmp_path, content)
     response = get(api, desde="2027-06-02T00:00Z", hasta="2027-06-03T00:00Z")
-    assert response.status_code == 503 and response.json() == {"detail": c.MSG_SIM_ERRORS_INVALID}
+    assert response.status_code == 503 and response.json()["detail"] == c.MSG_SIM_ERRORS_INVALID
 
 
 def test_tabla_de_errores_ausente_da_503(api, monkeypatch, tmp_path):
     _with_errors_file(monkeypatch, tmp_path, None)
     response = get(api, desde="2027-06-02T00:00Z", hasta="2027-06-03T00:00Z")
-    assert response.status_code == 503 and response.json() == {"detail": c.MSG_SIM_ERRORS_MISSING}
+    assert response.status_code == 503 and response.json()["detail"] == c.MSG_SIM_ERRORS_MISSING
 
 
 def test_la_tabla_de_errores_no_hace_falta_si_todo_es_dato_real(api, monkeypatch, tmp_path):

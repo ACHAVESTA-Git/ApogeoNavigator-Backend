@@ -79,7 +79,7 @@ Verdad de terreno: `scripts/datos/validacion/horizons_verdad.parquet` (2027-06-0
 
 ![Proyección frente a la verdad](img/proyeccion_vs_verdad.png)
 
-**Revisión de datos: APROBADA, y reproducible.** Una verificación independiente (el agente revisor) confirmó el esquema y la continuidad del Parquet (la primera fila de cada sitio es idéntica a la última de los datos de entrenamiento), 16 consultas propias a Horizons sin diferencias, y recalculó el error con su propio código con el mismo resultado hasta el 4.º decimal. Las comprobaciones están en un script que cualquiera puede repetir; imprime una línea por comprobación y termina con `APROBADO` (código 0) o `CORREGIR` (código 1):
+**Revisión de datos: APROBADA, y reproducible.** Una verificación independiente (la revisión de datos) confirmó el esquema y la continuidad del Parquet (la primera fila de cada sitio es idéntica a la última de los datos de entrenamiento), 16 consultas propias a Horizons sin diferencias, y recalculó el error con su propio código con el mismo resultado hasta el 4.º decimal. Las comprobaciones están en un script que cualquiera puede repetir; imprime una línea por comprobación y termina con `APROBADO` (código 0) o `CORREGIR` (código 1):
 
 ```bash
 python scripts/datos/revisar_validacion.py              # esquema, filas, paso de 1 h, rangos, saltos, continuidad con los CSV y tabla de errores
@@ -146,16 +146,17 @@ Excluye el azimut solar de Apolo 11. El error **no crece de forma monótona**: o
 - Devuelve una serie de azimut y elevación del Sol y de la Tierra para animar el cielo.
 - Dentro del rango de datos cada punto lleva `"origen": "datos"` (los datos reales, interpolados si el paso no coincide). Después del último dato, y hasta 366 días, `"origen": "proyeccion"` con `incertidumbre_deg`: el **RMSE de validación** de ese sitio y variable para el mes de horizonte del punto. No es un intervalo de confianza, pero **2× esa cifra cubre el 98–100 % de los puntos** (medido contra Horizons, 14 640 puntos por variable; `1×` cubre el 54–87 %). En los azimuts la cifra se calcula **por punto**: el error de dirección del cuerpo, escalado por 1/cos de la elevación del punto (tope de 180°), porque cerca del cénit o del nadir el azimut falla mucho más. Cada punto trae además `azimut_solar_fiable` (`false` con el Sol a más de 70° de elevación o por debajo de −70°) y el aviso `azimut_solar_cenit` cuenta cuántos puntos pedidos están en ese caso. La tabla (`app/analysis/proyeccion_errores.json`) viaja con el código y no con `data/`, porque en producción solo se sincronizan los CSV y el manifiesto.
 - Límites en `config.py`: paso de 0,25 a 24 h, **9000 puntos como máximo** y 30 días por defecto. Un año a paso de 1 h son 8785 puntos (≈ 75 ms y 2 MiB) y cabe; un rango mayor (por ejemplo datos más proyección a 1 h) da un 422 que dice el máximo y pide subir `paso_horas` o acortar el rango. Errores `{"detail"}`: 404 sitio o archivo inexistente, 422 rango o paso no válidos, 503 datos inválidos.
-- Avisos: `proyeccion_estadistica` siempre que haya puntos proyectados; `azimut_solar_cenit` si el Sol supera los 85° (Apolo 11); y `sin_incertidumbre` si el sitio no está en la tabla de errores (nunca se devuelve `null` en silencio). Si la tabla falta o está corrupta, la API responde 503 con `{"detail"}`.
+- Avisos: `proyeccion_estadistica` siempre que haya puntos proyectados; `azimut_solar_cenit` si el Sol supera los 85° (Apolo 11); y `sin_incertidumbre` si el sitio no está en la tabla de errores (nunca se devuelve `null` en silencio). Si el CSV del sitio no es el que se validó (un usuario subió efemérides nuevas), añade `incertidumbre_de_otros_datos`: la incertidumbre es de referencia y con esos datos puede ser mayor. Se decide con la misma huella SHA3-256 que usa la transparencia del análisis (`lectura.file_sha3` y `simulacion.validation_is_current`). Si la tabla falta o está corrupta, la API responde 503 con `{"detail"}`.
 - El modelo se ajusta una vez por archivo (menos de 0,1 s) y se guarda en la caché por `mtime` de `services/lectura.py`, así que se reajusta solo cuando se sube un CSV nuevo.
 - Si cambian los datos hay que regenerar la tabla de errores con `scripts/datos/analizar_proyeccion.py`; una prueba comprueba que está al día.
+- **Transparencia del análisis:** `GET /api/analisis/{site_id}` enseña al usuario cómo se analizan sus datos (los siete pasos, el origen y la calidad de la entrada, el espectro, el modelo, la validación y sus límites). Para saber si la validación vale para los datos actuales, la tabla guarda la huella SHA3-256 de los CSV de entrenamiento: si un usuario sube efemérides nuevas, la validación pasa a `vigente: false`. Contrato en `docs/api/analisis-transparencia.md`.
 
 ## 7. Hallazgos para el pitch
 1. **El cielo lunar es un reloj, y se puede animar con datos reales.** Un día lunar son 29,53 días: ≈14,8 días de Sol y otros tantos de noche en casi todos los sitios.
 2. **Shackleton tiene estaciones.** Cinco meses de Sol continuo (agosto–diciembre 2027) y otros cinco de casi oscuridad (marzo–julio de 2027), por la inclinación de solo 1,54° del eje lunar. Es la base de elegir un sitio y una fecha (HU-08).
 3. **La Tierra baila en el cielo.** Su azimut oscila entre 11° y 38° y su elevación entre 10° y 20°. En el polo eso la hace salir y ponerse cada mes, con solo el 39–57 % de visibilidad.
 4. **La cara oculta nunca ve la Tierra** (Chang'e 4 y 6): dependen de un satélite de enlace.
-5. **Predecir con honestidad:** un modelo armónico simple acierta la libración con 0,3–1,1° de error medio a 12 meses y el semáforo en 118 de 120 meses, pero falla donde la física es delicada (Sol en el cénit, Sol rasante en el polo). Por eso la API entrega la incertidumbre de cada punto.
+5. **Predecir con honestidad:** un modelo armónico simple acierta la libración con un RMSE de 0,3–1,1° a 12 meses y el semáforo en 118 de 120 meses, pero falla donde la física es delicada (Sol en el cénit, Sol rasante en el polo). Por eso la API entrega la incertidumbre de cada punto.
 
 ## 8. Limitaciones
 - **No sustituye a las efemérides físicas.** Horizons es la fuente; la proyección sirve para explorar tendencias y animar. No debe usarse para decidir una operación.
@@ -172,6 +173,6 @@ Excluye el azimut solar de Apolo 11. El error **no crece de forma monótona**: o
 ```bash
 pip install -r requirements.txt -r scripts/datos/requirements.txt
 python scripts/datos/descargar_validacion.py     # verdad de Horizons (Parquet, ~1 min)
-python scripts/datos/analizar_proyeccion.py      # tabla de errores, resultados.json y gráficos
+python scripts/datos/analizar_proyeccion.py      # tabla de errores, resultados.json y gráficos (--sin-graficos: solo las tablas)
 pytest tests/test_analisis_pipeline.py tests/test_analisis_ajuste.py tests/test_analisis_validacion.py tests/test_simulacion.py
 ```

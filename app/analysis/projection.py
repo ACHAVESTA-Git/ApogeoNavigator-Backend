@@ -32,19 +32,32 @@ FA = 1.0 / c.ANOMALISTIC_MONTH_DAYS
 FD = 1.0 / c.DRACONIC_MONTH_DAYS
 
 
-def sun_frequencies(f_synodic: float) -> list[float]:
-    freqs = [k * f_synodic for k in range(1, c.SUN_SYNODIC_HARMONICS + 1)]
-    freqs += [m * FA for m in range(1, c.SUN_ANOMALISTIC_HARMONICS + 1)]
-    freqs += [k * f_synodic + sign * FA for k in range(1, c.SUN_SIDEBAND_HARMONICS + 1) for sign in (1, -1)]
-    return freqs
+def sun_terms(f_synodic: float) -> list[tuple[float, str]]:
+    """Términos del modelo del Sol: (frecuencia en ciclos/día, papel físico en lenguaje claro)."""
+    terms = [(k * f_synodic, c.ROLE_SUN_HARMONIC.format(k=k)) for k in range(1, c.SUN_SYNODIC_HARMONICS + 1)]
+    terms += [(m * FA, c.ROLE_ANOMALISTIC if m == 1 else c.ROLE_ANOMALISTIC_2)
+              for m in range(1, c.SUN_ANOMALISTIC_HARMONICS + 1)]
+    terms += [(k * f_synodic + sign * FA, c.ROLE_SIDEBAND.format(k=k, sign="+" if sign > 0 else "−"))
+              for k in range(1, c.SUN_SIDEBAND_HARMONICS + 1) for sign in (1, -1)]
+    return terms
 
 
-def earth_frequencies() -> list[float]:
+def earth_terms() -> list[tuple[float, str]]:
     """Libración: anomalístico (longitud), dracónico (latitud), la «variación» 2·f_sinódico y la «evección»
     2·f_sinódico ± f_anomalístico, con los periodos físicos conocidos. Elegido por validación cruzada dentro
     de los datos de entrenamiento, no con la verdad de terreno."""
     f_syn = 1.0 / c.SYNODIC_MONTH_DAYS
-    return [FA, FD, 2 * FA, 2 * f_syn, 2 * f_syn + FA, abs(2 * f_syn - FA)]
+    return [(FA, c.ROLE_ANOMALISTIC), (FD, c.ROLE_DRACONIC), (2 * FA, c.ROLE_ANOMALISTIC_2),
+            (2 * f_syn, c.ROLE_VARIATION), (2 * f_syn + FA, c.ROLE_EVECTION.format(sign="+")),
+            (abs(2 * f_syn - FA), c.ROLE_EVECTION.format(sign="−"))]
+
+
+def sun_frequencies(f_synodic: float) -> list[float]:
+    return [freq for freq, _ in sun_terms(f_synodic)]
+
+
+def earth_frequencies() -> list[float]:
+    return [freq for freq, _ in earth_terms()]
 
 
 SUN, EARTH = c.KEY_SOL, c.KEY_TIERRA

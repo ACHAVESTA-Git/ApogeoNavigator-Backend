@@ -6,9 +6,11 @@ Escribe:
   * scripts/datos/validacion/resultados.json  resultados completos (exploración + validación)
   * docs/datos/img/*.png                      gráficos del informe (matplotlib, solo en este script)
 
-Uso (desde la raíz del backend):  python scripts/datos/analizar_proyeccion.py
+Uso (desde la raíz del backend):  python scripts/datos/analizar_proyeccion.py [--sin-graficos]
+  --sin-graficos  regenera solo las tablas JSON (no vuelve a dibujar los PNG de docs/datos/img)
 Requiere scripts/datos/validacion/horizons_verdad.parquet (python scripts/datos/descargar_validacion.py).
 """
+import hashlib
 import json
 import os
 import sys
@@ -177,6 +179,17 @@ def fig_traffic(results: dict) -> None:
 
 
 # ------------------------------------------------------------------ principal
+def summary(site_id: str, result: dict) -> dict:
+    """Bloque `resumen` de la tabla de la API: qué datos se validaron y los resultados que la sección de transparencia muestra."""
+    csv_bytes = (ROOT / "data" / c.EFEMERIDES_FILENAME.format(site_id=site_id)).read_bytes()
+    traffic = {k: v for k, v in result[c.KEY_TRAFFIC_HITS].items() if k != c.KEY_MONTHS_DETAIL}
+    lines = csv_bytes.decode("utf-8").splitlines()[1:]
+    training = {c.KEY_ROWS: len(lines), c.KEY_START: lines[0].split(",")[0], c.KEY_END: lines[-1].split(",")[0]}
+    return {c.KEY_DATA_SHA3: hashlib.sha3_256(csv_bytes).hexdigest(), c.KEY_TRAINING: training,
+            c.KEY_TRAFFIC_HITS: traffic, c.KEY_EVENTS_SUN: result[c.KEY_EVENTS_SUN], c.KEY_SYNODIC_DAYS: result[c.KEY_SYNODIC_DAYS],
+            "ajuste_directo_elevacion_sol": result["sol_elevacion_ajuste_directo"]}
+
+
 def main() -> None:
     IMG.mkdir(parents=True, exist_ok=True)
     sites = site_ids()
@@ -193,10 +206,14 @@ def main() -> None:
             "entrenamiento": {"inicio": first[0].strftime(c.UTC_FORMAT), "fin": first[-1].strftime(c.UTC_FORMAT)},
             "validacion": {"inicio": last_truth[0].strftime(c.UTC_FORMAT), "fin": last_truth[-1].strftime(c.UTC_FORMAT)}}
     RESULTS.write_text(json.dumps({**meta, "sitios": results}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    table = {sid: {**{col: {k: v for k, v in r["errores"][col].items() if k in ("mae_deg", "rmse_deg", "rmse_por_mes_deg")}
-                      for col in r["errores"]}, c.KEY_ANGULAR: r[c.KEY_ANGULAR]} for sid, r in results.items()}
-    ERRORS.write_text(json.dumps({"version": c.ERRORS_VERSION, **meta, "sitios": table}, ensure_ascii=False, indent=1) + "\n",
+    table = {sid: {**{col: {k: v for k, v in r[c.KEY_ERRORS][col].items()
+                            if k in (c.KEY_MAE_DEG, c.KEY_RMSE_DEG, c.KEY_RMSE_MONTHS, c.KEY_RMSE_NAIVE)}
+                      for col in r[c.KEY_ERRORS]}, c.KEY_ANGULAR: r[c.KEY_ANGULAR], c.KEY_SUMMARY: summary(sid, r)} for sid, r in results.items()}
+    ERRORS.write_text(json.dumps({c.KEY_VERSION: c.ERRORS_VERSION, **meta, c.KEY_SITES: table}, ensure_ascii=False, indent=1) + "\n",
                       encoding="utf-8")
+    if "--sin-graficos" in sys.argv:
+        print(f"Listo: {ERRORS.relative_to(ROOT)} y {RESULTS.relative_to(ROOT)} (sin gráficos)")
+        return
     fig_windows(train); fig_spectrum(train["apollo15"])
     fig_season(train["shackleton"], truth["shackleton"], projection.fit_projection(train["shackleton"]))
     fig_libration(train)

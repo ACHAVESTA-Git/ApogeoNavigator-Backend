@@ -127,7 +127,7 @@ def test_la_tabla_sin_bloque_angular_da_503(api, monkeypatch, tmp_path):
     monkeypatch.setattr(c, "ERRORS_PATH", path)
     lectura.clear_cache()
     response = api.get("/api/simulacion/apollo15", params={"desde": "2027-06-02T00:00Z", "hasta": "2027-06-03T00:00Z"})
-    assert response.status_code == 503 and response.json() == {"detail": c.MSG_SIM_ERRORS_INVALID}
+    assert response.status_code == 503 and response.json()["detail"] == c.MSG_SIM_ERRORS_INVALID
 
 
 # ------------------------------------------------------------------ calibración contra la verdad de Horizons
@@ -184,3 +184,66 @@ def test_la_tabla_angular_esta_al_dia():
     fresh = validation.evaluate_site(frames.from_rows(lectura.ephemeris("slim")), frames.from_parquet(PARQUET, "slim"))
     for body in (c.KEY_SOL, c.KEY_TIERRA):
         assert table[body][c.KEY_RMSE_DEG] == pytest.approx(fresh[c.KEY_ANGULAR][body][c.KEY_RMSE_DEG], abs=1e-3)
+
+
+# ------------------------------------------------------------------ R3: incertidumbre de otros datos
+PROJECTED = {"desde": "2027-06-02T00:00Z", "hasta": "2027-06-03T00:00Z"}
+
+
+def _codes(api, site="apollo15"):
+    return [a["codigo"] for a in get(api, site, **PROJECTED)["avisos"]]
+
+
+def test_con_los_datos_de_la_semilla_no_hay_aviso_de_otros_datos(api):
+    assert c.AVISO_INCERTIDUMBRE_OTROS_DATOS not in _codes(api)
+
+
+def test_unas_efemerides_distintas_activan_el_aviso_de_otros_datos(api, tmp_path):
+    shorter = (DATA / "efemerides_apollo15.csv").read_text(encoding="utf-8").splitlines()[: 1 + 24 * 150]
+    (tmp_path / "efemerides_apollo15.csv").write_text("\n".join(shorter) + "\n", encoding="utf-8")
+    body = get(api, "apollo15", desde="2027-05-01T00:00Z", hasta="2027-05-03T00:00Z")      # tras el nuevo último dato
+    codes = [a["codigo"] for a in body["avisos"]]
+    assert c.AVISO_PROYECCION in codes and c.AVISO_INCERTIDUMBRE_OTROS_DATOS in codes
+    message = next(a["mensaje"] for a in body["avisos"] if a["codigo"] == c.AVISO_INCERTIDUMBRE_OTROS_DATOS)
+    assert "semilla" in message and "referencia" in message
+    assert body["puntos"][-1]["incertidumbre_deg"] is not None             # los números se siguen dando, con el aviso
+
+
+def test_el_aviso_vuelve_a_desaparecer_al_restaurar_los_datos(api, tmp_path):
+    original = (DATA / "efemerides_apollo15.csv").read_bytes()
+    (tmp_path / "efemerides_apollo15.csv").write_bytes(original[: len(original) // 2])
+    (tmp_path / "efemerides_apollo15.csv").write_bytes(original)
+    assert c.AVISO_INCERTIDUMBRE_OTROS_DATOS not in _codes(api)
+
+
+def test_una_tabla_sin_huella_no_puede_afirmar_que_la_validacion_vale(api, monkeypatch, tmp_path):
+    table = json.loads(c.ERRORS_PATH.read_text(encoding="utf-8"))
+    table[c.KEY_SITES]["apollo15"].pop(c.KEY_SUMMARY)
+    path = tmp_path / "errores.json"
+    path.write_text(json.dumps(table), encoding="utf-8")
+    monkeypatch.setattr(c, "ERRORS_PATH", path)
+    lectura.clear_cache()
+    assert c.AVISO_INCERTIDUMBRE_OTROS_DATOS in _codes(api)
+
+
+def test_el_sitio_sin_validacion_no_repite_el_aviso_de_otros_datos(api, monkeypatch, tmp_path):
+    table = json.loads(c.ERRORS_PATH.read_text(encoding="utf-8"))
+    del table[c.KEY_SITES]["apollo15"]
+    path = tmp_path / "errores.json"
+    path.write_text(json.dumps(table), encoding="utf-8")
+    monkeypatch.setattr(c, "ERRORS_PATH", path)
+    lectura.clear_cache()
+    codes = _codes(api)
+    assert c.AVISO_SIN_INCERTIDUMBRE in codes and c.AVISO_INCERTIDUMBRE_OTROS_DATOS not in codes
+
+
+def test_la_huella_y_la_vigencia_son_las_mismas_que_usa_la_transparencia():
+    import hashlib
+    path = DATA / "efemerides_apollo15.csv"
+    assert lectura.file_sha3(path) == hashlib.sha3_256(path.read_bytes()).hexdigest()
+    table = json.loads(c.ERRORS_PATH.read_text(encoding="utf-8"))[c.KEY_SITES]["apollo15"]
+    assert simulacion.validation_is_current(table, lectura.file_sha3(path)) is True
+    assert simulacion.validation_is_current(table, "0" * 64) is False
+    assert simulacion.validation_is_current(None, lectura.file_sha3(path)) is False
+    assert simulacion.validation_is_current(table, None) is False
+    assert lectura.file_sha3(DATA / "no_existe.csv") is None
