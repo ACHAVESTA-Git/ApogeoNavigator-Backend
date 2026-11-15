@@ -6,6 +6,7 @@ import time
 from datetime import datetime, timezone
 
 from app.core import config as c
+from app.utils.text import escapar_control
 
 _MARCA = "_apogeo_handler"
 
@@ -62,11 +63,13 @@ def nivel_para(estado: int) -> int:
 
 def linea_acceso(request_id: str, metodo: str, ruta: str, estado: int, codigo: str | None, ms: float, accion: str | None) -> str:
     """`<request_id> GET  /api/x → 404 CODIGO (3 ms) | acción` (sin query string: nunca claves ni datos del cliente)."""
+    metodo, ruta = escapar_control(metodo, 16), escapar_control(ruta, c.LOG_PATH_MAX)
     cuerpo = f"{request_id} {metodo:<4} {ruta} → {estado} {codigo or 'OK'} ({ms:.0f} ms)"
     return f"{cuerpo} | {accion}" if accion else cuerpo
 
 
 def registrar_acceso(logger: logging.Logger, request_id, metodo, ruta, estado, codigo, ms, accion) -> None:
+    metodo, ruta = escapar_control(metodo, 16), escapar_control(ruta, c.LOG_PATH_MAX)
     logger.log(nivel_para(estado), linea_acceso(request_id, metodo, ruta, estado, codigo, ms, accion),
                extra={"campos": {"request_id": request_id, "metodo": metodo, "ruta": ruta, "estado": estado,
                                  "codigo": codigo or "OK", "ms": round(ms), "accion": accion}})

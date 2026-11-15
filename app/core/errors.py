@@ -18,6 +18,7 @@ from app.core import config
 from app.core.respuestas import request_id_de, respuesta_error
 from app.services.blobstore import StoreError
 from app.services.lectura import LecturaError
+from app.utils.text import escapar_control
 
 log = logging.getLogger(config.LOGGER_ERRORS)
 
@@ -43,20 +44,20 @@ async def lectura_error(request: Request, exc: LecturaError) -> JSONResponse:
 
 
 async def store_error(request: Request, exc: StoreError) -> JSONResponse:
-    log.error(config.MSG_STORE_ERROR_LOG, request_id_de(request), request.method, request.url.path, type(exc).__name__)
+    log.error(config.MSG_STORE_ERROR_LOG, request_id_de(request), request.method, escapar_control(request.url.path, config.LOG_PATH_MAX), type(exc).__name__)
     return respuesta_error(request, config.HTTP_UNAVAILABLE, config.MSG_BUCKET_UNAVAILABLE)
 
 
 async def db_error(request: Request, exc: SQLAlchemyError) -> JSONResponse:
     if isinstance(exc, DB_UNAVAILABLE_ERRORS):
-        log.error(config.MSG_DB_ERROR_LOG, request_id_de(request), request.method, request.url.path, type(exc).__name__)
+        log.error(config.MSG_DB_ERROR_LOG, request_id_de(request), request.method, escapar_control(request.url.path, config.LOG_PATH_MAX), type(exc).__name__)
         return respuesta_error(request, config.HTTP_UNAVAILABLE, config.MSG_DB_UNAVAILABLE)
     return await unhandled(request, exc)
 
 
 async def unhandled(request: Request, exc: Exception) -> JSONResponse:
     # Traza completa al log (enlazada por request_id) y nunca al cliente.
-    log.error(config.MSG_UNHANDLED_LOG, request_id_de(request), request.method, request.url.path, exc_info=exc)
+    log.error(config.MSG_UNHANDLED_LOG, request_id_de(request), request.method, escapar_control(request.url.path, config.LOG_PATH_MAX), exc_info=exc)
     return respuesta_error(request, config.HTTP_INTERNAL_ERROR, config.MSG_INTERNAL_ERROR)
 
 
