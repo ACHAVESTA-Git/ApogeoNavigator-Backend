@@ -33,4 +33,4 @@ def consultar(request: Request,
     solo miran dentro del rango pedido. Los resultados se guardan en caché 24 h y hay un límite de consultas en vivo
     (429 con `Retry-After`); si JPL falla responde 502, y 504 si tarda demasiado.
     """
-    return horizons.query(lat, lon, desde, hasta, paso_horas, client=auditoria_util.client_ip(request))
+    return horizons.query(lat, lon, desde, hasta, paso_horas, client=auditoria_util.trusted_client_ip(request))

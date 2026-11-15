@@ -565,6 +565,18 @@ CORS_WILDCARD = "*"
 MSG_CORS_WILDCARD = "CORS_ORIGINS no admite «*»: lista los orígenes permitidos"
 
 
+ENV_TRUSTED_PROXY_HOPS = "TRUSTED_PROXY_HOPS"     # proxies de confianza delante de la app (Cloud Run directo: 1)
+DEFAULT_TRUSTED_PROXY_HOPS = 1
+
+
+def get_trusted_proxy_hops() -> int:
+    """Cuántas entradas del final de X-Forwarded-For añaden proxies propios (solo esas son fiables)."""
+    try:
+        return max(1, int(os.getenv(ENV_TRUSTED_PROXY_HOPS, DEFAULT_TRUSTED_PROXY_HOPS)))
+    except ValueError:
+        return DEFAULT_TRUSTED_PROXY_HOPS
+
+
 def get_cors_origins() -> list[str]:
     """Orígenes permitidos: CORS_ORIGINS (separados por comas) o, sin definir, los de desarrollo local."""
     raw = os.getenv(ENV_CORS_ORIGINS)
