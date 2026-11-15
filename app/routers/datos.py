@@ -2,9 +2,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse
 
-from app.core.respuestas import respuesta_error
-
 from app.core import config
+from app.core.respuestas import respuesta_error
 from app.core.security import require_api_key
 from app.db.enums import AccionAuditoria
 from app.schemas.report import Report, SaveResult
@@ -53,7 +52,7 @@ def _audit(tipo: str, result: ValidationResult, raw: bytes, accion: AccionAudito
 def _fail(result: ValidationResult, request: Request) -> JSONResponse:
     informe = result.report
     return respuesta_error(request, result.http_status, informe.model_dump(), codigo=config.CODE_CSV_INVALID,
-                           resumen=config.MSG_CSV_SUMMARY.format(archivo=informe.archivo, n=informe.total_errores))
+                           resumen=config.MSG_CSV_SUMMARY.format(n=informe.total_errores))
 
 
 @router.post("/validar/{tipo}", response_model=Report, responses=RESPONSES)
