@@ -17,6 +17,8 @@ committed straight to `dev` before the pull-request rule started on 14 Nov 2026 
 - Typed response models (DTOs) for health, key and read endpoints (#21, #22) and an HTTP contract frozen by tests against the frontend types (#16).
 - OpenAPI in English with descriptions, tags and real examples (#20).
 - Astronaut indicators (additive `indicadores_astronauta` field in `/api/metricas` and the live Horizons metrics): longest night, longest Earth blackout, longest Sun-and-Earth window, next Sun and Earth sets and mean Sun elevation in daylight.
+- Best landing windows, `GET /api/ventanas-alunizaje`: for stays of 72, 156 or 336 hours, hours of Sun, Earth and both by arrival hour, best arrival per day and top 3 non-overlapping windows (#47).
+- Projection up to July 2028, `GET /api/proyeccion`, admin session only and audited (`VER_PROYECCION`, migration `0006`); projection files stay outside the signed manifest (#48).
 
 ### Simulation
 - Sky simulation: real data inside the range and a statistical projection beyond it, computed with Polars (#13).

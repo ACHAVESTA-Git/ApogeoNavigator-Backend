@@ -89,6 +89,7 @@ Main endpoints (all `GET`, no authentication). Times are UTC (`YYYY-MM-DDTHH:MMZ
 | `/api/metricas?site_id=&desde=&hasta=` | Sunlight and Earth-visibility metrics and the traffic light; repeat `site_id` to compare 1 to 3 sites |
 | `/api/puestas/{site_id}?desde=` | Next sunset/sunrise and Earth-set/Earth-rise from a given moment |
 | `/api/horizons?lat=&lon=&desde=&hasta=&paso_horas=` | **Live** query to NASA/JPL Horizons for any point of the Moon (latitude -90 to 90, east-positive longitude -180 to 180, up to 35 days, step 1 to 24 h). Same shape as the ephemerides plus `metricas` and `puestas`. Cached 24 h, rate limited (`429` with `Retry-After`); `502`/`504` if JPL fails or is slow |
+| `/api/ventanas-alunizaje?site_id=&estancia_h=72\|156\|336&desde=&hasta=` | Best landing windows: for every possible arrival hour, hours and percentages of Sun, Earth and both at once during the stay, whether both are up on arrival and the longest stretch without the Earth. Returns the best arrival of each day, the 3 best non-overlapping windows per site and, with several sites (1 to 5), the best of all. Arrivals whose stay runs past the data are dropped (`trunca`) |
 | `/api/seguridad/clave-publica`, `/api/seguridad/manifiesto` | Public signing key and signed manifest of the data (see [Integrity](#integrity-and-security)) |
 
 ```bash
@@ -117,6 +118,14 @@ Each item of `/api/metricas` (and the `metricas` of `/api/horizons`) carries an 
 | `sol_el_media_horas_sol_deg` | Mean Sun elevation during the hours of sunlight (same value as `sol_el_media_deg`) |
 
 Each stretch is `{horas, inicio_utc, fin_utc, trunca_inicio, trunca_fin}`, with 0 hours and null dates when there is none. `trunca_inicio` / `trunca_fin` mean the stretch touches an edge of the range and may be longer outside it: ask for a wider range to see it whole.
+
+### Projection up to July 2028 (admin only)
+`GET /api/proyeccion?site_id=&desde=&hasta=&paso_horas=1|6|24` returns the projected Sun and Earth series, projected monthly metrics (with the same traffic light and `indicadores_astronauta` utilities) and the model with its measured error. These are modelled values, not JPL ephemerides, and the response always carries its limitations.
+
+- **Access:** only a session with the `admin` role. Without a session it answers 401, with the analyst or reviewer role 403; the `X-API-Key` does **not** give access (it is a shared script credential with no person behind it).
+- **Audit:** every successful query is recorded in the signed audit log (`VER_PROYECCION`, with the user, sites, range and step, never the series). Failed queries (404, 422) are not audited.
+- **Data:** `data/proyecciones/proyeccion_<site_id>.csv` and `modelo.json`, read by a dedicated reader (they exceed the upload limits) and synced from the bucket. They are **outside the signed manifest**: each site reports the `sha3_256` of its file, but it is not verified by the ML-DSA signature.
+- **Deployment:** the audit action needs migration `0006`, so run `alembic upgrade head` (step 05) **before** using this endpoint in production.
 
 Field names and some texts (site names, notes, warning messages) are currently in Spanish.
 
