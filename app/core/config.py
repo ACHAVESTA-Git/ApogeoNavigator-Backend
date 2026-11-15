@@ -462,8 +462,8 @@ MSG_PROD_NEEDS_BUCKET = ("En producción hay que configurar DATA_BUCKET: el disc
 MSG_DB_UNAVAILABLE = "La base de datos no está disponible; inténtalo de nuevo en unos minutos"
 MSG_INTERNAL_ERROR = "Error interno"
 LOGGER_ERRORS = "apogeo.errores"
-MSG_UNHANDLED_LOG = "Error no controlado en %s %s"
-MSG_DB_ERROR_LOG = "Error de base de datos en %s %s (%s)"
+MSG_UNHANDLED_LOG = "[%s] Error no controlado en %s %s"
+MSG_DB_ERROR_LOG = "[%s] Error de base de datos en %s %s (%s)"
 UTC_FIELD_PATTERN = rf"^{UTC_RE.pattern}$"      # patrón anclado para campos UTC de los DTO
 MSG_BUCKET_UNAVAILABLE = "No se pudo acceder al almacenamiento de datos; no se guardó nada"
 MSG_DATA_CONFLICT = "Otro proceso modificó los datos a la vez; se recargó la versión vigente. Reintenta la carga"
@@ -558,7 +558,7 @@ ENV_CORS_ORIGINS = "CORS_ORIGINS"                 # lista separada por comas
 ENV_CORS_ORIGIN_REGEX = "CORS_ORIGIN_REGEX"       # p. ej. ^https://([a-z0-9-]+\.)?mi-proyecto\.pages\.dev$
 CORS_DEFAULT_ORIGINS = ("http://localhost:5173", "http://127.0.0.1:5173")
 CORS_ALLOW_METHODS = ("GET", "POST", "OPTIONS")
-CORS_ALLOW_HEADERS = (API_KEY_HEADER, "Content-Type")
+CORS_ALLOW_HEADERS = (API_KEY_HEADER, "Content-Type", "X-Request-ID")
 CORS_ALLOW_CREDENTIALS = False                    # nunca credenciales con orígenes comodín
 CORS_MAX_AGE_SECONDS = 600
 CORS_WILDCARD = "*"
@@ -592,7 +592,8 @@ def get_cors_origin_regex() -> str | None:
     return os.getenv(ENV_CORS_ORIGIN_REGEX) or None
 
 # ---------------------------------------------------------------- documentación OpenAPI (/docs)
-ROUTER_TAG_SIMULACION = "simulacion"          # etiqueta de la simulación (declarada aquí porque OPENAPI_TAGS la usa)
+ROUTER_TAG_SIMULACION = "simulacion"          # etiquetas declaradas aquí porque OPENAPI_TAGS las usa
+ROUTER_TAG_HORIZONS = "horizons"
 TAG_SYSTEM = "sistema"
 TAG_SITES = "sitios"
 API_DESCRIPTION = """
@@ -611,6 +612,7 @@ OPENAPI_TAGS = [
     {"name": TAG_SYSTEM, "description": "Service health."},
     {"name": TAG_SITES, "description": "Catalogue of the ten landing sites with their coordinates and NASA source."},
     {"name": ROUTER_TAG_LECTURA, "description": "Ephemerides, sunlight and Earth-visibility metrics with a traffic light, and next sunset/sunrise."},
+    {"name": ROUTER_TAG_HORIZONS, "description": "Sun and Earth azimuth and elevation for custom coordinates, queried live from NASA/JPL Horizons."},
     {"name": ROUTER_TAG_SIMULACION, "description": "Sky simulation: real data inside the range and a statistical projection beyond it (with its uncertainty)."},
     {"name": ROUTER_TAG, "description": "Validate and upload CSV data (`X-API-Key`). Strict validation, atomic save, audited."},
     {"name": ROUTER_TAG_SECURITY, "description": "Public ML-DSA-65 key and the signed manifest of the data files, for independent verification."},
@@ -721,10 +723,37 @@ MSG_SIM_NO_UNCERTAINTY = "No hay validación de este sitio: los puntos proyectad
 MSG_SIM_ERRORS_MISSING = "Falta la tabla de errores de la proyección (app/analysis/proyeccion_errores.json)"
 MSG_SIM_ERRORS_INVALID = "La tabla de errores de la proyección no es válida; hay que regenerarla con analizar_proyeccion.py"
 
+# ---------------------------------------------------------------- respuestas HTTP estandarizadas y logs
+REQUEST_ID_HEADER = "X-Request-ID"
+REQUEST_ID_RE = r"[A-Za-z0-9._-]{8,64}"           # un X-Request-ID del cliente solo se reutiliza si cumple esto
+REQUEST_ID_BYTES = 5                              # 5 bytes -> 10 caracteres hexadecimales
+ERROR_TS_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+CONTEXT_MISSING = "(no válido)"
+CONTEXT_SAFE_ID_RE = r"[A-Za-z0-9_-]{1,60}"          # solo se cita del cliente lo que parece un identificador
+LOGGER_ROOT = "apogeo"
+LOGGER_ACCESS = "apogeo.acceso"
+ENV_LOG_FORMAT = "LOG_FORMAT"                     # texto | json
+ENV_LOG_LEVEL = "LOG_LEVEL"
+LOG_FORMATS = ("texto", "json")
+DEFAULT_LOG_FORMAT = "texto"
+DEFAULT_LOG_LEVEL = "INFO"
+LOG_TS_FORMAT = ERROR_TS_FORMAT
+LOG_PATH_MAX = 200                                # recorte de la ruta en la línea de log
+UNSAFE_CHAR_CATEGORIES = ("Cc", "Cf", "Zl", "Zp")  # controles, formato (bidi, ancho cero) y separadores de línea
+LOG_ESCAPES = {"\r": "\\r", "\n": "\\n", "\t": "\\t", "\x7f": "\\x7f"}
+LOG_QUIET_STATUSES = (401, 404)                   # son normales: se registran en INFO y no en WARNING
+RETRY_AFTER_HEADER = "Retry-After"
+CORS_EXPOSE_HEADERS = (REQUEST_ID_HEADER, RETRY_AFTER_HEADER)    # el frontend de otro origen puede leerlos
+VALIDATION_LOC_NOISE = ("query", "path", "body", "header", "cookie")
+MSG_VALIDATION_FIELDS = "Hay {n} campo(s) con valores no válidos: {campos}."
+MSG_VALIDATION_GENERIC = "La petición no tiene el formato esperado."
+MSG_STORE_ERROR_LOG = "[%s] Error del almacenamiento en %s %s (%s)"
+CODE_CSV_INVALID = "CSV_INVALIDO"
+MSG_CSV_SUMMARY = "El archivo tiene {n} error(es) de validación; el informe completo va en `detail`."
+
 
 # ---------------------------------------------------------------- Horizons en vivo: coordenadas propias (app/services/horizons.py)
 ROUTE_HORIZONS = "/horizons"
-ROUTER_TAG_HORIZONS = "horizons"
 PARAM_LAT = "lat"
 PARAM_LON = "lon"
 HORIZONS_URL = "https://ssd.jpl.nasa.gov/api/horizons.api"
@@ -763,7 +792,7 @@ HORIZONS_HEADER_COLUMNS = ("Azi_(a-app)", "Elev_(a-app)")   # columnas que Horiz
 HORIZONS_RATE_GLOBAL = (30, 60.0)         # consultas en vivo por ventana (segundos), entre todos los clientes
 HORIZONS_RATE_CLIENT = (6, 60.0)          # ídem por cliente (según X-Forwarded-For o el socket)
 HORIZONS_RATE_MAX_KEYS = 10_000           # clientes distintos que recuerda el limitador (los más antiguos se expulsan)
-HORIZONS_RETRY_AFTER_HEADER = "Retry-After"
+HORIZONS_RETRY_AFTER_HEADER = RETRY_AFTER_HEADER
 HORIZONS_LOGGER = "apogeo.horizons"
 HORIZONS_LOG_SNIPPET_CHARS = 160           # cuánto de una respuesta rara de JPL va al log (nunca al cliente)
 CUSTOM_SITE_ID = "personalizado"

@@ -275,6 +275,9 @@
   }
  },
  "auditoria_listar": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 200,
   "forma": {
    "items": [
@@ -310,6 +313,9 @@
   "tipo_contenido": "application/json"
  },
  "auditoria_listar_con_firma": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 200,
   "forma": {
    "items": [
@@ -345,6 +351,9 @@
   "tipo_contenido": "application/json"
  },
  "auditoria_parametro_invalido_422": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 422,
   "forma": {
    "detail": [
@@ -359,27 +368,63 @@
      "msg": "str",
      "type": "str"
     }
-   ]
+   ],
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
   },
   "tipo_contenido": "application/json"
  },
  "auditoria_sin_base_de_datos_503": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "detail": "La base de datos no está configurada (DATABASE_URL)",
   "estado": 503,
   "forma": {
-   "detail": "str"
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
   },
   "tipo_contenido": "application/json"
  },
  "auditoria_sin_clave_401": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "detail": "API key inválida o ausente",
   "estado": 401,
   "forma": {
-   "detail": "str"
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
   },
   "tipo_contenido": "application/json"
  },
  "auditoria_verificar": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 200,
   "forma": {
    "error_secuencia": "null",
@@ -394,7 +439,8 @@
  },
  "claves_generar_201": {
   "cabeceras": {
-   "cache-control": "no-store"
+   "cache-control": "no-store",
+   "x-request-id": "presente"
   },
   "estado": 201,
   "forma": {
@@ -426,6 +472,9 @@
   "tipo_contenido": "application/json"
  },
  "claves_generar_cuerpo_invalido_422": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 422,
   "forma": {
    "detail": [
@@ -437,19 +486,43 @@
      "msg": "str",
      "type": "str"
     }
-   ]
+   ],
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
   },
   "tipo_contenido": "application/json"
  },
  "claves_generar_usuario_inexistente": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "detail": "El usuario no existe",
   "estado": 404,
   "forma": {
-   "detail": "str"
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
   },
   "tipo_contenido": "application/json"
  },
  "claves_huella": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 200,
   "forma": {
    "algoritmo": "str",
@@ -460,14 +533,29 @@
   "tipo_contenido": "application/json"
  },
  "claves_inexistente_404": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "detail": "La clave no existe",
   "estado": 404,
   "forma": {
-   "detail": "str"
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
   },
   "tipo_contenido": "application/json"
  },
  "claves_listar_con_datos": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 200,
   "forma": {
    "items": [
@@ -497,6 +585,9 @@
   "tipo_contenido": "application/json"
  },
  "claves_listar_vacio": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 200,
   "forma": {
    "items": [],
@@ -507,6 +598,9 @@
   "tipo_contenido": "application/json"
  },
  "claves_publica": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 200,
   "forma": {
    "algoritmo": "str",
@@ -520,6 +614,9 @@
   "tipo_contenido": "application/json"
  },
  "claves_revocar": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 200,
   "forma": {
    "algoritmo": "str",
@@ -543,7 +640,8 @@
  },
  "claves_rotar_201": {
   "cabeceras": {
-   "cache-control": "no-store"
+   "cache-control": "no-store",
+   "x-request-id": "presente"
   },
   "estado": 201,
   "forma": {
@@ -575,31 +673,70 @@
   "tipo_contenido": "application/json"
  },
  "claves_sin_clave_401": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "detail": "Clave de administración inválida o ausente",
   "estado": 401,
   "forma": {
-   "detail": "str"
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
   },
   "tipo_contenido": "application/json"
  },
  "datos_clave_incorrecta_401": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "detail": "API key inválida o ausente",
   "estado": 401,
   "forma": {
-   "detail": "str"
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
   },
   "tipo_contenido": "application/json"
  },
  "datos_demasiado_grande_413": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "detail": "Máximo 5 MB",
   "estado": 413,
   "forma": {
    "codigo": "str",
-   "detail": "str"
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
   },
   "tipo_contenido": "application/json"
  },
  "datos_extension_415": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 415,
   "forma": {
    "detail": {
@@ -618,11 +755,23 @@
     "total_errores": "number",
     "total_filas": "number",
     "valido": "bool"
+   },
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
    }
   },
   "tipo_contenido": "application/json"
  },
  "datos_guardar_con_historial": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 200,
   "forma": {
    "advertencias": [],
@@ -638,6 +787,9 @@
   "tipo_contenido": "application/json"
  },
  "datos_guardar_invalido_422": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 422,
   "forma": {
    "detail": {
@@ -656,11 +808,23 @@
     "total_errores": "number",
     "total_filas": "number",
     "valido": "bool"
+   },
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
    }
   },
   "tipo_contenido": "application/json"
  },
  "datos_guardar_ok": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 200,
   "forma": {
    "advertencias": [],
@@ -676,6 +840,9 @@
   "tipo_contenido": "application/json"
  },
  "datos_sin_archivo_422": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 422,
   "forma": {
    "detail": [
@@ -687,27 +854,63 @@
      "msg": "str",
      "type": "str"
     }
-   ]
+   ],
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
   },
   "tipo_contenido": "application/json"
  },
  "datos_sin_clave_401": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "detail": "API key inválida o ausente",
   "estado": 401,
   "forma": {
-   "detail": "str"
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
   },
   "tipo_contenido": "application/json"
  },
  "datos_tipo_desconocido_404": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "detail": "Tipo desconocido; usa uno de ['sites', 'efemerides', 'metricas']",
   "estado": 404,
   "forma": {
-   "detail": "str"
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
   },
   "tipo_contenido": "application/json"
  },
  "datos_validar_con_advertencias": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 200,
   "forma": {
    "advertencias": [
@@ -729,6 +932,9 @@
   "tipo_contenido": "application/json"
  },
  "datos_validar_invalido_422": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 422,
   "forma": {
    "detail": {
@@ -747,11 +953,23 @@
     "total_errores": "number",
     "total_filas": "number",
     "valido": "bool"
+   },
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
    }
   },
   "tipo_contenido": "application/json"
  },
  "datos_validar_ok": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 200,
   "forma": {
    "advertencias": [],
@@ -765,14 +983,29 @@
   "tipo_contenido": "application/json"
  },
  "efemerides_fecha_invalida_422": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "detail": "'desde': Formato esperado: YYYY-MM-DDTHH:MMZ (UTC)",
   "estado": 422,
   "forma": {
-   "detail": "str"
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
   },
   "tipo_contenido": "application/json"
  },
  "efemerides_ok": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 200,
   "forma": {
    "filas": [
@@ -792,22 +1025,49 @@
   "tipo_contenido": "application/json"
  },
  "efemerides_rango_invertido_422": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "detail": "'hasta' debe ser posterior a 'desde'",
   "estado": 422,
   "forma": {
-   "detail": "str"
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
   },
   "tipo_contenido": "application/json"
  },
  "efemerides_rango_largo_422": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "detail": "El rango máximo es de 35 días (se pidieron 90.00 días)",
   "estado": 422,
   "forma": {
-   "detail": "str"
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
   },
   "tipo_contenido": "application/json"
  },
  "efemerides_sin_rango": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 200,
   "forma": {
    "filas": [
@@ -827,14 +1087,29 @@
   "tipo_contenido": "application/json"
  },
  "efemerides_sitio_inexistente_404": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "detail": "El sitio no existe en sites.csv",
   "estado": 404,
   "forma": {
-   "detail": "str"
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
   },
   "tipo_contenido": "application/json"
  },
  "health": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 200,
   "forma": {
    "status": "str"
@@ -842,22 +1117,49 @@
   "tipo_contenido": "application/json"
  },
  "horizons_jpl_falla_502": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "detail": "JPL Horizons no está disponible ahora; reintenta en unos minutos",
   "estado": 502,
   "forma": {
-   "detail": "str"
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
   },
   "tipo_contenido": "application/json"
  },
  "horizons_jpl_tarda_504": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "detail": "JPL Horizons tardó demasiado en responder; reduce el rango de fechas o reintenta en unos minutos",
   "estado": 504,
   "forma": {
-   "detail": "str"
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
   },
   "tipo_contenido": "application/json"
  },
  "horizons_lat_fuera_de_rango_422": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 422,
   "forma": {
    "detail": [
@@ -872,11 +1174,23 @@
      "msg": "str",
      "type": "str"
     }
-   ]
+   ],
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
   },
   "tipo_contenido": "application/json"
  },
  "horizons_ok": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 200,
   "forma": {
    "consultado_utc": "str",
@@ -941,22 +1255,69 @@
   "tipo_contenido": "application/json"
  },
  "horizons_rango_largo_422": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "detail": "El rango máximo es de 35 días (se pidieron 90.00 días)",
   "estado": 422,
   "forma": {
-   "detail": "str"
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "metodo_no_permitido_405": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
+  "detail": "Method Not Allowed",
+  "estado": 405,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
   },
   "tipo_contenido": "application/json"
  },
  "metricas_cuatro_sitios_422": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "detail": "Se pueden consultar de 1 a 3 sitios",
   "estado": 422,
   "forma": {
-   "detail": "str"
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
   },
   "tipo_contenido": "application/json"
  },
  "metricas_sin_referencia": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 200,
   "forma": {
    "resultados": [
@@ -989,14 +1350,29 @@
   "tipo_contenido": "application/json"
  },
  "metricas_sin_site_id_422": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "detail": "Indica al menos un site_id",
   "estado": 422,
   "forma": {
-   "detail": "str"
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
   },
   "tipo_contenido": "application/json"
  },
  "metricas_sin_sol_media_nula": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 200,
   "forma": {
    "resultados": [
@@ -1037,14 +1413,29 @@
   "tipo_contenido": "application/json"
  },
  "metricas_sitio_inexistente_404": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "detail": "El sitio no existe en sites.csv",
   "estado": 404,
   "forma": {
-   "detail": "str"
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
   },
   "tipo_contenido": "application/json"
  },
  "metricas_tres_sitios": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 200,
   "forma": {
    "resultados": [
@@ -1085,6 +1476,9 @@
   "tipo_contenido": "application/json"
  },
  "metricas_un_sitio": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 200,
   "forma": {
    "resultados": [
@@ -1125,6 +1519,9 @@
   "tipo_contenido": "application/json"
  },
  "puestas_ok": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 200,
   "forma": {
    "desde_utc": "str",
@@ -1145,6 +1542,9 @@
   "tipo_contenido": "application/json"
  },
  "puestas_sin_desde": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 200,
   "forma": {
    "desde_utc": "str",
@@ -1165,14 +1565,29 @@
   "tipo_contenido": "application/json"
  },
  "puestas_sitio_inexistente_404": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "detail": "El sitio no existe en sites.csv",
   "estado": 404,
   "forma": {
-   "detail": "str"
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
   },
   "tipo_contenido": "application/json"
  },
  "puestas_tierra_nunca_visible_con_nulos": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 200,
   "forma": {
    "desde_utc": "str",
@@ -1193,14 +1608,29 @@
   "tipo_contenido": "application/json"
  },
  "ruta_inexistente_404": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "detail": "Not Found",
   "estado": 404,
   "forma": {
-   "detail": "str"
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
   },
   "tipo_contenido": "application/json"
  },
  "seguridad_clave_publica": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 200,
   "forma": {
    "algoritmo": "str",
@@ -1212,7 +1642,8 @@
  },
  "seguridad_manifiesto": {
   "cabeceras": {
-   "cache-control": "no-cache"
+   "cache-control": "no-cache",
+   "x-request-id": "presente"
   },
   "estado": 200,
   "forma": {
@@ -1232,14 +1663,29 @@
   "tipo_contenido": "application/json"
  },
  "seguridad_manifiesto_sin_generar_404": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "detail": "Aún no hay manifiesto firmado de los datos",
   "estado": 404,
   "forma": {
-   "detail": "str"
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
   },
   "tipo_contenido": "application/json"
  },
  "sites": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 200,
   "forma": [
    {
@@ -1258,6 +1704,9 @@
   "tipo_contenido": "application/json"
  },
  "sites_con_notas_nulas_y_altitud_por_defecto": {
+  "cabeceras": {
+   "x-request-id": "presente"
+  },
   "estado": 200,
   "forma": [
    {

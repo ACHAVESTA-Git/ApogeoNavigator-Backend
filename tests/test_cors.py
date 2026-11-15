@@ -120,3 +120,25 @@ def test_la_aplicacion_real_tiene_cors(monkeypatch):
     from app.main import app
     nombres = [m.cls.__name__ for m in app.user_middleware]
     assert nombres.index("CORSMiddleware") < nombres.index("BaseHTTPMiddleware")      # primero en la lista = más externo
+
+
+def test_se_exponen_x_request_id_y_retry_after_para_que_el_frontend_los_lea(monkeypatch):
+    """Sin expose-headers, un frontend de otro origen no puede leer el Retry-After del 429 de /api/horizons."""
+    client = build(monkeypatch)
+
+    @client.app.get("/api/limitado")
+    def limitado():
+        from fastapi.responses import JSONResponse
+        return JSONResponse({"detail": "demasiadas"}, status_code=429, headers={"Retry-After": "30", "X-Request-ID": "abc12345"})
+    r = client.get("/api/limitado", headers={"Origin": LOCAL})
+    expuestas = {h.strip().lower() for h in r.headers["access-control-expose-headers"].split(",")}
+    assert {"x-request-id", "retry-after"} <= expuestas
+    assert r.status_code == 429 and r.headers["retry-after"] == "30"
+
+
+def test_la_aplicacion_real_expone_retry_after(monkeypatch):
+    from fastapi.testclient import TestClient
+    from app.main import app
+    r = TestClient(app).get("/api/health", headers={"Origin": LOCAL})
+    expuestas = {h.strip().lower() for h in r.headers["access-control-expose-headers"].split(",")}
+    assert config.CORS_EXPOSE_HEADERS == ("X-Request-ID", "Retry-After") and {"x-request-id", "retry-after"} <= expuestas

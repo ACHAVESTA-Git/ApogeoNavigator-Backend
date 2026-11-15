@@ -28,7 +28,7 @@ At Shackleton the Sun never rises above 1.74° (about 88° at Apollo 11), and on
 ```
 - **Reads** use a local replica of `data/`; the metrics are recomputed from the ephemerides and compared with the reference `metricas.csv`.
 - **Uploads** (`/api/datos/**`, API key required) are validated against a declarative schema, saved atomically, signed into a manifest and audited.
-- **Errors** are JSON `{"detail": ...}` everywhere, handled in one place (`app/core/errors.py`): domain errors keep their status, a database or bucket outage is a `503`, and anything unexpected is a generic `500` whose trace goes to the log, never to the client. Native FastAPI validation errors (`422` with a list) are left as they are.
+- **Errors** are JSON `{"detail": ..., "error": {...}}` everywhere, built in one place (`app/core/errors.py` and the catalogue in `app/core/mensajes.py`): domain errors keep their status, a database or bucket outage is a `503`, and anything unexpected is a generic `500` whose trace goes to the log, never to the client. See [Errors](#errors).
 - **Production** target: Cloud Run + Cloud SQL + Cloud Storage on Google Cloud (not deployed yet). The image runs as a non-root user and ships a seed copy of `data/`.
 
 ```
@@ -119,6 +119,66 @@ The goal is that anyone can check that the data they are shown have not been alt
 - **Fail closed in production:** if signing, the bucket or the database is unavailable, an upload is refused instead of being saved without evidence.
 
 Post-quantum signatures are used here for their long-term integrity guarantees on our own files. This does not mean that NASA uses them, and the implementation has not been independently audited. Details: [`docs/bd/modelo-datos.md`](docs/bd/modelo-datos.md) (Spanish).
+
+## Errors
+Nobody should see a bare `500` or `404`. Every error response says **what failed**, **why** and **what to do**, in the API and in the server console.
+
+```json
+{
+  "detail": "El sitio no existe en sites.csv",
+  "error": {
+    "codigo": "SITIO_NO_ENCONTRADO", "estado": 404, "titulo": "Sitio no encontrado",
+    "mensaje": "No hay ningún sitio con el identificador «shakleton».",
+    "accion": "Revisa el identificador o elige un sitio del catálogo (/api/sites).",
+    "request_id": "9f2c1e7a4b", "ts_utc": "2026-11-15T04:12:33Z"
+  }
+}
+```
+- `detail` keeps its original value and shape (a text, FastAPI's validation list, or the CSV report of a rejected upload); the `error` object is added next to it. `codigo` is stable (the frontend can translate it); `titulo`, `mensaje` and `accion` are user-facing Spanish texts from a single catalogue, [`app/core/mensajes.py`](app/core/mensajes.py).
+- **Every** response, successful or not, carries an `X-Request-ID` header (a client-supplied one is reused if it is 8-64 characters of letters, digits, `.`, `_`, `-`; otherwise a new one is generated). The same id is in `error.request_id` and in the log line, so a report can be traced end to end.
+- Nothing internal is ever exposed: no stack traces, SQL, file paths, keys or personal data. Those go to the server log, linked by `request_id`. Only identifier-looking values (letters, digits, `_`, `-`) are quoted back from the request.
+- Console: one readable line per request, `2026-11-15T04:12:33Z INFO  9f2c1e7a4b GET  /api/efemerides/shakleton → 404 SITIO_NO_ENCONTRADO (3 ms) | Revisa el identificador…`. 2xx and 3xx are INFO, 401 and 404 are INFO, other 4xx are WARNING and 5xx are ERROR, with the full trace in the line above, linked by `request_id`. The query string and headers are never logged. Set `LOG_FORMAT=texto|json` (`json` for Cloud Run / Cloud Logging) and `LOG_LEVEL`.
+
+**Base catalogue (by status)**
+
+| Status | `codigo` | Title | What to do |
+|---|---|---|---|
+| 400 | `PETICION_INVALIDA` | Petición inválida | Revisa los datos enviados. |
+| 401 | `NO_AUTORIZADO` | Falta autorización | Introduce una clave válida (X-API-Key). |
+| 403 | `PROHIBIDO` | Sin permiso | Usa una clave con permiso para esta acción. |
+| 404 | `NO_ENCONTRADO` | No encontrado | Revisa la dirección o el identificador. |
+| 405 | `METODO_NO_PERMITIDO` | Método no permitido | Usa el método indicado en /docs. |
+| 409 | `CONFLICTO` | Conflicto | Los datos cambiaron mientras tanto; recarga y reintenta. |
+| 413 | `ARCHIVO_DEMASIADO_GRANDE` | Archivo demasiado grande | Máximo 5 MB y 10 000 filas; divide el archivo. |
+| 415 | `TIPO_NO_SOPORTADO` | Tipo de archivo no soportado | Sube un archivo .csv en UTF-8. |
+| 422 | `DATOS_INVALIDOS` | Datos inválidos | Corrige los campos indicados y vuelve a intentarlo. |
+| 429 | `DEMASIADAS_PETICIONES` | Demasiadas peticiones | Espera unos segundos y reintenta. |
+| 500 | `ERROR_INTERNO` | Error inesperado | Reintenta; si persiste, comparte el código de seguimiento. |
+| 502 | `SERVICIO_EXTERNO_FALLO` | Fallo de un servicio externo | Reintenta en unos minutos. |
+| 503 | `SERVICIO_NO_DISPONIBLE` | Servicio no disponible | Reintenta en unos minutos (datos, BD o almacenamiento caídos). |
+| 504 | `TIEMPO_AGOTADO` | Tiempo de espera agotado | Reduce el rango de fechas o reintenta. |
+
+**Domain codes** (more specific than the base code of their status)
+
+| Status | `codigo` | Title | What to do |
+|---|---|---|---|
+| 401 | `CLAVE_INVALIDA` | Clave inválida o ausente | Envía una clave válida en la cabecera X-API-Key. |
+| 404 | `CLAVE_NO_ENCONTRADA` | Clave no encontrada | Revisa el identificador de la clave. |
+| 404 | `EFEMERIDES_NO_ENCONTRADAS` | Sin efemérides | Elige otro sitio o carga sus efemérides. |
+| 404 | `MANIFIESTO_NO_GENERADO` | Aún no hay manifiesto | Se genera con la primera carga válida; vuelve a intentarlo después. |
+| 404 | `SITIO_NO_ENCONTRADO` | Sitio no encontrado | Revisa el identificador o elige un sitio del catálogo (/api/sites). |
+| 404 | `TIPO_DATOS_DESCONOCIDO` | Tipo de datos desconocido | Usa sites, efemerides o metricas. |
+| 404 | `USUARIO_NO_ENCONTRADO` | Usuario no encontrado | Revisa el identificador del usuario. |
+| 409 | `CLAVE_DUPLICADA` | Clave ya activa | Revócala o rótala en lugar de generar otra. |
+| 409 | `CLAVE_YA_REVOCADA` | Clave ya revocada | No hace falta revocarla de nuevo; rota o genera una nueva. |
+| 409 | `USUARIO_INACTIVO` | Usuario desactivado | Activa al usuario antes de emitirle claves. |
+| 422 | `CSV_INVALIDO` | CSV inválido | Corrige las filas indicadas en el informe (detail) y vuelve a subirlo. |
+| 422 | `RANGO_DEMASIADO_LARGO` | Rango demasiado largo | Pide un rango de 35 días como máximo y consulta por tramos. |
+| 422 | `RANGO_FECHAS_INVALIDO` | Rango de fechas inválido | Usa fechas UTC con el formato AAAA-MM-DDTHH:MMZ y que «hasta» sea posterior a «desde». |
+| 503 | `ALMACEN_NO_DISPONIBLE` | Almacenamiento no disponible | Reintenta en unos minutos. |
+| 503 | `BD_NO_DISPONIBLE` | Base de datos no disponible | Reintenta en unos minutos; si persiste, avisa al equipo con el código de seguimiento. |
+| 503 | `DATOS_NO_DISPONIBLES` | Datos no disponibles | Reintenta en unos minutos; si persiste, avisa al equipo con el código de seguimiento. |
+| 503 | `FIRMA_NO_DISPONIBLE` | Firma no disponible | Avisa al equipo con el código de seguimiento: faltan las claves de firma. |
 
 ## Limitations
 - **Ideal horizon.** Horizons models a smooth Moon with no terrain. Shackleton's centre shows 100 % Sun in December although the real crater floor is permanently shadowed. Results are flagged as *relief sensitive* when the Sun never exceeds 3°.
