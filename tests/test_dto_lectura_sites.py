@@ -53,9 +53,24 @@ def test_semaforo_serializa_la_clave_global_y_restringe_los_niveles():
         Semaforo.model_validate({"energia": "azul", "comunicacion": "rojo", "global": "rojo"})
 
 
-def test_las_metricas_reales_conservan_la_clave_global(api):
-    r = api.get("/api/efemerides/sitio_uno")           # solo para comprobar que la app responde con los datos de prueba
-    assert r.status_code in (200, 404, 422)
+def test_las_metricas_conservan_la_clave_global_en_el_json_real(api, data_dir):
+    from tests.conftest import make_ephem
+    (data_dir / "efemerides_sitio_uno.csv").write_bytes(make_ephem(n=49))
+    r = api.get("/api/metricas", params={"site_id": ["sitio_uno"], "desde": "2026-12-01T00:00Z", "hasta": "2026-12-03T00:00Z"})
+    assert r.status_code == 200
+    semaforo = r.json()["resultados"][0]["semaforo"]
+    assert list(semaforo) == ["energia", "comunicacion", "global"]               # `global` sale con su nombre, no `global_`
+    assert set(semaforo.values()) <= {"verde", "amarillo", "rojo"}
+    assert semaforo["global"] in (semaforo["energia"], semaforo["comunicacion"])
+
+
+def test_la_descripcion_del_semaforo_usa_los_umbrales_de_config():
+    from app.schemas.lectura import Semaforo
+    props = Semaforo.model_json_schema()["properties"]
+    assert f"{c.SEMAFORO_ENERGIA_VERDE_MIN:g} %" in props["energia"]["description"] and f"{c.SEMAFORO_ENERGIA_AMARILLO_MIN:g} %" in props["energia"]["description"]
+    assert f"{c.SEMAFORO_COMUNICACION_VERDE_MIN:g} %" in props["comunicacion"]["description"]
+    assert f"{c.SEMAFORO_COMUNICACION_AMARILLO_MIN:g} %" in props["comunicacion"]["description"]
+
 
 
 def test_origen_solo_admite_calculado():
@@ -83,3 +98,11 @@ def test_metricas_sin_site_id_sigue_dando_el_422_de_texto(api):
     assert (r.status_code, r.json()) == (422, {"detail": "Indica al menos un site_id"})
     param = next(p for p in OPENAPI["paths"]["/api/metricas"]["get"]["parameters"] if p["name"] == "site_id")
     assert param["required"] is False
+
+
+def test_no_hay_umbrales_escritos_a_mano_en_el_dto():
+    import inspect
+    from app.schemas import lectura
+    fuente = inspect.getsource(lectura.Semaforo)
+    for numero in ("45", "25", "70", "40"):
+        assert numero not in fuente, f"umbral {numero} escrito a mano en Semaforo"
