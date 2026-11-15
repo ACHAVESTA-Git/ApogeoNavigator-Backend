@@ -2,6 +2,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse
 
+from app.core.respuestas import respuesta_error
+
 from app.core import config
 from app.core.security import require_api_key
 from app.db.enums import AccionAuditoria
@@ -48,8 +50,10 @@ def _audit(tipo: str, result: ValidationResult, raw: bytes, accion: AccionAudito
         raise HTTPException(status_code=config.HTTP_UNAVAILABLE, detail=config.MSG_AUDIT_UNAVAILABLE) from None
 
 
-def _fail(result: ValidationResult) -> JSONResponse:
-    return JSONResponse(status_code=result.http_status, content={"detail": result.report.model_dump()})
+def _fail(result: ValidationResult, request: Request) -> JSONResponse:
+    informe = result.report
+    return respuesta_error(request, result.http_status, informe.model_dump(), codigo=config.CODE_CSV_INVALID,
+                           resumen=config.MSG_CSV_SUMMARY.format(archivo=informe.archivo, n=informe.total_errores))
 
 
 @router.post("/validar/{tipo}", response_model=Report, responses=RESPONSES)
@@ -58,7 +62,7 @@ def validar(tipo: str, file: UploadFile, request: Request):
     result, raw = _validate(tipo, file)
     ok = result.report.valido
     _audit(tipo, result, raw, AccionAuditoria.CARGA_VALIDADA if ok else AccionAuditoria.CARGA_RECHAZADA, request)
-    return result.report if ok else _fail(result)
+    return result.report if ok else _fail(result, request)
 
 
 @router.post("/{tipo}", response_model=SaveResult, responses=RESPONSES)
@@ -71,7 +75,7 @@ def guardar(tipo: str, file: UploadFile, request: Request):
     result, raw = _validate(tipo, file)
     if not result.report.valido:
         _audit(tipo, result, raw, AccionAuditoria.CARGA_RECHAZADA, request)
-        return _fail(result)
+        return _fail(result, request)
     try:
         with auditoria_util.unidad_de_trabajo() as db:
             registro = auditoria_util.registrar_carga(
