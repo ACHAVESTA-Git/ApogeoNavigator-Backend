@@ -357,5 +357,5 @@ def test_r2_y_residuos_llevan_la_nota_de_que_son_del_ajuste_dentro_de_los_datos(
     model = get(stack).json()["modelo"]
     assert model["nota_ajuste"] == c.NOTE_FIT_IN_SAMPLE and "no miden" in model["nota_ajuste"]
     schema = app.openapi()["components"]["schemas"]["Modelo"]["properties"]
-    assert schema["r2"]["description"] == schema["residuos"]["description"] == c.NOTE_FIT_IN_SAMPLE
+    assert schema["r2"]["description"] == schema["residuos"]["description"] == c.NOTE_FIT_IN_SAMPLE_DOC
     assert model["r2"]["tierra_el_deg"] > 0.99          # el R² da ~1: por eso no debe leerse como acierto fuera de los datos

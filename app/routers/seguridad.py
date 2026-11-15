@@ -9,7 +9,7 @@ from app.security import pqc
 router = APIRouter(tags=[config.ROUTER_TAG_SECURITY])
 
 
-@router.get(config.ROUTE_SECURITY_PUBKEY)
+@router.get(config.ROUTE_SECURITY_PUBKEY, summary="Public ML-DSA-65 key that signs the data")
 def clave_publica() -> dict:
     try:
         return {"algoritmo": pqc.ALGORITMO, "estandar": pqc.ESTANDAR,
@@ -19,9 +19,9 @@ def clave_publica() -> dict:
         raise HTTPException(status_code=config.HTTP_UNAVAILABLE, detail=config.MSG_SIGNING_UNAVAILABLE) from None
 
 
-@router.get(config.ROUTE_SECURITY_MANIFEST)
+@router.get(config.ROUTE_SECURITY_MANIFEST, summary="Signed manifest of the data files (exact bytes of manifest.json)")
 def manifiesto() -> Response:
-    """Devuelve data/manifest.json tal cual está. Cambia con cada carga: no se cachea."""
+    """Returns data/manifest.json exactly as it is on disk. It changes with every upload, so it is never cached."""
     path = config.get_data_dir() / pqc.MANIFEST_FILENAME
     try:
         body = path.read_bytes()

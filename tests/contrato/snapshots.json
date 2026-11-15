@@ -196,6 +196,25 @@
     ]
    }
   },
+  "/api/horizons": {
+   "GET": {
+    "cuerpo": null,
+    "parametros": [
+     "query:desde:obligatorio",
+     "query:hasta:obligatorio",
+     "query:lat:obligatorio",
+     "query:lon:obligatorio",
+     "query:paso_horas:opcional"
+    ],
+    "respuestas": [
+     "200",
+     "422",
+     "429",
+     "502",
+     "504"
+    ]
+   }
+  },
   "/api/metricas": {
    "GET": {
     "cuerpo": null,
@@ -1466,6 +1485,113 @@
   "estado": 200,
   "forma": {
    "status": "str"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "horizons_jpl_falla_502": {
+  "detail": "JPL Horizons no está disponible ahora; reintenta en unos minutos",
+  "estado": 502,
+  "forma": {
+   "detail": "str"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "horizons_jpl_tarda_504": {
+  "detail": "JPL Horizons tardó demasiado en responder; reduce el rango de fechas o reintenta en unos minutos",
+  "estado": 504,
+  "forma": {
+   "detail": "str"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "horizons_lat_fuera_de_rango_422": {
+  "estado": 422,
+  "forma": {
+   "detail": [
+    {
+     "ctx": {
+      "le": "number"
+     },
+     "input": "str",
+     "loc": [
+      "str"
+     ],
+     "msg": "str",
+     "type": "str"
+    }
+   ]
+  },
+  "tipo_contenido": "application/json"
+ },
+ "horizons_ok": {
+  "estado": 200,
+  "forma": {
+   "consultado_utc": "str",
+   "en_cache": "bool",
+   "filas": [
+    {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number",
+     "utc": "str"
+    }
+   ],
+   "fin_utc": "str",
+   "fuente": "str",
+   "inicio_utc": "str",
+   "lat_deg": "number",
+   "lon_este_deg": "number",
+   "metricas": {
+    "avisos": [
+     {
+      "codigo": "str",
+      "mensaje": "str"
+     }
+    ],
+    "fin_utc": "str",
+    "horas_sol": "number",
+    "horas_tierra_visible": "number",
+    "inicio_utc": "str",
+    "origen": "str",
+    "pct_sol": "number",
+    "pct_tierra": "number",
+    "referencia": "null",
+    "semaforo": {
+     "comunicacion": "str",
+     "energia": "str",
+     "global": "str"
+    },
+    "site_id": "str",
+    "sol_el_max_deg": "number",
+    "sol_el_media_deg": "number"
+   },
+   "paso_horas": "number",
+   "puestas": {
+    "desde_utc": "str",
+    "site_id": "str",
+    "sol": {
+     "horas_restantes": "null",
+     "proxima_puesta_utc": "null",
+     "proxima_salida_utc": "null",
+     "visible": "bool"
+    },
+    "tierra": {
+     "horas_restantes": "null",
+     "proxima_puesta_utc": "null",
+     "proxima_salida_utc": "null",
+     "visible": "bool"
+    }
+   },
+   "site_id": "str"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "horizons_rango_largo_422": {
+  "detail": "El rango máximo es de 35 días (se pidieron 90.00 días)",
+  "estado": 422,
+  "forma": {
+   "detail": "str"
   },
   "tipo_contenido": "application/json"
  },

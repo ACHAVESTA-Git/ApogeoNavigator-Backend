@@ -108,8 +108,8 @@ class Modelo(BaseModel):
     terminos_por_cuerpo: dict[str, int]
     periodos: list[Termino]
     ajuste_directo_elevacion_sol: bool
-    r2: dict[str, float | None] = Field(description=c.NOTE_FIT_IN_SAMPLE)
-    residuos: dict[str, Residuos] = Field(description=c.NOTE_FIT_IN_SAMPLE)
+    r2: dict[str, float | None] = Field(description=c.NOTE_FIT_IN_SAMPLE_DOC)
+    residuos: dict[str, Residuos] = Field(description=c.NOTE_FIT_IN_SAMPLE_DOC)
     nota_ajuste: str                      # texto para pintar junto al R² y los residuos
 
 

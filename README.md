@@ -97,7 +97,7 @@ All sunlight and Earth-visibility figures come from **NASA/JPL Horizons** (https
 | [JPL Horizons API](https://ssd-api.jpl.nasa.gov/doc/horizons.html) | All ephemerides (and the metrics derived from them) |
 | [NSSDC lunar landing sites](https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_sites.html) | Apollo landing coordinates |
 | [LROC (Lunar Reconnaissance Orbiter Camera)](https://www.lroc.asu.edu/) | Positions of recent landers measured on LRO images |
-| [NASA LRO mission page](https://science.nasa.gov/mission/lro/) | IM-1 Odysseus coordinates |
+| [NASA/LRO: LRO images Intuitive Machines' Odysseus lander](https://www.nasa.gov/missions/lro/nasas-lro-images-intuitive-machines-odysseus-lander/) | IM-1 Odysseus coordinates |
 
 Moon Trek, QuickMap and the PGDA products were **not** used as data. Exact queries, per-site sources, exclusions and findings: [`docs/datos/informe-fuentes.md`](docs/datos/informe-fuentes.md) (English first, with the original Spanish report below). NASA does not endorse or sponsor this project.
 
