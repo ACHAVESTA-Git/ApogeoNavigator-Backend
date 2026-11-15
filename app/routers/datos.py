@@ -5,7 +5,8 @@ from fastapi.responses import JSONResponse
 from app.core import config
 from app.core.security import require_api_key
 from app.db.enums import AccionAuditoria
-from app.schemas.report import Report, SaveResult
+from app.schemas.common import ErrorOut
+from app.schemas.report import ErrorValidacionOut, Report, SaveResult
 from app.security.pqc import ErrorClavesPQC
 from app.services import datastore, storage
 from app.utils import auditoria_util
@@ -15,10 +16,10 @@ from app.validation.engine import ValidationResult, validate_csv
 router = APIRouter(prefix=config.UPLOAD_ROUTER_PREFIX, tags=[config.ROUTER_TAG], dependencies=[Depends(require_api_key)])
 
 RESPONSES = {
-    401: {"description": "API key inválida o ausente"},
-    413: {"description": "E_TAMANO"},
-    415: {"description": "E_TIPO_ARCHIVO"},
-    422: {"description": "Informe con los errores de validación (detail)"},
+    401: {"description": "Missing or invalid API key", "model": ErrorOut},
+    413: {"description": "E_TAMANO: file over 5 MB or 10 000 rows", "model": ErrorOut},
+    415: {"description": "E_TIPO_ARCHIVO: not a .csv text file; `detail` carries the report", "model": ErrorValidacionOut},
+    422: {"description": "Rejected file: `detail` is the validation report (or a list for malformed requests)", "model": ErrorValidacionOut},
 }
 
 
