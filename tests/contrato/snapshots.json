@@ -326,6 +326,9 @@
  },
  "analisis_ok": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -527,6 +530,9 @@
  },
  "analisis_otra_variable_y_rango": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -728,6 +734,9 @@
  },
  "analisis_rango_invalido_422": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "'hasta' debe ser posterior a 'desde'",
@@ -748,6 +757,9 @@
  },
  "analisis_sitio_inexistente_404": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "El sitio no existe en sites.csv",
@@ -768,6 +780,9 @@
  },
  "analisis_tras_subir_efemerides": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -981,6 +996,9 @@
  },
  "analisis_variable_invalida_422": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "'variable' debe ser una de: sol_az_deg, sol_el_deg, tierra_az_deg, tierra_el_deg",
@@ -1001,6 +1019,9 @@
  },
  "auditoria_listar": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -1039,6 +1060,9 @@
  },
  "auditoria_listar_con_firma": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -1077,6 +1101,9 @@
  },
  "auditoria_parametro_invalido_422": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 422,
@@ -1108,6 +1135,9 @@
  },
  "auditoria_sin_base_de_datos_503": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "La base de datos no está configurada (DATABASE_URL)",
@@ -1128,6 +1158,9 @@
  },
  "auditoria_sin_clave_401": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "API key inválida o ausente",
@@ -1148,6 +1181,9 @@
  },
  "auditoria_verificar": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -1165,6 +1201,9 @@
  "claves_generar_201": {
   "cabeceras": {
    "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 201,
@@ -1198,6 +1237,10 @@
  },
  "claves_generar_cuerpo_invalido_422": {
   "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 422,
@@ -1226,6 +1269,10 @@
  },
  "claves_generar_usuario_inexistente": {
   "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "El usuario no existe",
@@ -1246,6 +1293,10 @@
  },
  "claves_huella": {
   "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -1259,6 +1310,10 @@
  },
  "claves_inexistente_404": {
   "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "La clave no existe",
@@ -1279,6 +1334,10 @@
  },
  "claves_listar_con_datos": {
   "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -1311,6 +1370,10 @@
  },
  "claves_listar_vacio": {
   "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -1324,6 +1387,10 @@
  },
  "claves_publica": {
   "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -1340,6 +1407,10 @@
  },
  "claves_revocar": {
   "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -1366,6 +1437,9 @@
  "claves_rotar_201": {
   "cabeceras": {
    "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 201,
@@ -1399,6 +1473,10 @@
  },
  "claves_sin_clave_401": {
   "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "Clave de administración inválida o ausente",
@@ -1419,6 +1497,10 @@
  },
  "datos_clave_incorrecta_401": {
   "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "API key inválida o ausente",
@@ -1439,6 +1521,10 @@
  },
  "datos_demasiado_grande_413": {
   "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "Máximo 5 MB",
@@ -1460,6 +1546,10 @@
  },
  "datos_extension_415": {
   "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 415,
@@ -1495,6 +1585,10 @@
  },
  "datos_guardar_con_historial": {
   "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -1513,6 +1607,10 @@
  },
  "datos_guardar_invalido_422": {
   "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 422,
@@ -1548,6 +1646,10 @@
  },
  "datos_guardar_ok": {
   "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -1566,6 +1668,10 @@
  },
  "datos_sin_archivo_422": {
   "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 422,
@@ -1594,6 +1700,10 @@
  },
  "datos_sin_clave_401": {
   "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "API key inválida o ausente",
@@ -1614,6 +1724,10 @@
  },
  "datos_tipo_desconocido_404": {
   "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "Tipo desconocido; usa uno de ['sites', 'efemerides', 'metricas']",
@@ -1634,6 +1748,10 @@
  },
  "datos_validar_con_advertencias": {
   "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -1658,6 +1776,10 @@
  },
  "datos_validar_invalido_422": {
   "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 422,
@@ -1693,6 +1815,10 @@
  },
  "datos_validar_ok": {
   "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -1709,6 +1835,9 @@
  },
  "efemerides_fecha_invalida_422": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "'desde': Formato esperado: YYYY-MM-DDTHH:MMZ (UTC)",
@@ -1729,6 +1858,9 @@
  },
  "efemerides_ok": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -1751,6 +1883,9 @@
  },
  "efemerides_rango_invertido_422": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "'hasta' debe ser posterior a 'desde'",
@@ -1771,6 +1906,9 @@
  },
  "efemerides_rango_largo_422": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "El rango máximo es de 35 días (se pidieron 90.00 días)",
@@ -1791,6 +1929,9 @@
  },
  "efemerides_sin_rango": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -1813,6 +1954,9 @@
  },
  "efemerides_sitio_inexistente_404": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "El sitio no existe en sites.csv",
@@ -1833,6 +1977,9 @@
  },
  "health": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -1843,6 +1990,9 @@
  },
  "horizons_jpl_falla_502": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "JPL Horizons no está disponible ahora; reintenta en unos minutos",
@@ -1863,6 +2013,9 @@
  },
  "horizons_jpl_tarda_504": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "JPL Horizons tardó demasiado en responder; reduce el rango de fechas o reintenta en unos minutos",
@@ -1883,6 +2036,9 @@
  },
  "horizons_lat_fuera_de_rango_422": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 422,
@@ -1914,6 +2070,9 @@
  },
  "horizons_ok": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -1981,6 +2140,9 @@
  },
  "horizons_rango_largo_422": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "El rango máximo es de 35 días (se pidieron 90.00 días)",
@@ -2001,6 +2163,9 @@
  },
  "metodo_no_permitido_405": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "Method Not Allowed",
@@ -2021,6 +2186,9 @@
  },
  "metricas_cuatro_sitios_422": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "Se pueden consultar de 1 a 3 sitios",
@@ -2041,6 +2209,9 @@
  },
  "metricas_sin_referencia": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -2076,6 +2247,9 @@
  },
  "metricas_sin_site_id_422": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "Indica al menos un site_id",
@@ -2096,6 +2270,9 @@
  },
  "metricas_sin_sol_media_nula": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -2139,6 +2316,9 @@
  },
  "metricas_sitio_inexistente_404": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "El sitio no existe en sites.csv",
@@ -2159,6 +2339,9 @@
  },
  "metricas_tres_sitios": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -2202,6 +2385,9 @@
  },
  "metricas_un_sitio": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -2245,6 +2431,9 @@
  },
  "puestas_ok": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -2268,6 +2457,9 @@
  },
  "puestas_sin_desde": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -2291,6 +2483,9 @@
  },
  "puestas_sitio_inexistente_404": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "El sitio no existe en sites.csv",
@@ -2311,6 +2506,9 @@
  },
  "puestas_tierra_nunca_visible_con_nulos": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -2334,6 +2532,9 @@
  },
  "ruta_inexistente_404": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "Not Found",
@@ -2354,6 +2555,9 @@
  },
  "seguridad_clave_publica": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -2368,6 +2572,9 @@
  "seguridad_manifiesto": {
   "cabeceras": {
    "cache-control": "no-cache",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -2389,6 +2596,9 @@
  },
  "seguridad_manifiesto_sin_generar_404": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "Aún no hay manifiesto firmado de los datos",
@@ -2409,6 +2619,9 @@
  },
  "simulacion_con_proyeccion": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -2455,6 +2668,9 @@
  },
  "simulacion_datos": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -2482,6 +2698,9 @@
  },
  "simulacion_paso_invalido_422": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "'paso_horas' debe estar entre 0.25 y 24",
@@ -2502,6 +2721,9 @@
  },
  "simulacion_sitio_inexistente_404": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "detail": "El sitio no existe en sites.csv",
@@ -2522,6 +2744,9 @@
  },
  "sites": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
@@ -2543,6 +2768,9 @@
  },
  "sites_con_notas_nulas_y_altitud_por_defecto": {
   "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
    "x-request-id": "presente"
   },
   "estado": 200,
