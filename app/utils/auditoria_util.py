@@ -274,36 +274,45 @@ def registrar_login_fallido(actor: str = c.ACTOR_ANONYMOUS, request: Any = None,
 @dataclass
 class RegistroCarga:
     evento: EventoAuditoria
-    carga: CargaArchivo
+    carga: CargaArchivo | None            # None si el contenido se cortó: no hay hash que guardar
 
 
 def registrar_carga(tipo: str, nombre_archivo: str, contenido: bytes, filas: int, valido: bool, total_errores: int,
                     accion: AccionAuditoria, actor: str = c.ACTOR_API_KEY, request: Any = None,
                     ruta_almacenamiento: str | None = None, ruta_historial: str | None = None,
-                    usuario_id: uuid.UUID | None = None, db: Session | None = None) -> RegistroCarga | None:
+                    usuario_id: uuid.UUID | None = None, db: Session | None = None,
+                    truncado: bool = False) -> RegistroCarga | None:
     """Guarda la fila de cargas_archivo (SHA3-256 y firma del archivo) y el evento encadenado.
+
+    `truncado=True`: el servidor dejó de leer el archivo al pasar el límite de tamaño, así que `contenido` es solo
+    el principio. El evento registra los bytes leídos, `sha3_256: null` y `truncado: true` (un hash del principio no
+    es el del archivo), y no se crea fila en cargas_archivo, que exige el hash.
 
     Con `db` no hace commit: el llamador decide (así puede registrar antes de escribir el archivo y
     deshacerlo todo si el guardado falla).
     """
-    digest = hashlib.sha3_256(contenido).hexdigest()
+    digest = None if truncado else hashlib.sha3_256(contenido).hexdigest()
     ip_hash, user_agent = _request_context(request)
     nombre_archivo = clean_text(nombre_archivo, c.DB_FILENAME_MAX) or ""
     actor = clean_text(actor, c.DB_ACTOR_MAX) or c.ACTOR_ANONYMOUS
 
     def work(session: Session) -> RegistroCarga:
-        signer, algorithm, fingerprint = _identity()
-        signature = _sign(signer, {"v": c.SIGNED_DOC_VERSION, "sha3_256": digest, "nombre_archivo": nombre_archivo,
-                                   "tipo": tipo, "tamano_bytes": len(contenido), "algoritmo_firma": algorithm,
-                                   "huella_clave": fingerprint}, c.UPLOAD_SIGN_CONTEXT)
-        carga = CargaArchivo(usuario_id=usuario_id, actor=actor, tipo=TipoCarga(tipo), nombre_archivo=nombre_archivo,
-                             sha3_256=digest, tamano_bytes=len(contenido), filas=filas, valido=valido,
-                             total_errores=total_errores, ruta_almacenamiento=ruta_almacenamiento,
-                             ruta_historial=ruta_historial, firma_pqc=signature, algoritmo_firma=algorithm,
-                             huella_clave=fingerprint)
-        session.add(carga)
+        carga = None
+        if not truncado:
+            signer, algorithm, fingerprint = _identity()
+            signature = _sign(signer, {"v": c.SIGNED_DOC_VERSION, "sha3_256": digest, "nombre_archivo": nombre_archivo,
+                                       "tipo": tipo, "tamano_bytes": len(contenido), "algoritmo_firma": algorithm,
+                                       "huella_clave": fingerprint}, c.UPLOAD_SIGN_CONTEXT)
+            carga = CargaArchivo(usuario_id=usuario_id, actor=actor, tipo=TipoCarga(tipo), nombre_archivo=nombre_archivo,
+                                 sha3_256=digest, tamano_bytes=len(contenido), filas=filas, valido=valido,
+                                 total_errores=total_errores, ruta_almacenamiento=ruta_almacenamiento,
+                                 ruta_historial=ruta_historial, firma_pqc=signature, algoritmo_firma=algorithm,
+                                 huella_clave=fingerprint)
+            session.add(carga)
         detalle = {"tipo": tipo, "sha3_256": digest, "tamano_bytes": len(contenido), "filas": filas, "valido": valido,
                    "total_errores": total_errores}
+        if truncado:
+            detalle[c.KEY_TRUNCADO] = True
         event = _append_event(session, AccionAuditoria(accion), actor, usuario_id, nombre_archivo, detalle, ip_hash, user_agent)
         return RegistroCarga(event, carga)
 

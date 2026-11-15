@@ -764,7 +764,7 @@
   "tipo_contenido": "application/json"
  },
  "efemerides_rango_largo_422": {
-  "detail": "El rango máximo es de 35 días (se pidieron 90.0)",
+  "detail": "El rango máximo es de 35 días (se pidieron 90.00 días)",
   "estado": 422,
   "forma": {
    "detail": "str"
