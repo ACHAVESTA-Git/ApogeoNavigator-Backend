@@ -178,6 +178,7 @@ def test_un_rango_con_un_solo_sitio_sin_ventanas_deja_mejor_global_nulo(cliente)
     ({"site_id": "apollo11", "estancia_h": "72", "desde": "2027-01-01T00:00Z", "hasta": "2026-12-01T00:00Z"}, "RANGO_FECHAS_INVALIDO"),
     ({"site_id": "apollo11", "estancia_h": "72", "desde": "ayer"}, "RANGO_FECHAS_INVALIDO"),
     ({"site_id": "apollo11", "estancia_h": "72", "hasta": "2030-01-01T00:00Z"}, "FECHA_FUERA_DE_DATOS"),
+    ({"site_id": "apollo11", "estancia_h": "72", "desde": "2026-12-01T00:10Z", "hasta": "2026-12-01T00:50Z"}, "RANGO_SIN_DATOS"),
 ])
 def test_errores_con_el_estandar(cliente, params, codigo):
     r = _pedir(cliente, **params)

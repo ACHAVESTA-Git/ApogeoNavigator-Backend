@@ -132,11 +132,12 @@ def step_hours(rows: list[Row]) -> float:
     return (rows[1][c.COL_UTC] - rows[0][c.COL_UTC]).total_seconds() / c.SECONDS_PER_HOUR
 
 
-def resolve_range(rows: list[Row], desde: str | None, hasta: str | None) -> tuple[datetime, datetime]:
-    """Rango [desde, hasta] dentro de los datos y de como máximo QUERY_MAX_RANGE_DAYS días."""
+def resolve_range(rows: list[Row], desde: str | None, hasta: str | None,
+                  max_days: int | None = c.QUERY_MAX_RANGE_DAYS) -> tuple[datetime, datetime]:
+    """Rango [desde, hasta] dentro de los datos y de como máximo `max_days` días (sin tope si es None: por defecto, todos los datos)."""
     first, last = rows[0][c.COL_UTC], rows[-1][c.COL_UTC]
     start = parse_instant(c.PARAM_DESDE, desde) or first
-    end = parse_instant(c.PARAM_HASTA, hasta) or min(start + timedelta(days=c.QUERY_MAX_RANGE_DAYS), last)
+    end = parse_instant(c.PARAM_HASTA, hasta) or (last if max_days is None else min(start + timedelta(days=max_days), last))
     if not first <= start <= last:
         raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_OUT_OF_DATA.format(param=c.PARAM_DESDE))
     if end > last:
@@ -144,8 +145,8 @@ def resolve_range(rows: list[Row], desde: str | None, hasta: str | None) -> tupl
     if end <= start:
         raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_RANGE_ORDER)
     days = (end - start).total_seconds() / (c.SECONDS_PER_HOUR * c.HOURS_PER_DAY)
-    if days > c.QUERY_MAX_RANGE_DAYS:
-        raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_QUERY_RANGE.format(max=c.QUERY_MAX_RANGE_DAYS, days=days))
+    if max_days is not None and days > max_days:
+        raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_QUERY_RANGE.format(max=max_days, days=days))
     return start, end
 
 

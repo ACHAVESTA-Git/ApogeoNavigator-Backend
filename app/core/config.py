@@ -387,7 +387,6 @@ ESTANCIAS_H = (72, 156, 336)                # 3 días, 6,5 días y 14 días luna
 MAX_VENTANAS_SITIOS = 5
 VENTANAS_TOP = 3                            # ventanas no solapadas que se devuelven por sitio
 MSG_STAY_INVALID = "'estancia_h' debe ser una de {opciones} horas"
-MSG_WINDOWS_SITES = "Se pueden consultar de 1 a {max} sitios"
 MSG_STAY_NOT_ON_GRID = "'estancia_h' debe ser múltiplo del paso de las efemérides ({paso:g} h)"
 KEY_ESTANCIA = "estancia_h"
 KEY_VENTANAS_EVAL = "ventanas_evaluadas"

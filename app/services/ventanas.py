@@ -39,20 +39,14 @@ def _window(row: dict, stay_h: int) -> dict:
 def _site(site_id: str, stay_h: int, desde: str | None, hasta: str | None) -> tuple[dict, list[dict]]:
     """Resultado del sitio y su ventana mejor (en formato interno, para elegir el mejor global)."""
     rows = lectura.ephemeris(site_id)
-    first, last = rows[0][c.COL_UTC], rows[-1][c.COL_UTC]
-    start = lectura.parse_instant(c.PARAM_DESDE, desde) or first
-    end = lectura.parse_instant(c.PARAM_HASTA, hasta) or last
-    if not first <= start <= last:
-        raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_OUT_OF_DATA.format(param=c.PARAM_DESDE))
-    if end > last:
-        raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_OUT_OF_DATA.format(param=c.PARAM_HASTA))
-    if end <= start:
-        raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_RANGE_ORDER)
+    start, end = lectura.resolve_range(rows, desde, hasta, max_days=None)
     step_h = lectura.step_hours(rows)
     if stay_h % step_h:
         raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_STAY_NOT_ON_GRID.format(paso=step_h))
     n = round(stay_h / step_h)
     sample = [r for r in rows if start <= r[c.COL_UTC] <= end]
+    if not sample:
+        raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_NO_ROWS_IN_RANGE)
     candidates = util.evaluar_ventanas([r[c.COL_UTC] for r in sample], [r[c.COL_SOL_EL] for r in sample],
                                        [r[c.COL_TIERRA_EL] for r in sample], n, step_h)
     discarded = len(sample) - candidates.height
@@ -76,7 +70,7 @@ def landing_windows(site_ids: list[str], estancia_h: str | None, desde: str | No
     if not unique:
         raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_SITE_ID_REQUIRED)
     if len(unique) > c.MAX_VENTANAS_SITIOS:
-        raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_WINDOWS_SITES.format(max=c.MAX_VENTANAS_SITIOS))
+        raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_COMPARE_COUNT.format(max=c.MAX_VENTANAS_SITIOS))
     stay_h = parse_stay(estancia_h)
     results, tops = [], []
     for site_id in unique:
