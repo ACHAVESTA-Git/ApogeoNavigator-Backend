@@ -565,6 +565,18 @@ CORS_WILDCARD = "*"
 MSG_CORS_WILDCARD = "CORS_ORIGINS no admite «*»: lista los orígenes permitidos"
 
 
+ENV_TRUSTED_PROXY_HOPS = "TRUSTED_PROXY_HOPS"     # proxies de confianza delante de la app (Cloud Run directo: 1)
+DEFAULT_TRUSTED_PROXY_HOPS = 1
+
+
+def get_trusted_proxy_hops() -> int:
+    """Cuántas entradas del final de X-Forwarded-For añaden proxies propios (solo esas son fiables)."""
+    try:
+        return max(1, int(os.getenv(ENV_TRUSTED_PROXY_HOPS, DEFAULT_TRUSTED_PROXY_HOPS)))
+    except ValueError:
+        return DEFAULT_TRUSTED_PROXY_HOPS
+
+
 def get_cors_origins() -> list[str]:
     """Orígenes permitidos: CORS_ORIGINS (separados por comas) o, sin definir, los de desarrollo local."""
     raw = os.getenv(ENV_CORS_ORIGINS)
@@ -578,6 +590,37 @@ def get_cors_origins() -> list[str]:
 
 def get_cors_origin_regex() -> str | None:
     return os.getenv(ENV_CORS_ORIGIN_REGEX) or None
+
+# ---------------------------------------------------------------- documentación OpenAPI (/docs)
+ROUTER_TAG_SIMULACION = "simulacion"          # etiquetas declaradas aquí porque OPENAPI_TAGS las usa
+ROUTER_TAG_HORIZONS = "horizons"
+TAG_SYSTEM = "sistema"
+TAG_SITES = "sitios"
+API_DESCRIPTION = """
+**Lunar Landing Site Navigator** answers one question for ten lunar landing sites: *where are the Sun and the Earth in the
+sky, hour by hour?* Built by Apogeo Team for the NASA Space Apps Challenge 2026.
+
+* **Data:** hourly Sun and Earth azimuth and elevation from **NASA/JPL Horizons** (observer on the Moon, DE441, no refraction),
+  2026-12-01 to 2027-06-01. Site coordinates come from NSSDC, LROC and NASA/LRO. NASA does not endorse this project.
+* **Time:** every timestamp is **UTC** in the form `YYYY-MM-DDTHH:MMZ` (no seconds). Angles are in degrees; elevation is measured
+  against the *ideal* horizon (a smooth Moon, no terrain).
+* **Reading** (`lectura`, `sitios`, `seguridad`) is public. **Uploads and the audit log** need the `X-API-Key` header;
+  the key manager (`admin-claves`) needs the administration key.
+* **Errors** are JSON `{"detail": ...}`: a text, a list (request validation) or a CSV report (rejected uploads).
+"""
+OPENAPI_TAGS = [
+    {"name": TAG_SYSTEM, "description": "Service health."},
+    {"name": TAG_SITES, "description": "Catalogue of the ten landing sites with their coordinates and NASA source."},
+    {"name": ROUTER_TAG_LECTURA, "description": "Ephemerides, sunlight and Earth-visibility metrics with a traffic light, and next sunset/sunrise."},
+    {"name": ROUTER_TAG_HORIZONS, "description": "Sun and Earth azimuth and elevation for custom coordinates, queried live from NASA/JPL Horizons."},
+    {"name": ROUTER_TAG_SIMULACION, "description": "Sky simulation: real data inside the range and a statistical projection beyond it (with its uncertainty)."},
+    {"name": ROUTER_TAG, "description": "Validate and upload CSV data (`X-API-Key`). Strict validation, atomic save, audited."},
+    {"name": ROUTER_TAG_SECURITY, "description": "Public ML-DSA-65 key and the signed manifest of the data files, for independent verification."},
+    {"name": ROUTER_TAG_AUDIT, "description": "Hash-chained, signed audit log of validations and uploads (`X-API-Key`)."},
+    {"name": KEYS_ROUTER_TAG, "description": "Per-user key manager: generate, revoke and rotate ML-KEM/ML-DSA key pairs (administration key)."},
+]
+API_CONTACT = {"name": "Apogeo Team", "url": "https://github.com/ACHAVESTA-Git/ApogeoNavigator-Backend"}
+API_LICENSE = {"name": "MIT", "url": "https://opensource.org/license/mit"}
 
 # ---------------------------------------------------------------- análisis y proyección (Polars + numpy)
 # Periodos físicos de la Luna (días). La FFT de 6 meses no separa el anomalístico del dracónico (resolución
@@ -661,7 +704,6 @@ SIM_AZIMUTH_MAX_SUN_EL_DEG = 85.0        # con el Sol casi en el cénit el azimu
 ORIGEN_DATOS = "datos"
 ORIGEN_PROYECCION = "proyeccion"
 ROUTE_SIMULACION = "/simulacion/{site_id}"
-ROUTER_TAG_SIMULACION = "simulacion"
 PARAM_PASO_HORAS = "paso_horas"
 KEY_PUNTOS = "puntos"
 KEY_FIN_DATOS = "fin_datos_utc"
@@ -707,3 +749,71 @@ MSG_VALIDATION_GENERIC = "La petición no tiene el formato esperado."
 MSG_STORE_ERROR_LOG = "[%s] Error del almacenamiento en %s %s (%s)"
 CODE_CSV_INVALID = "CSV_INVALIDO"
 MSG_CSV_SUMMARY = "El archivo tiene {n} error(es) de validación; el informe completo va en `detail`."
+
+
+# ---------------------------------------------------------------- Horizons en vivo: coordenadas propias (app/services/horizons.py)
+ROUTE_HORIZONS = "/horizons"
+PARAM_LAT = "lat"
+PARAM_LON = "lon"
+HORIZONS_URL = "https://ssd.jpl.nasa.gov/api/horizons.api"
+HORIZONS_SOURCE = "NASA/JPL Horizons"
+HORIZONS_USER_AGENT = "ApogeoNavigator/1.0 (NASA Space Apps 2026; proyecto abierto)"   # genérico: sin datos personales
+HORIZONS_TIMEOUT_S = 20.0
+HORIZONS_CONNECT_TIMEOUT_S = 5.0
+HORIZONS_RETRIES = 1                      # reintentos tras el primer intento (timeouts, caídas de red y 5xx de JPL)
+HORIZONS_RETRY_BACKOFF_S = 0.5
+HORIZONS_RETRY_STATUS = (500, 502, 503, 504)
+HORIZONS_BODY_SUN = "10"
+HORIZONS_BODY_EARTH = "399"
+HORIZONS_CENTER = "coord@301"             # observador en la superficie de la Luna (301)
+HORIZONS_COORD_TYPE = "GEODETIC"
+HORIZONS_QUANTITIES = "4"                 # azimut y elevación aparentes
+HORIZONS_SOE = "$$SOE"
+HORIZONS_EOE = "$$EOE"
+HORIZONS_HEADER_MOON = "Center body name: Moon (301)"
+HORIZONS_HEADER_AIRLESS = "Atmos refraction: NO (AIRLESS)"
+HORIZONS_TIME_FORMAT = "%Y-%m-%d %H:%M"
+HORIZONS_MONTHS = {"Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6,
+                   "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12}
+HORIZONS_STEP_MIN_H = 1                   # paso mínimo: 1 h (la API no es para alta resolución)
+HORIZONS_STEP_MAX_H = 24
+HORIZONS_STEP_DEFAULT_H = 1
+HORIZONS_MIN_YEAR = 1900
+HORIZONS_MAX_YEAR = 2100
+HORIZONS_COORD_DECIMALS = 4               # ≈ 3 m en la Luna: dos consultas casi iguales comparten caché
+HORIZONS_CACHE_TTL_S = 86_400             # las efemérides no cambian: 24 h
+HORIZONS_CACHE_MAX_ENTRIES = 64
+HORIZONS_MAX_CONCURRENT = 2               # consultas simultáneas a JPL
+HORIZONS_GATE_WAIT_S = 5.0                # cuánto espera una petición un hueco antes de responder 503 (no bloquea hilos)
+HORIZONS_GATE_RETRY_AFTER_S = 5
+HORIZONS_MAX_RESPONSE_BYTES = 2_000_000   # tope de lo que se lee de JPL (ya descomprimido); una consulta normal pesa < 100 KB
+HORIZONS_HEADER_COLUMNS = ("Azi_(a-app)", "Elev_(a-app)")   # columnas que Horizons rotula con QUANTITIES=4
+HORIZONS_RATE_GLOBAL = (30, 60.0)         # consultas en vivo por ventana (segundos), entre todos los clientes
+HORIZONS_RATE_CLIENT = (6, 60.0)          # ídem por cliente (según X-Forwarded-For o el socket)
+HORIZONS_RATE_MAX_KEYS = 10_000           # clientes distintos que recuerda el limitador (los más antiguos se expulsan)
+HORIZONS_RETRY_AFTER_HEADER = "Retry-After"
+HORIZONS_LOGGER = "apogeo.horizons"
+HORIZONS_LOG_SNIPPET_CHARS = 160           # cuánto de una respuesta rara de JPL va al log (nunca al cliente)
+CUSTOM_SITE_ID = "personalizado"
+HTTP_TOO_MANY_REQUESTS = 429
+HTTP_BAD_GATEWAY = 502
+HTTP_GATEWAY_TIMEOUT = 504
+KEY_FUENTE = "fuente"
+KEY_EN_CACHE = "en_cache"
+KEY_CONSULTA_UTC = "consultado_utc"
+KEY_METRICAS = "metricas"
+KEY_PUESTAS = "puestas"
+ORIGEN_HORIZONS = "horizons_en_vivo"
+DESC_TOO_MANY = "Demasiadas consultas en vivo a JPL Horizons"
+DESC_BAD_GATEWAY = "JPL Horizons falló o devolvió algo inesperado"
+DESC_GATEWAY_TIMEOUT = "JPL Horizons tardó demasiado en responder"
+MSG_HORIZONS_YEARS = "Las fechas deben estar entre los años {min} y {max}"
+MSG_HORIZONS_TOO_MANY = "Hay demasiadas consultas en vivo a JPL Horizons; espera {seconds} s y reintenta"
+MSG_HORIZONS_TIMEOUT = "JPL Horizons tardó demasiado en responder; reduce el rango de fechas o reintenta en unos minutos"
+MSG_HORIZONS_FAILED = "JPL Horizons no está disponible ahora; reintenta en unos minutos"
+MSG_HORIZONS_UNEXPECTED = "JPL Horizons devolvió una respuesta que no se pudo interpretar; reintenta en unos minutos"
+MSG_HORIZONS_BUSY = "El servicio de consultas en vivo está ocupado; reintenta en {seconds} s"
+MSG_HORIZONS_NOT_MOON = "JPL Horizons no calculó la posición desde la superficie de la Luna sin refracción; no se devuelven datos"
+MSG_HORIZONS_LOG_FAILED = "JPL Horizons: fallo %s en la consulta de %s"
+MSG_HORIZONS_BAD_ROW_LOG = "fila de efemérides ilegible"
+MSG_HORIZONS_LOG_REJECTED = "JPL Horizons rechazó la consulta de %s: %s"

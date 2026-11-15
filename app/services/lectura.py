@@ -265,14 +265,19 @@ def _events(rows: list[Row], idx: int, key: str, moment: datetime) -> dict:
     }
 
 
+def sunsets_from_rows(site_id: str, rows: list[Row], moment: datetime, idx: int = 0) -> dict:
+    """Puestas y salidas a partir de filas ya cargadas (la fila `idx` es la última con utc <= moment)."""
+    return {
+        c.COL_SITE_ID: site_id, c.KEY_DESDE_UTC: fmt(moment),
+        c.KEY_SOL: _events(rows, idx, c.COL_SOL_EL, moment),
+        c.KEY_TIERRA: _events(rows, idx, c.COL_TIERRA_EL, moment),
+    }
+
+
 def sunsets(site_id: str, desde: str | None) -> dict:
     rows = ephemeris(site_id)
     moment = parse_instant(c.PARAM_DESDE, desde) or rows[0][c.COL_UTC]
     if not rows[0][c.COL_UTC] <= moment <= rows[-1][c.COL_UTC]:
         raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_OUT_OF_DATA.format(param=c.PARAM_DESDE))
     idx = max(i for i, r in enumerate(rows) if r[c.COL_UTC] <= moment)
-    return {
-        c.COL_SITE_ID: site_id, c.KEY_DESDE_UTC: fmt(moment),
-        c.KEY_SOL: _events(rows, idx, c.COL_SOL_EL, moment),
-        c.KEY_TIERRA: _events(rows, idx, c.COL_TIERRA_EL, moment),
-    }
+    return sunsets_from_rows(site_id, rows, moment, idx)

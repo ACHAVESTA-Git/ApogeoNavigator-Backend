@@ -97,6 +97,20 @@ def client_ip(request: Any) -> str | None:
     return request.client.host if getattr(request, "client", None) else None
 
 
+def trusted_client_ip(request: Any) -> str | None:
+    """IP del cliente para limitar consultas. Un cliente puede inventar el principio de X-Forwarded-For, pero el
+    balanceador de Cloud Run añade la IP real AL FINAL: se toma la entrada que está `TRUSTED_PROXY_HOPS` posiciones
+    desde el final (1 = la última). Si la cabecera trae menos entradas, la primera; sin cabecera, la del socket."""
+    if request is None:
+        return None
+    forwarded = request.headers.get(c.FORWARDED_FOR_HEADER)
+    if forwarded:
+        parts = [p.strip() for p in forwarded.split(",") if p.strip()]
+        if parts:
+            return parts[max(0, len(parts) - c.get_trusted_proxy_hops())]
+    return request.client.host if getattr(request, "client", None) else None
+
+
 def _request_context(request: Any) -> tuple[str | None, str | None]:
     if request is None:
         return None, None

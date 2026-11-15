@@ -88,6 +88,25 @@ def _con_evento(ctx, peticion):
     return peticion(ctx)
 
 
+def _horizons(modo="ok", **params):
+    """/api/horizons con Horizons simulado (sin red) y sin esperas entre reintentos."""
+    def peticion(ctx):
+        from app.services import horizons
+        from tests.horizons_falso import FakeHorizons
+        antes = config.HORIZONS_RETRY_BACKOFF_S
+        config.HORIZONS_RETRY_BACKOFF_S = 0
+        horizons.set_transport(FakeHorizons(mode=modo).transport)
+        horizons.reset_state()
+        try:
+            return ctx.client.get("/api/horizons", params={"lat": -89.66, "lon": 129.2, "desde": "2026-12-01T00:00Z",
+                                                           "hasta": "2026-12-01T03:00Z", **params})
+        finally:
+            config.HORIZONS_RETRY_BACKOFF_S = antes
+            horizons.set_transport(None)
+            horizons.reset_state()
+    return peticion
+
+
 ESCENARIOS = {
     # ---- lectura (lo que consume el frontend)
     "health": lambda c: c.client.get("/api/health"),
@@ -113,6 +132,12 @@ ESCENARIOS = {
     "puestas_sitio_inexistente_404": lambda c: c.client.get("/api/puestas/no_existe"),
     "ruta_inexistente_404": lambda c: c.client.get("/api/no-existe"),
     "metodo_no_permitido_405": lambda c: c.client.post("/api/sites"),
+    # ---- coordenadas propias (Horizons en vivo, simulado)
+    "horizons_ok": _horizons(),
+    "horizons_lat_fuera_de_rango_422": _horizons(lat=91),
+    "horizons_rango_largo_422": _horizons(hasta="2027-03-01T00:00Z"),
+    "horizons_jpl_falla_502": _horizons("http500"),
+    "horizons_jpl_tarda_504": _horizons("timeout"),
     # ---- seguridad (público)
     "seguridad_clave_publica": lambda c: c.client.get("/api/seguridad/clave-publica"),
     "seguridad_manifiesto_sin_generar_404": lambda c: c.client.get("/api/seguridad/manifiesto"),
