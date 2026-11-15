@@ -47,7 +47,7 @@ def test_clave_publica_sigue_dando_503_sin_claves_en_produccion(api, monkeypatch
     monkeypatch.delenv("PQC_PUBLIC_KEY")
     pqc.reiniciar()
     r = api.get("/api/seguridad/clave-publica")
-    assert (r.status_code, r.json()) == (503, {"detail": c.MSG_SIGNING_UNAVAILABLE})
+    assert (r.status_code, r.json()["detail"]) == (503, c.MSG_SIGNING_UNAVAILABLE)
 
 
 # ------------------------------------------------------------------ manifiesto: documentado, no modelado
