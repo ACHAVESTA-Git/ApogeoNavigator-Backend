@@ -10,8 +10,10 @@ T = TypeVar("T")
 
 class ErrorOut(BaseModel):
     """Cuerpo de un error. `detail` es un texto en los errores de la API y en el 401 del guardia, una lista en los 422
-    de validación nativos de FastAPI y un informe de CSV (objeto) en los 422 de la carga de archivos."""
+    de validación nativos de FastAPI y un informe de CSV (objeto) en los 422 de la carga de archivos.
+    `codigo` solo lo lleva el 413 del guardia de subida (E_TAMANO)."""
     detail: str | list | dict
+    codigo: str | None = None
 
 
 class Page(BaseModel, Generic[T]):

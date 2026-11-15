@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI
 
 from app.core import config
 from app.core.cors import add_cors
@@ -9,9 +9,9 @@ from app.core.limits import upload_guard
 from app.core.logging_config import configurar_logging
 from app.core.peticion import RequestContextMiddleware
 from app.db.session import db_enabled
-from app.routers import admin_claves, analisis, auditoria, datos, horizons, lectura, seguridad, simulacion
-from app.schemas.sites import Site
-from app.services import datastore, storage
+from app.routers import admin_claves, analisis, auditoria, datos, horizons, lectura, seguridad, simulacion, sites
+from app.schemas.seguridad import HealthOut
+from app.services import datastore
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -31,6 +31,7 @@ add_cors(app)      # el último en añadirse es el más externo
 register_handlers(app)
 app.include_router(datos.router)
 app.include_router(lectura.router, dependencies=[Depends(datastore.refresh_if_stale)])
+app.include_router(sites.router, dependencies=[Depends(datastore.refresh_if_stale)])
 app.include_router(simulacion.router, dependencies=[Depends(datastore.refresh_if_stale)])
 app.include_router(analisis.router, dependencies=[Depends(datastore.refresh_if_stale)])
 app.include_router(horizons.router)
@@ -39,20 +40,7 @@ app.include_router(seguridad.router, dependencies=[Depends(datastore.refresh_if_
 app.include_router(admin_claves.router)
 
 
-@app.get(config.ROUTE_HEALTH, tags=[config.TAG_SYSTEM], summary="Service health")
-def health() -> dict:
+@app.get(config.ROUTE_HEALTH, response_model=HealthOut, tags=[config.TAG_SYSTEM], summary="Service health")
+def health() -> HealthOut:
     """Returns `{"status": "ok"}` while the service is up."""
-    return dict(config.HEALTH_OK)
-
-
-@app.get(config.ROUTE_SITES, response_model=list[Site], tags=[config.TAG_SITES], summary="List the landing sites",
-         dependencies=[Depends(datastore.refresh_if_stale)])
-def sites() -> list[dict]:
-    """The ten sites of the catalogue: coordinates (latitude south negative, longitude east positive), mission, agency and the
-    URL of the NASA source of each position."""
-    result = storage.read_sites()
-    if result is None:
-        raise HTTPException(status_code=config.HTTP_UNAVAILABLE, detail=config.MSG_NO_SITES)
-    if not result.report.valido:
-        raise HTTPException(status_code=config.HTTP_UNAVAILABLE, detail=config.MSG_SITES_INVALID)
-    return [r.values for r in result.records]
+    return HealthOut(**config.HEALTH_OK)
