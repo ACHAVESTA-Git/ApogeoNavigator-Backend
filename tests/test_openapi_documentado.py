@@ -6,11 +6,12 @@ from app.main import app
 from app.schemas.auditoria import EventoOut
 from app.schemas.lectura import EphemerisOut, MetricsItem, SunsetsOut
 from app.schemas.report import Issue, Report
+from app.schemas.simulacion import SimulacionOut
 from app.schemas.sites import Site
 
 ESQUEMA = app.openapi()
 OPERACIONES = [(ruta, metodo, op) for ruta, ms in ESQUEMA["paths"].items() for metodo, op in ms.items()]
-DTO_CON_EJEMPLO = [Site, EphemerisOut, MetricsItem, SunsetsOut, Report, Issue, EventoOut]
+DTO_CON_EJEMPLO = [Site, EphemerisOut, MetricsItem, SunsetsOut, Report, Issue, EventoOut, SimulacionOut]
 
 
 def test_la_api_tiene_descripcion_contacto_y_licencia():
@@ -58,7 +59,7 @@ def test_los_campos_con_unidad_tienen_descripcion():
                 assert prop.get("description"), f"{modelo.__name__}.{nombre} sin descripción"
 
 
-@pytest.mark.parametrize("ruta", ["/api/efemerides/{site_id}", "/api/metricas", "/api/puestas/{site_id}"])
+@pytest.mark.parametrize("ruta", ["/api/efemerides/{site_id}", "/api/metricas", "/api/puestas/{site_id}", "/api/simulacion/{site_id}"])
 def test_los_parametros_de_lectura_tienen_descripcion_y_ejemplo(ruta):
     for parametro in ESQUEMA["paths"][ruta]["get"]["parameters"]:
         assert parametro.get("description"), f"{ruta}: {parametro['name']} sin descripción"
@@ -67,10 +68,40 @@ def test_los_parametros_de_lectura_tienen_descripcion_y_ejemplo(ruta):
 
 def test_los_parametros_de_lectura_no_ganan_restricciones_que_cambien_los_errores():
     """Con pattern, ge/le o datetime, el 422 pasaría de texto a lista y el contrato del frontend se rompería."""
-    for ruta in ("/api/efemerides/{site_id}", "/api/metricas", "/api/puestas/{site_id}"):
+    for ruta in ("/api/efemerides/{site_id}", "/api/metricas", "/api/puestas/{site_id}", "/api/simulacion/{site_id}"):
         for parametro in ESQUEMA["paths"][ruta]["get"]["parameters"]:
             esquema = parametro["schema"]
             base = esquema.get("items", esquema) if esquema.get("type") == "array" else esquema
             otras = esquema.get("anyOf", [])
             assert not {"pattern", "minimum", "maximum", "format"} & set(base), (ruta, parametro["name"])
             assert all(not {"pattern", "format"} & set(o) for o in otras), (ruta, parametro["name"])
+
+
+PALABRAS_EN_ESPANOL = (" el ", " la ", " los ", " las ", " del ", " con ", " sin ", " según ", " para ", " por ", " si ", " una ", " un ")
+
+
+def _descripciones():
+    """Todas las descripciones de campos de los DTO y de parámetros de lectura y simulación que salen en /docs."""
+    for nombre, esquema in ESQUEMA["components"]["schemas"].items():
+        for campo, prop in esquema.get("properties", {}).items():
+            if prop.get("description"):
+                yield f"{nombre}.{campo}", prop["description"]
+    for ruta in ("/api/efemerides/{site_id}", "/api/metricas", "/api/puestas/{site_id}", "/api/simulacion/{site_id}"):
+        for p in ESQUEMA["paths"][ruta]["get"]["parameters"]:
+            yield f"{ruta}:{p['name']}", p.get("description", "")
+        yield f"{ruta}:doc", ESQUEMA["paths"][ruta]["get"].get("description", "")
+
+
+@pytest.mark.parametrize("donde,texto", [d for d in _descripciones() if not d[0].startswith(("Body_", "HTTPValidation", "ValidationError", "ClaveOut", "ClaveEntregada", "Entrega", "GenerarIn", "RevocarIn", "RotarIn", "PublicaOut", "HuellaOut", "VerificacionOut", "EventoOut"))],
+                         ids=lambda x: x if len(x) < 60 else x[:57] + "...")
+def test_la_documentacion_de_los_dto_y_parametros_publicos_esta_en_ingles(donde, texto):
+    """El jurado lee /docs en inglés. (Los DTO de auditoría y claves aún no llevan descripciones.)"""
+    assert texto and not any(palabra in f" {texto.lower()} " for palabra in PALABRAS_EN_ESPANOL), f"{donde}: {texto}"
+
+
+def test_la_simulacion_documenta_desde_hasta_y_paso_horas():
+    params = {p["name"]: p for p in ESQUEMA["paths"]["/api/simulacion/{site_id}"]["get"]["parameters"]}
+    assert set(params) == {"site_id", "desde", "hasta", "paso_horas"}
+    assert "0.25" in params["paso_horas"]["description"] and "366" in params["hasta"]["description"]
+    assert all(p["schema"].get("examples") or p.get("examples") for p in params.values())
+    assert SimulacionOut.model_config["json_schema_extra"]["examples"][0]["site_id"] == "shackleton"
