@@ -1,0 +1,3661 @@
+{
+ "generado_utc": "2026-11-14T21:58Z",
+ "entrenamiento": {
+  "inicio": "2026-12-01T00:00Z",
+  "fin": "2027-06-01T00:00Z"
+ },
+ "validacion": {
+  "inicio": "2027-06-01T00:00Z",
+  "fin": "2028-06-01T00:00Z"
+ },
+ "sitios": {
+  "apollo11": {
+   "exploracion": {
+    "paso_h": 1.0,
+    "sol_visibles": {
+     "tramos_completos": 6,
+     "duracion_media_h": 355.0,
+     "duracion_min_h": 354.0,
+     "duracion_max_h": 356.0
+    },
+    "sol_oscuras": {
+     "tramos_completos": 5,
+     "duracion_media_h": 354.4,
+     "duracion_min_h": 354.0,
+     "duracion_max_h": 355.0
+    },
+    "tierra_visibles": {
+     "tramos_completos": 0,
+     "duracion_media_h": null,
+     "duracion_min_h": null,
+     "duracion_max_h": null
+    },
+    "tierra_oscuras": {
+     "tramos_completos": 0,
+     "duracion_media_h": null,
+     "duracion_min_h": null,
+     "duracion_max_h": null
+    },
+    "dias_lunares_completos": 6,
+    "horas_sol_por_dia_lunar_media": 355.0,
+    "sol_el_max_por_dia_lunar": [
+     88.09,
+     88.74,
+     89.6,
+     89.6,
+     89.17,
+     89.14
+    ],
+    "sol_el_max_diaria": {
+     "min": -83.831,
+     "max": 89.598
+    },
+    "libracion": {
+     "tierra_az_rango_deg": 35.75,
+     "tierra_az_std_deg": 11.89,
+     "tierra_el_rango_deg": 15.72,
+     "tierra_el_std_deg": 4.58,
+     "tierra_el_media_deg": 65.89
+    },
+    "picos_fft": {
+     "sol_el_deg": [
+      {
+       "periodo_dias": 29.57,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "sinodico",
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 9.86,
+       "amplitud_rel": 0.11,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 216.57,
+       "amplitud_rel": 0.05,
+       "candidatos": []
+      }
+     ],
+     "tierra_el_deg": [
+      {
+       "periodo_dias": 27.52,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "sinodico",
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 15.14,
+       "amplitud_rel": 0.08,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 13.37,
+       "amplitud_rel": 0.08,
+       "candidatos": []
+      }
+     ],
+     "tierra_az_deg": [
+      {
+       "periodo_dias": 27.3,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 13.71,
+       "amplitud_rel": 0.13,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 20.14,
+       "amplitud_rel": 0.03,
+       "candidatos": []
+      }
+     ]
+    }
+   },
+   "periodo_sinodico_dias": 29.525,
+   "ventana_dias": 182.0,
+   "errores": {
+    "sol_az_deg": {
+     "mae_deg": 2.9879,
+     "rmse_deg": 10.6443,
+     "rmse_por_mes_deg": [
+      0.9248,
+      6.9688,
+      6.8091,
+      6.5437,
+      6.715,
+      8.721,
+      12.5643,
+      16.383,
+      16.6094,
+      15.4748,
+      11.9761,
+      4.1632
+     ],
+     "rmse_referencia_ingenua_deg": 15.8715
+    },
+    "sol_el_deg": {
+     "mae_deg": 1.2795,
+     "rmse_deg": 1.5392,
+     "rmse_por_mes_deg": [
+      0.0581,
+      0.202,
+      0.456,
+      0.8356,
+      1.3147,
+      1.8267,
+      2.2555,
+      2.4636,
+      2.3635,
+      1.9416,
+      1.2855,
+      0.5497
+     ],
+     "rmse_referencia_ingenua_deg": 1.9043
+    },
+    "tierra_az_deg": {
+     "mae_deg": 0.7629,
+     "rmse_deg": 1.0496,
+     "rmse_por_mes_deg": [
+      0.3129,
+      0.4929,
+      0.6383,
+      0.7374,
+      0.7847,
+      0.758,
+      0.7003,
+      0.9451,
+      1.3292,
+      1.6829,
+      1.6783,
+      1.3845
+     ],
+     "rmse_referencia_ingenua_deg": 7.3555
+    },
+    "tierra_el_deg": {
+     "mae_deg": 0.3387,
+     "rmse_deg": 0.3987,
+     "rmse_por_mes_deg": [
+      0.2103,
+      0.3265,
+      0.3769,
+      0.4099,
+      0.4583,
+      0.4572,
+      0.4469,
+      0.441,
+      0.4046,
+      0.3993,
+      0.4007,
+      0.3868
+     ],
+     "rmse_referencia_ingenua_deg": 1.4864
+    }
+   },
+   "puestas_sol": {
+    "eventos_reales": 25,
+    "eventos_proyectados": 25,
+    "emparejados_pct": 100.0,
+    "mae_h": 2.48,
+    "mediana_h": 3.0,
+    "max_h": 5.0
+   },
+   "puestas_tierra": {
+    "eventos_reales": 0,
+    "eventos_proyectados": 0,
+    "emparejados_pct": null,
+    "mae_h": null,
+    "mediana_h": null,
+    "max_h": null
+   },
+   "semaforo": {
+    "meses": 12,
+    "meses_detalle": [
+     {
+      "mes": "2027-06",
+      "pct_sol_real": 49.1667,
+      "pct_sol_proy": 49.1667,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-07",
+      "pct_sol_real": 47.5806,
+      "pct_sol_proy": 47.4462,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-08",
+      "pct_sol_real": 47.5806,
+      "pct_sol_proy": 47.5806,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-09",
+      "pct_sol_real": 49.3056,
+      "pct_sol_proy": 49.1667,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-10",
+      "pct_sol_real": 47.7151,
+      "pct_sol_proy": 47.7151,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-11",
+      "pct_sol_real": 49.3056,
+      "pct_sol_proy": 49.1667,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-12",
+      "pct_sol_real": 47.8495,
+      "pct_sol_proy": 47.7151,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-01",
+      "pct_sol_real": 47.8495,
+      "pct_sol_proy": 47.7151,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-02",
+      "pct_sol_real": 51.1494,
+      "pct_sol_proy": 51.1494,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-03",
+      "pct_sol_real": 49.7312,
+      "pct_sol_proy": 50.2688,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-04",
+      "pct_sol_real": 50.8333,
+      "pct_sol_proy": 50.8333,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-05",
+      "pct_sol_real": 52.5538,
+      "pct_sol_proy": 52.4194,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     }
+    ],
+    "aciertos_energia": 12,
+    "aciertos_comunicacion": 12,
+    "aciertos_global": 12
+   },
+   "sol_elevacion_ajuste_directo": false
+  },
+  "apollo15": {
+   "exploracion": {
+    "paso_h": 1.0,
+    "sol_visibles": {
+     "tramos_completos": 6,
+     "duracion_media_h": 356.2,
+     "duracion_min_h": 354.0,
+     "duracion_max_h": 358.0
+    },
+    "sol_oscuras": {
+     "tramos_completos": 6,
+     "duracion_media_h": 353.7,
+     "duracion_min_h": 350.0,
+     "duracion_max_h": 357.0
+    },
+    "tierra_visibles": {
+     "tramos_completos": 0,
+     "duracion_media_h": null,
+     "duracion_min_h": null,
+     "duracion_max_h": null
+    },
+    "tierra_oscuras": {
+     "tramos_completos": 0,
+     "duracion_media_h": null,
+     "duracion_min_h": null,
+     "duracion_max_h": null
+    },
+    "dias_lunares_completos": 6,
+    "horas_sol_por_dia_lunar_media": 355.2,
+    "sol_el_max_por_dia_lunar": [
+     62.67,
+     63.36,
+     64.2,
+     64.94,
+     65.37,
+     65.39
+    ],
+    "sol_el_max_diaria": {
+     "min": -64.045,
+     "max": 65.391
+    },
+    "libracion": {
+     "tierra_az_rango_deg": 32.64,
+     "tierra_az_std_deg": 9.46,
+     "tierra_el_rango_deg": 15.12,
+     "tierra_el_std_deg": 5.16,
+     "tierra_el_media_deg": 63.61
+    },
+    "picos_fft": {
+     "sol_el_deg": [
+      {
+       "periodo_dias": 29.57,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "sinodico",
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 207.59,
+       "amplitud_rel": 0.06,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 9.85,
+       "amplitud_rel": 0.06,
+       "candidatos": []
+      }
+     ],
+     "tierra_el_deg": [
+      {
+       "periodo_dias": 27.28,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 13.82,
+       "amplitud_rel": 0.04,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 20.12,
+       "amplitud_rel": 0.03,
+       "candidatos": []
+      }
+     ],
+     "tierra_az_deg": [
+      {
+       "periodo_dias": 27.55,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "sinodico",
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 14.32,
+       "amplitud_rel": 0.18,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 20.32,
+       "amplitud_rel": 0.03,
+       "candidatos": []
+      }
+     ]
+    }
+   },
+   "periodo_sinodico_dias": 29.525,
+   "ventana_dias": 182.0,
+   "errores": {
+    "sol_az_deg": {
+     "mae_deg": 1.3629,
+     "rmse_deg": 2.0095,
+     "rmse_por_mes_deg": [
+      0.1895,
+      0.4017,
+      0.6828,
+      1.0614,
+      1.586,
+      2.2152,
+      2.8123,
+      3.1887,
+      3.1815,
+      2.7056,
+      1.8089,
+      0.7394
+     ],
+     "rmse_referencia_ingenua_deg": 2.9097
+    },
+    "sol_el_deg": {
+     "mae_deg": 1.0155,
+     "rmse_deg": 1.3228,
+     "rmse_por_mes_deg": [
+      0.1233,
+      0.2572,
+      0.4328,
+      0.6836,
+      1.0373,
+      1.4665,
+      1.8729,
+      2.1266,
+      2.1068,
+      1.7666,
+      1.1474,
+      0.4116
+     ],
+     "rmse_referencia_ingenua_deg": 1.8219
+    },
+    "tierra_az_deg": {
+     "mae_deg": 0.744,
+     "rmse_deg": 0.8808,
+     "rmse_por_mes_deg": [
+      0.4695,
+      0.6984,
+      0.8262,
+      0.9323,
+      1.0423,
+      1.0324,
+      1.0221,
+      0.9922,
+      0.8498,
+      0.8704,
+      0.8586,
+      0.8086
+     ],
+     "rmse_referencia_ingenua_deg": 4.0414
+    },
+    "tierra_el_deg": {
+     "mae_deg": 0.2768,
+     "rmse_deg": 0.3743,
+     "rmse_por_mes_deg": [
+      0.0854,
+      0.1403,
+      0.2143,
+      0.2857,
+      0.334,
+      0.2986,
+      0.2659,
+      0.3612,
+      0.4864,
+      0.5689,
+      0.5611,
+      0.4969
+     ],
+     "rmse_referencia_ingenua_deg": 2.7457
+    }
+   },
+   "puestas_sol": {
+    "eventos_reales": 25,
+    "eventos_proyectados": 25,
+    "emparejados_pct": 100.0,
+    "mae_h": 2.52,
+    "mediana_h": 2.0,
+    "max_h": 7.0
+   },
+   "puestas_tierra": {
+    "eventos_reales": 0,
+    "eventos_proyectados": 0,
+    "emparejados_pct": null,
+    "mae_h": null,
+    "mediana_h": null,
+    "max_h": null
+   },
+   "semaforo": {
+    "meses": 12,
+    "meses_detalle": [
+     {
+      "mes": "2027-06",
+      "pct_sol_real": 49.4444,
+      "pct_sol_proy": 49.4444,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-07",
+      "pct_sol_real": 47.7151,
+      "pct_sol_proy": 47.7151,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-08",
+      "pct_sol_real": 47.5806,
+      "pct_sol_proy": 47.5806,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-09",
+      "pct_sol_real": 49.0278,
+      "pct_sol_proy": 49.0278,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-10",
+      "pct_sol_real": 47.3118,
+      "pct_sol_proy": 47.1774,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-11",
+      "pct_sol_real": 49.0278,
+      "pct_sol_proy": 48.8889,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-12",
+      "pct_sol_real": 47.5806,
+      "pct_sol_proy": 47.1774,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-01",
+      "pct_sol_real": 47.7151,
+      "pct_sol_proy": 47.4462,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-02",
+      "pct_sol_real": 51.2931,
+      "pct_sol_proy": 50.7184,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-03",
+      "pct_sol_real": 48.1183,
+      "pct_sol_proy": 47.7151,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-04",
+      "pct_sol_real": 49.7222,
+      "pct_sol_proy": 49.4444,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-05",
+      "pct_sol_real": 51.4785,
+      "pct_sol_proy": 51.3441,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     }
+    ],
+    "aciertos_energia": 12,
+    "aciertos_comunicacion": 12,
+    "aciertos_global": 12
+   },
+   "sol_elevacion_ajuste_directo": false
+  },
+  "apollo17": {
+   "exploracion": {
+    "paso_h": 1.0,
+    "sol_visibles": {
+     "tramos_completos": 6,
+     "duracion_media_h": 355.8,
+     "duracion_min_h": 354.0,
+     "duracion_max_h": 357.0
+    },
+    "sol_oscuras": {
+     "tramos_completos": 5,
+     "duracion_media_h": 353.6,
+     "duracion_min_h": 351.0,
+     "duracion_max_h": 357.0
+    },
+    "tierra_visibles": {
+     "tramos_completos": 0,
+     "duracion_media_h": null,
+     "duracion_min_h": null,
+     "duracion_max_h": null
+    },
+    "tierra_oscuras": {
+     "tramos_completos": 0,
+     "duracion_media_h": null,
+     "duracion_min_h": null,
+     "duracion_max_h": null
+    },
+    "dias_lunares_completos": 6,
+    "horas_sol_por_dia_lunar_media": 355.8,
+    "sol_el_max_por_dia_lunar": [
+     68.55,
+     69.22,
+     70.06,
+     70.82,
+     71.28,
+     71.33
+    ],
+    "sol_el_max_diaria": {
+     "min": -69.534,
+     "max": 71.335
+    },
+    "libracion": {
+     "tierra_az_rango_deg": 13.87,
+     "tierra_az_std_deg": 3.65,
+     "tierra_el_rango_deg": 19.62,
+     "tierra_el_std_deg": 6.23,
+     "tierra_el_media_deg": 53.7
+    },
+    "picos_fft": {
+     "sol_el_deg": [
+      {
+       "periodo_dias": 29.57,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "sinodico",
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 9.86,
+       "amplitud_rel": 0.07,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 246.72,
+       "amplitud_rel": 0.05,
+       "candidatos": [
+        "anio_de_eclipses"
+       ]
+      }
+     ],
+     "tierra_el_deg": [
+      {
+       "periodo_dias": 27.45,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 14.79,
+       "amplitud_rel": 0.06,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 20.21,
+       "amplitud_rel": 0.03,
+       "candidatos": []
+      }
+     ],
+     "tierra_az_deg": [
+      {
+       "periodo_dias": 26.67,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 38.67,
+       "amplitud_rel": 0.1,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 15.27,
+       "amplitud_rel": 0.09,
+       "candidatos": []
+      }
+     ]
+    }
+   },
+   "periodo_sinodico_dias": 29.525,
+   "ventana_dias": 182.0,
+   "errores": {
+    "sol_az_deg": {
+     "mae_deg": 1.4358,
+     "rmse_deg": 2.2257,
+     "rmse_por_mes_deg": [
+      0.2295,
+      0.4621,
+      0.7499,
+      1.1493,
+      1.7163,
+      2.4137,
+      3.0835,
+      3.5229,
+      3.5396,
+      3.0382,
+      2.055,
+      0.8555
+     ],
+     "rmse_referencia_ingenua_deg": 3.2998
+    },
+    "sol_el_deg": {
+     "mae_deg": 1.0812,
+     "rmse_deg": 1.3796,
+     "rmse_por_mes_deg": [
+      0.1094,
+      0.2521,
+      0.4536,
+      0.737,
+      1.1172,
+      1.556,
+      1.9597,
+      2.2021,
+      2.1707,
+      1.8228,
+      1.2044,
+      0.4645
+     ],
+     "rmse_referencia_ingenua_deg": 1.8282
+    },
+    "tierra_az_deg": {
+     "mae_deg": 0.6904,
+     "rmse_deg": 0.8458,
+     "rmse_por_mes_deg": [
+      0.3482,
+      0.5292,
+      0.6702,
+      0.8132,
+      0.9327,
+      0.8515,
+      0.7828,
+      0.9379,
+      1.0507,
+      1.0887,
+      0.9819,
+      0.8557
+     ],
+     "rmse_referencia_ingenua_deg": 4.8843
+    },
+    "tierra_el_deg": {
+     "mae_deg": 0.2315,
+     "rmse_deg": 0.2969,
+     "rmse_por_mes_deg": [
+      0.1247,
+      0.2043,
+      0.2349,
+      0.233,
+      0.2391,
+      0.272,
+      0.2861,
+      0.2481,
+      0.2821,
+      0.3974,
+      0.4549,
+      0.4119
+     ],
+     "rmse_referencia_ingenua_deg": 1.5619
+    }
+   },
+   "puestas_sol": {
+    "eventos_reales": 25,
+    "eventos_proyectados": 25,
+    "emparejados_pct": 100.0,
+    "mae_h": 2.48,
+    "mediana_h": 2.0,
+    "max_h": 6.0
+   },
+   "puestas_tierra": {
+    "eventos_reales": 0,
+    "eventos_proyectados": 0,
+    "emparejados_pct": null,
+    "mae_h": null,
+    "mediana_h": null,
+    "max_h": null
+   },
+   "semaforo": {
+    "meses": 12,
+    "meses_detalle": [
+     {
+      "mes": "2027-06",
+      "pct_sol_real": 49.3056,
+      "pct_sol_proy": 49.3056,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-07",
+      "pct_sol_real": 47.7151,
+      "pct_sol_proy": 47.5806,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-08",
+      "pct_sol_real": 47.4462,
+      "pct_sol_proy": 47.4462,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-09",
+      "pct_sol_real": 49.0278,
+      "pct_sol_proy": 49.0278,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-10",
+      "pct_sol_real": 47.4462,
+      "pct_sol_proy": 47.3118,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-11",
+      "pct_sol_real": 49.0278,
+      "pct_sol_proy": 49.0278,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-12",
+      "pct_sol_real": 47.7151,
+      "pct_sol_proy": 47.3118,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-01",
+      "pct_sol_real": 49.0591,
+      "pct_sol_proy": 49.0591,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-02",
+      "pct_sol_real": 50.0,
+      "pct_sol_proy": 49.1379,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-03",
+      "pct_sol_real": 52.0161,
+      "pct_sol_proy": 52.0161,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-04",
+      "pct_sol_real": 51.25,
+      "pct_sol_proy": 50.9722,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-05",
+      "pct_sol_real": 52.8226,
+      "pct_sol_proy": 52.6882,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     }
+    ],
+    "aciertos_energia": 12,
+    "aciertos_comunicacion": 12,
+    "aciertos_global": 12
+   },
+   "sol_elevacion_ajuste_directo": false
+  },
+  "shackleton": {
+   "exploracion": {
+    "paso_h": 1.0,
+    "sol_visibles": {
+     "tramos_completos": 1,
+     "duracion_media_h": 413.0,
+     "duracion_min_h": 413.0,
+     "duracion_max_h": 413.0
+    },
+    "sol_oscuras": {
+     "tramos_completos": 1,
+     "duracion_media_h": 54.0,
+     "duracion_min_h": 54.0,
+     "duracion_max_h": 54.0
+    },
+    "tierra_visibles": {
+     "tramos_completos": 6,
+     "duracion_media_h": 300.0,
+     "duracion_min_h": 291.0,
+     "duracion_max_h": 305.0
+    },
+    "tierra_oscuras": {
+     "tramos_completos": 6,
+     "duracion_media_h": 352.3,
+     "duracion_min_h": 349.0,
+     "duracion_max_h": 360.0
+    },
+    "dias_lunares_completos": 6,
+    "horas_sol_por_dia_lunar_media": 298.7,
+    "sol_el_max_por_dia_lunar": [
+     1.74,
+     1.18,
+     0.37,
+     -0.43,
+     -1.0,
+     -1.17
+    ],
+    "sol_el_max_diaria": {
+     "min": -1.881,
+     "max": 1.739
+    },
+    "libracion": {
+     "tierra_az_rango_deg": 15.57,
+     "tierra_az_std_deg": 4.6,
+     "tierra_el_rango_deg": 13.59,
+     "tierra_el_std_deg": 4.68,
+     "tierra_el_media_deg": -0.87
+    },
+    "picos_fft": {
+     "sol_el_deg": [
+      {
+       "periodo_dias": 29.54,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "sinodico",
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 206.32,
+       "amplitud_rel": 0.74,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 55.33,
+       "amplitud_rel": 0.03,
+       "candidatos": []
+      }
+     ],
+     "tierra_el_deg": [
+      {
+       "periodo_dias": 27.26,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 13.71,
+       "amplitud_rel": 0.06,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 20.1,
+       "amplitud_rel": 0.03,
+       "candidatos": []
+      }
+     ],
+     "tierra_az_deg": [
+      {
+       "periodo_dias": 27.52,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "sinodico",
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 14.98,
+       "amplitud_rel": 0.1,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 298.88,
+       "amplitud_rel": 0.04,
+       "candidatos": [
+        "anio_de_eclipses"
+       ]
+      }
+     ]
+    }
+   },
+   "periodo_sinodico_dias": 29.525,
+   "ventana_dias": 182.0,
+   "errores": {
+    "sol_az_deg": {
+     "mae_deg": 1.2954,
+     "rmse_deg": 1.5534,
+     "rmse_por_mes_deg": [
+      0.0548,
+      0.1962,
+      0.4553,
+      0.8415,
+      1.3301,
+      1.8484,
+      2.2782,
+      2.4875,
+      2.3837,
+      1.9572,
+      1.2933,
+      0.5527
+     ],
+     "rmse_referencia_ingenua_deg": 1.9301
+    },
+    "sol_el_deg": {
+     "mae_deg": 0.1798,
+     "rmse_deg": 0.2178,
+     "rmse_por_mes_deg": [
+      0.0463,
+      0.1094,
+      0.1666,
+      0.1987,
+      0.2181,
+      0.2473,
+      0.2736,
+      0.2756,
+      0.2574,
+      0.2357,
+      0.2242,
+      0.2362
+     ],
+     "rmse_referencia_ingenua_deg": 1.7991
+    },
+    "tierra_az_deg": {
+     "mae_deg": 0.3253,
+     "rmse_deg": 0.3893,
+     "rmse_por_mes_deg": [
+      0.227,
+      0.3467,
+      0.382,
+      0.3907,
+      0.4234,
+      0.4461,
+      0.4524,
+      0.4374,
+      0.382,
+      0.3856,
+      0.3843,
+      0.3632
+     ],
+     "rmse_referencia_ingenua_deg": 1.5382
+    },
+    "tierra_el_deg": {
+     "mae_deg": 0.3069,
+     "rmse_deg": 0.3982,
+     "rmse_por_mes_deg": [
+      0.1243,
+      0.189,
+      0.2482,
+      0.2988,
+      0.335,
+      0.3123,
+      0.3008,
+      0.4021,
+      0.5187,
+      0.6019,
+      0.5839,
+      0.5141
+     ],
+     "rmse_referencia_ingenua_deg": 2.8742
+    }
+   },
+   "puestas_sol": {
+    "eventos_reales": 4,
+    "eventos_proyectados": 2,
+    "emparejados_pct": 25.0,
+    "mae_h": 3.0,
+    "mediana_h": 3.0,
+    "max_h": 3.0
+   },
+   "puestas_tierra": {
+    "eventos_reales": 27,
+    "eventos_proyectados": 27,
+    "emparejados_pct": 100.0,
+    "mae_h": 2.7037,
+    "mediana_h": 2.0,
+    "max_h": 9.0
+   },
+   "semaforo": {
+    "meses": 12,
+    "meses_detalle": [
+     {
+      "mes": "2027-06",
+      "pct_sol_real": 0.0,
+      "pct_sol_proy": 0.0,
+      "pct_tierra_real": 51.3889,
+      "pct_tierra_proy": 51.8056,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-07",
+      "pct_sol_real": 1.2097,
+      "pct_sol_proy": 0.8065,
+      "pct_tierra_real": 53.2258,
+      "pct_tierra_proy": 53.7634,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-08",
+      "pct_sol_real": 100.0,
+      "pct_sol_proy": 100.0,
+      "pct_tierra_real": 46.371,
+      "pct_tierra_proy": 46.5054,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-09",
+      "pct_sol_real": 100.0,
+      "pct_sol_proy": 100.0,
+      "pct_tierra_real": 43.8889,
+      "pct_tierra_proy": 43.6111,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-10",
+      "pct_sol_real": 100.0,
+      "pct_sol_proy": 100.0,
+      "pct_tierra_real": 42.2043,
+      "pct_tierra_proy": 41.8011,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-11",
+      "pct_sol_real": 100.0,
+      "pct_sol_proy": 100.0,
+      "pct_tierra_real": 43.6111,
+      "pct_tierra_proy": 43.1944,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-12",
+      "pct_sol_real": 100.0,
+      "pct_sol_proy": 100.0,
+      "pct_tierra_real": 47.3118,
+      "pct_tierra_proy": 47.5806,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-01",
+      "pct_sol_real": 63.7097,
+      "pct_sol_proy": 46.1022,
+      "pct_tierra_real": 54.9731,
+      "pct_tierra_proy": 54.9731,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-02",
+      "pct_sol_real": 6.6092,
+      "pct_sol_proy": 0.0,
+      "pct_tierra_real": 52.7299,
+      "pct_tierra_proy": 52.0115,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-03",
+      "pct_sol_real": 0.0,
+      "pct_sol_proy": 0.0,
+      "pct_tierra_real": 56.3172,
+      "pct_tierra_proy": 54.8387,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-04",
+      "pct_sol_real": 0.0,
+      "pct_sol_proy": 0.0,
+      "pct_tierra_real": 54.0278,
+      "pct_tierra_proy": 51.3889,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-05",
+      "pct_sol_real": 0.0,
+      "pct_sol_proy": 0.0,
+      "pct_tierra_real": 43.8172,
+      "pct_tierra_proy": 41.9355,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     }
+    ],
+    "aciertos_energia": 12,
+    "aciertos_comunicacion": 12,
+    "aciertos_global": 12
+   },
+   "sol_elevacion_ajuste_directo": true
+  },
+  "im1_odysseus": {
+   "exploracion": {
+    "paso_h": 1.0,
+    "sol_visibles": {
+     "tramos_completos": 6,
+     "duracion_media_h": 345.5,
+     "duracion_min_h": 321.0,
+     "duracion_max_h": 383.0
+    },
+    "sol_oscuras": {
+     "tramos_completos": 6,
+     "duracion_media_h": 358.5,
+     "duracion_min_h": 323.0,
+     "duracion_max_h": 388.0
+    },
+    "tierra_visibles": {
+     "tramos_completos": 0,
+     "duracion_media_h": null,
+     "duracion_min_h": null,
+     "duracion_max_h": null
+    },
+    "tierra_oscuras": {
+     "tramos_completos": 0,
+     "duracion_media_h": null,
+     "duracion_min_h": null,
+     "duracion_max_h": null
+    },
+    "dias_lunares_completos": 6,
+    "horas_sol_por_dia_lunar_media": 350.3,
+    "sol_el_max_por_dia_lunar": [
+     11.07,
+     10.37,
+     9.53,
+     8.79,
+     8.36,
+     8.35
+    ],
+    "sol_el_max_diaria": {
+     "min": -11.192,
+     "max": 11.065
+    },
+    "libracion": {
+     "tierra_az_rango_deg": 15.82,
+     "tierra_az_std_deg": 4.67,
+     "tierra_el_rango_deg": 13.6,
+     "tierra_el_std_deg": 4.68,
+     "tierra_el_media_deg": 9.18
+    },
+    "picos_fft": {
+     "sol_el_deg": [
+      {
+       "periodo_dias": 29.57,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "sinodico",
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 191.21,
+       "amplitud_rel": 0.08,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 21.37,
+       "amplitud_rel": 0.03,
+       "candidatos": []
+      }
+     ],
+     "tierra_el_deg": [
+      {
+       "periodo_dias": 27.26,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 13.71,
+       "amplitud_rel": 0.06,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 20.11,
+       "amplitud_rel": 0.03,
+       "candidatos": []
+      }
+     ],
+     "tierra_az_deg": [
+      {
+       "periodo_dias": 27.61,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "sinodico",
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 13.78,
+       "amplitud_rel": 0.3,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 6.9,
+       "amplitud_rel": 0.23,
+       "candidatos": []
+      }
+     ]
+    }
+   },
+   "periodo_sinodico_dias": 29.525,
+   "ventana_dias": 182.0,
+   "errores": {
+    "sol_az_deg": {
+     "mae_deg": 1.2982,
+     "rmse_deg": 1.5589,
+     "rmse_por_mes_deg": [
+      0.0538,
+      0.1938,
+      0.4554,
+      0.8481,
+      1.3443,
+      1.868,
+      2.2976,
+      2.5009,
+      2.3864,
+      1.9498,
+      1.2795,
+      0.537
+     ],
+     "rmse_referencia_ingenua_deg": 1.9304
+    },
+    "sol_el_deg": {
+     "mae_deg": 1.0042,
+     "rmse_deg": 1.314,
+     "rmse_por_mes_deg": [
+      0.1726,
+      0.3574,
+      0.5597,
+      0.7657,
+      0.9851,
+      1.2469,
+      1.5431,
+      1.8008,
+      1.8996,
+      1.7809,
+      1.5402,
+      1.5313
+     ],
+     "rmse_referencia_ingenua_deg": 1.8148
+    },
+    "tierra_az_deg": {
+     "mae_deg": 0.3309,
+     "rmse_deg": 0.3962,
+     "rmse_por_mes_deg": [
+      0.232,
+      0.3547,
+      0.389,
+      0.3964,
+      0.4299,
+      0.4545,
+      0.4603,
+      0.4448,
+      0.3896,
+      0.3924,
+      0.3907,
+      0.3697
+     ],
+     "rmse_referencia_ingenua_deg": 1.5565
+    },
+    "tierra_el_deg": {
+     "mae_deg": 0.3082,
+     "rmse_deg": 0.3995,
+     "rmse_por_mes_deg": [
+      0.1274,
+      0.1931,
+      0.2504,
+      0.2981,
+      0.3326,
+      0.3116,
+      0.3025,
+      0.4037,
+      0.5198,
+      0.6041,
+      0.5863,
+      0.5159
+     ],
+     "rmse_referencia_ingenua_deg": 2.8791
+    }
+   },
+   "puestas_sol": {
+    "eventos_reales": 25,
+    "eventos_proyectados": 24,
+    "emparejados_pct": 76.0,
+    "mae_h": 11.2632,
+    "mediana_h": 11.0,
+    "max_h": 24.0
+   },
+   "puestas_tierra": {
+    "eventos_reales": 0,
+    "eventos_proyectados": 0,
+    "emparejados_pct": null,
+    "mae_h": null,
+    "mediana_h": null,
+    "max_h": null
+   },
+   "semaforo": {
+    "meses": 12,
+    "meses_detalle": [
+     {
+      "mes": "2027-06",
+      "pct_sol_real": 45.6944,
+      "pct_sol_proy": 45.4167,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-07",
+      "pct_sol_real": 46.2366,
+      "pct_sol_proy": 45.8333,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-08",
+      "pct_sol_real": 48.6559,
+      "pct_sol_proy": 48.2527,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-09",
+      "pct_sol_real": 52.5,
+      "pct_sol_proy": 52.3611,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-10",
+      "pct_sol_real": 52.1505,
+      "pct_sol_proy": 52.5538,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-11",
+      "pct_sol_real": 54.0278,
+      "pct_sol_proy": 55.2778,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-12",
+      "pct_sol_real": 51.0753,
+      "pct_sol_proy": 53.4946,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-01",
+      "pct_sol_real": 48.9247,
+      "pct_sol_proy": 52.4194,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-02",
+      "pct_sol_real": 49.4253,
+      "pct_sol_proy": 53.7356,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-03",
+      "pct_sol_real": 44.2204,
+      "pct_sol_proy": 47.8495,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": false,
+       "comunicacion": true,
+       "global": false
+      }
+     },
+     {
+      "mes": "2028-04",
+      "pct_sol_real": 44.5833,
+      "pct_sol_proy": 47.0833,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": false,
+       "comunicacion": true,
+       "global": false
+      }
+     },
+     {
+      "mes": "2028-05",
+      "pct_sol_real": 44.2204,
+      "pct_sol_proy": 43.8172,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     }
+    ],
+    "aciertos_energia": 10,
+    "aciertos_comunicacion": 12,
+    "aciertos_global": 10
+   },
+   "sol_elevacion_ajuste_directo": true
+  },
+  "blue_ghost_m1": {
+   "exploracion": {
+    "paso_h": 1.0,
+    "sol_visibles": {
+     "tramos_completos": 6,
+     "duracion_media_h": 355.7,
+     "duracion_min_h": 354.0,
+     "duracion_max_h": 357.0
+    },
+    "sol_oscuras": {
+     "tramos_completos": 5,
+     "duracion_media_h": 353.6,
+     "duracion_min_h": 351.0,
+     "duracion_max_h": 356.0
+    },
+    "tierra_visibles": {
+     "tramos_completos": 0,
+     "duracion_media_h": null,
+     "duracion_min_h": null,
+     "duracion_max_h": null
+    },
+    "tierra_oscuras": {
+     "tramos_completos": 0,
+     "duracion_media_h": null,
+     "duracion_min_h": null,
+     "duracion_max_h": null
+    },
+    "dias_lunares_completos": 6,
+    "horas_sol_por_dia_lunar_media": 355.7,
+    "sol_el_max_por_dia_lunar": [
+     70.13,
+     70.77,
+     71.59,
+     72.37,
+     72.86,
+     72.96
+    ],
+    "sol_el_max_diaria": {
+     "min": -70.32,
+     "max": 72.959
+    },
+    "libracion": {
+     "tierra_az_rango_deg": 10.82,
+     "tierra_az_std_deg": 3.53,
+     "tierra_el_rango_deg": 18.5,
+     "tierra_el_std_deg": 5.77,
+     "tierra_el_media_deg": 26.39
+    },
+    "picos_fft": {
+     "sol_el_deg": [
+      {
+       "periodo_dias": 29.57,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "sinodico",
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 9.86,
+       "amplitud_rel": 0.07,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 21.37,
+       "amplitud_rel": 0.03,
+       "candidatos": []
+      }
+     ],
+     "tierra_el_deg": [
+      {
+       "periodo_dias": 27.49,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "sinodico",
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 14.91,
+       "amplitud_rel": 0.08,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 870.45,
+       "amplitud_rel": 0.05,
+       "candidatos": [
+        "sinodico",
+        "anomalistico",
+        "draconico",
+        "anio_de_eclipses"
+       ]
+      }
+     ],
+     "tierra_az_deg": [
+      {
+       "periodo_dias": 27.04,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 13.43,
+       "amplitud_rel": 0.06,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 40.79,
+       "amplitud_rel": 0.04,
+       "candidatos": []
+      }
+     ]
+    }
+   },
+   "periodo_sinodico_dias": 29.525,
+   "ventana_dias": 182.0,
+   "errores": {
+    "sol_az_deg": {
+     "mae_deg": 1.4623,
+     "rmse_deg": 2.3017,
+     "rmse_por_mes_deg": [
+      0.224,
+      0.4502,
+      0.728,
+      1.1276,
+      1.7105,
+      2.4402,
+      3.1548,
+      3.6414,
+      3.6925,
+      3.2001,
+      2.1904,
+      0.9319
+     ],
+     "rmse_referencia_ingenua_deg": 3.2989
+    },
+    "sol_el_deg": {
+     "mae_deg": 1.0978,
+     "rmse_deg": 1.3954,
+     "rmse_por_mes_deg": [
+      0.1067,
+      0.2448,
+      0.4562,
+      0.7571,
+      1.1463,
+      1.5811,
+      1.9742,
+      2.2096,
+      2.1812,
+      1.8453,
+      1.242,
+      0.5073
+     ],
+     "rmse_referencia_ingenua_deg": 1.8601
+    },
+    "tierra_az_deg": {
+     "mae_deg": 0.4135,
+     "rmse_deg": 0.5133,
+     "rmse_por_mes_deg": [
+      0.2068,
+      0.311,
+      0.3826,
+      0.4483,
+      0.5054,
+      0.4736,
+      0.4492,
+      0.5575,
+      0.6511,
+      0.7067,
+      0.6547,
+      0.5733
+     ],
+     "rmse_referencia_ingenua_deg": 3.3366
+    },
+    "tierra_el_deg": {
+     "mae_deg": 0.2634,
+     "rmse_deg": 0.3276,
+     "rmse_por_mes_deg": [
+      0.1732,
+      0.2725,
+      0.3028,
+      0.3022,
+      0.3204,
+      0.3516,
+      0.3627,
+      0.3247,
+      0.298,
+      0.3653,
+      0.4112,
+      0.3808
+     ],
+     "rmse_referencia_ingenua_deg": 1.3211
+    }
+   },
+   "puestas_sol": {
+    "eventos_reales": 25,
+    "eventos_proyectados": 25,
+    "emparejados_pct": 100.0,
+    "mae_h": 2.6,
+    "mediana_h": 2.0,
+    "max_h": 6.0
+   },
+   "puestas_tierra": {
+    "eventos_reales": 0,
+    "eventos_proyectados": 0,
+    "emparejados_pct": null,
+    "mae_h": null,
+    "mediana_h": null,
+    "max_h": null
+   },
+   "semaforo": {
+    "meses": 12,
+    "meses_detalle": [
+     {
+      "mes": "2027-06",
+      "pct_sol_real": 49.3056,
+      "pct_sol_proy": 49.3056,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-07",
+      "pct_sol_real": 47.7151,
+      "pct_sol_proy": 47.5806,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-08",
+      "pct_sol_real": 47.4462,
+      "pct_sol_proy": 47.4462,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-09",
+      "pct_sol_real": 49.0278,
+      "pct_sol_proy": 49.0278,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-10",
+      "pct_sol_real": 47.4462,
+      "pct_sol_proy": 47.3118,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-11",
+      "pct_sol_real": 49.4444,
+      "pct_sol_proy": 49.5833,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-12",
+      "pct_sol_real": 52.1505,
+      "pct_sol_proy": 52.0161,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-01",
+      "pct_sol_real": 52.2849,
+      "pct_sol_proy": 51.8817,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-02",
+      "pct_sol_real": 49.1379,
+      "pct_sol_proy": 48.7069,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-03",
+      "pct_sol_real": 52.6882,
+      "pct_sol_proy": 52.2849,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-04",
+      "pct_sol_real": 51.1111,
+      "pct_sol_proy": 50.8333,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-05",
+      "pct_sol_real": 52.8226,
+      "pct_sol_proy": 52.5538,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     }
+    ],
+    "aciertos_energia": 12,
+    "aciertos_comunicacion": 12,
+    "aciertos_global": 12
+   },
+   "sol_elevacion_ajuste_directo": false
+  },
+  "chandrayaan3": {
+   "exploracion": {
+    "paso_h": 1.0,
+    "sol_visibles": {
+     "tramos_completos": 6,
+     "duracion_media_h": 351.2,
+     "duracion_min_h": 339.0,
+     "duracion_max_h": 369.0
+    },
+    "sol_oscuras": {
+     "tramos_completos": 5,
+     "duracion_media_h": 359.0,
+     "duracion_min_h": 345.0,
+     "duracion_max_h": 369.0
+    },
+    "tierra_visibles": {
+     "tramos_completos": 0,
+     "duracion_media_h": null,
+     "duracion_min_h": null,
+     "duracion_max_h": null
+    },
+    "tierra_oscuras": {
+     "tramos_completos": 0,
+     "duracion_media_h": null,
+     "duracion_min_h": null,
+     "duracion_max_h": null
+    },
+    "dias_lunares_completos": 6,
+    "horas_sol_por_dia_lunar_media": 351.2,
+    "sol_el_max_por_dia_lunar": [
+     21.88,
+     21.22,
+     20.38,
+     19.62,
+     19.16,
+     19.1
+    ],
+    "sol_el_max_diaria": {
+     "min": -22.018,
+     "max": 21.881
+    },
+    "libracion": {
+     "tierra_az_rango_deg": 18.07,
+     "tierra_az_std_deg": 5.55,
+     "tierra_el_rango_deg": 11.31,
+     "tierra_el_std_deg": 3.86,
+     "tierra_el_media_deg": 16.59
+    },
+    "picos_fft": {
+     "sol_el_deg": [
+      {
+       "periodo_dias": 29.57,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "sinodico",
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 203.12,
+       "amplitud_rel": 0.05,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 21.37,
+       "amplitud_rel": 0.03,
+       "candidatos": []
+      }
+     ],
+     "tierra_el_deg": [
+      {
+       "periodo_dias": 27.17,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 13.59,
+       "amplitud_rel": 0.07,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 20.08,
+       "amplitud_rel": 0.03,
+       "candidatos": []
+      }
+     ],
+     "tierra_az_deg": [
+      {
+       "periodo_dias": 27.5,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "sinodico",
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 15.01,
+       "amplitud_rel": 0.08,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 398.99,
+       "amplitud_rel": 0.05,
+       "candidatos": [
+        "sinodico",
+        "anomalistico",
+        "draconico",
+        "anio_de_eclipses"
+       ]
+      }
+     ]
+    }
+   },
+   "periodo_sinodico_dias": 29.525,
+   "ventana_dias": 182.0,
+   "errores": {
+    "sol_az_deg": {
+     "mae_deg": 1.3076,
+     "rmse_deg": 1.5806,
+     "rmse_por_mes_deg": [
+      0.0634,
+      0.2078,
+      0.4762,
+      0.8728,
+      1.3683,
+      1.8884,
+      2.3157,
+      2.5226,
+      2.4157,
+      1.9883,
+      1.318,
+      0.558
+     ],
+     "rmse_referencia_ingenua_deg": 1.9579
+    },
+    "sol_el_deg": {
+     "mae_deg": 0.7134,
+     "rmse_deg": 0.9709,
+     "rmse_por_mes_deg": [
+      0.1774,
+      0.3182,
+      0.3861,
+      0.3189,
+      0.2161,
+      0.5492,
+      1.0787,
+      1.5506,
+      1.7768,
+      1.6192,
+      1.07,
+      0.3317
+     ],
+     "rmse_referencia_ingenua_deg": 1.8388
+    },
+    "tierra_az_deg": {
+     "mae_deg": 0.3028,
+     "rmse_deg": 0.3716,
+     "rmse_por_mes_deg": [
+      0.2102,
+      0.3265,
+      0.358,
+      0.3588,
+      0.3856,
+      0.4183,
+      0.4264,
+      0.3952,
+      0.3493,
+      0.384,
+      0.4114,
+      0.3858
+     ],
+     "rmse_referencia_ingenua_deg": 1.3965
+    },
+    "tierra_el_deg": {
+     "mae_deg": 0.3429,
+     "rmse_deg": 0.4318,
+     "rmse_por_mes_deg": [
+      0.1675,
+      0.2494,
+      0.3041,
+      0.3512,
+      0.3922,
+      0.3715,
+      0.3621,
+      0.461,
+      0.5543,
+      0.6176,
+      0.5831,
+      0.5153
+     ],
+     "rmse_referencia_ingenua_deg": 2.9768
+    }
+   },
+   "puestas_sol": {
+    "eventos_reales": 25,
+    "eventos_proyectados": 25,
+    "emparejados_pct": 100.0,
+    "mae_h": 3.88,
+    "mediana_h": 2.0,
+    "max_h": 14.0
+   },
+   "puestas_tierra": {
+    "eventos_reales": 0,
+    "eventos_proyectados": 0,
+    "emparejados_pct": null,
+    "mae_h": null,
+    "mediana_h": null,
+    "max_h": null
+   },
+   "semaforo": {
+    "meses": 12,
+    "meses_detalle": [
+     {
+      "mes": "2027-06",
+      "pct_sol_real": 47.5,
+      "pct_sol_proy": 47.2222,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-07",
+      "pct_sol_real": 46.9086,
+      "pct_sol_proy": 46.371,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-08",
+      "pct_sol_real": 47.9839,
+      "pct_sol_proy": 47.4462,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-09",
+      "pct_sol_real": 50.5556,
+      "pct_sol_proy": 50.4167,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-10",
+      "pct_sol_real": 49.7312,
+      "pct_sol_proy": 49.7312,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-11",
+      "pct_sol_real": 51.5278,
+      "pct_sol_proy": 52.0833,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-12",
+      "pct_sol_real": 49.328,
+      "pct_sol_proy": 50.5376,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-01",
+      "pct_sol_real": 49.7312,
+      "pct_sol_proy": 53.629,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-02",
+      "pct_sol_real": 48.9943,
+      "pct_sol_proy": 50.431,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-03",
+      "pct_sol_real": 49.328,
+      "pct_sol_proy": 52.5538,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-04",
+      "pct_sol_real": 48.75,
+      "pct_sol_proy": 49.8611,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-05",
+      "pct_sol_real": 50.8065,
+      "pct_sol_proy": 50.8065,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     }
+    ],
+    "aciertos_energia": 12,
+    "aciertos_comunicacion": 12,
+    "aciertos_global": 12
+   },
+   "sol_elevacion_ajuste_directo": false
+  },
+  "change4": {
+   "exploracion": {
+    "paso_h": 1.0,
+    "sol_visibles": {
+     "tramos_completos": 6,
+     "duracion_media_h": 353.3,
+     "duracion_min_h": 347.0,
+     "duracion_max_h": 360.0
+    },
+    "sol_oscuras": {
+     "tramos_completos": 6,
+     "duracion_media_h": 357.2,
+     "duracion_min_h": 352.0,
+     "duracion_max_h": 361.0
+    },
+    "tierra_visibles": {
+     "tramos_completos": 0,
+     "duracion_media_h": null,
+     "duracion_min_h": null,
+     "duracion_max_h": null
+    },
+    "tierra_oscuras": {
+     "tramos_completos": 0,
+     "duracion_media_h": null,
+     "duracion_min_h": null,
+     "duracion_max_h": null
+    },
+    "dias_lunares_completos": 6,
+    "horas_sol_por_dia_lunar_media": 353.3,
+    "sol_el_max_por_dia_lunar": [
+     45.98,
+     45.45,
+     44.65,
+     43.84,
+     43.24,
+     43.02
+    ],
+    "sol_el_max_diaria": {
+     "min": -45.702,
+     "max": 45.977
+    },
+    "libracion": {
+     "tierra_az_rango_deg": 22.33,
+     "tierra_az_std_deg": 6.7,
+     "tierra_el_rango_deg": 13.07,
+     "tierra_el_std_deg": 4.52,
+     "tierra_el_media_deg": -44.89
+    },
+    "picos_fft": {
+     "sol_el_deg": [
+      {
+       "periodo_dias": 29.57,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "sinodico",
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 207.8,
+       "amplitud_rel": 0.06,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 21.37,
+       "amplitud_rel": 0.03,
+       "candidatos": []
+      }
+     ],
+     "tierra_el_deg": [
+      {
+       "periodo_dias": 27.23,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 13.77,
+       "amplitud_rel": 0.05,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 20.1,
+       "amplitud_rel": 0.03,
+       "candidatos": []
+      }
+     ],
+     "tierra_az_deg": [
+      {
+       "periodo_dias": 27.52,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "sinodico",
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 14.66,
+       "amplitud_rel": 0.12,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 377.67,
+       "amplitud_rel": 0.04,
+       "candidatos": [
+        "sinodico",
+        "anomalistico",
+        "draconico",
+        "anio_de_eclipses"
+       ]
+      }
+     ]
+    }
+   },
+   "periodo_sinodico_dias": 29.525,
+   "ventana_dias": 182.0,
+   "errores": {
+    "sol_az_deg": {
+     "mae_deg": 1.2934,
+     "rmse_deg": 1.6835,
+     "rmse_por_mes_deg": [
+      0.1241,
+      0.2844,
+      0.5273,
+      0.8785,
+      1.3484,
+      1.8872,
+      2.3825,
+      2.6783,
+      2.6496,
+      2.2378,
+      1.5029,
+      0.6406
+     ],
+     "rmse_referencia_ingenua_deg": 2.3071
+    },
+    "sol_el_deg": {
+     "mae_deg": 0.8282,
+     "rmse_deg": 1.1506,
+     "rmse_por_mes_deg": [
+      0.1518,
+      0.2864,
+      0.4113,
+      0.5511,
+      0.7861,
+      1.1469,
+      1.5495,
+      1.854,
+      1.912,
+      1.6428,
+      1.0558,
+      0.316
+     ],
+     "rmse_referencia_ingenua_deg": 1.7866
+    },
+    "tierra_az_deg": {
+     "mae_deg": 0.4392,
+     "rmse_deg": 0.5272,
+     "rmse_por_mes_deg": [
+      0.2986,
+      0.4552,
+      0.5137,
+      0.5329,
+      0.5717,
+      0.5975,
+      0.6108,
+      0.5849,
+      0.5052,
+      0.5354,
+      0.5451,
+      0.5041
+     ],
+     "rmse_referencia_ingenua_deg": 2.1382
+    },
+    "tierra_el_deg": {
+     "mae_deg": 0.307,
+     "rmse_deg": 0.3977,
+     "rmse_por_mes_deg": [
+      0.1171,
+      0.1791,
+      0.2475,
+      0.3142,
+      0.362,
+      0.3297,
+      0.3057,
+      0.4065,
+      0.5183,
+      0.5895,
+      0.5672,
+      0.5035
+     ],
+     "rmse_referencia_ingenua_deg": 2.8731
+    }
+   },
+   "puestas_sol": {
+    "eventos_reales": 25,
+    "eventos_proyectados": 25,
+    "emparejados_pct": 100.0,
+    "mae_h": 2.48,
+    "mediana_h": 1.0,
+    "max_h": 8.0
+   },
+   "puestas_tierra": {
+    "eventos_reales": 0,
+    "eventos_proyectados": 0,
+    "emparejados_pct": null,
+    "mae_h": null,
+    "mediana_h": null,
+    "max_h": null
+   },
+   "semaforo": {
+    "meses": 12,
+    "meses_detalle": [
+     {
+      "mes": "2027-06",
+      "pct_sol_real": 50.1389,
+      "pct_sol_proy": 50.1389,
+      "pct_tierra_real": 0.0,
+      "pct_tierra_proy": 0.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-07",
+      "pct_sol_real": 52.1505,
+      "pct_sol_proy": 52.1505,
+      "pct_tierra_real": 0.0,
+      "pct_tierra_proy": 0.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-08",
+      "pct_sol_real": 52.5538,
+      "pct_sol_proy": 52.5538,
+      "pct_tierra_real": 0.0,
+      "pct_tierra_proy": 0.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-09",
+      "pct_sol_real": 51.3889,
+      "pct_sol_proy": 51.25,
+      "pct_tierra_real": 0.0,
+      "pct_tierra_proy": 0.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-10",
+      "pct_sol_real": 52.957,
+      "pct_sol_proy": 53.0914,
+      "pct_tierra_real": 0.0,
+      "pct_tierra_proy": 0.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-11",
+      "pct_sol_real": 51.3889,
+      "pct_sol_proy": 51.6667,
+      "pct_tierra_real": 0.0,
+      "pct_tierra_proy": 0.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-12",
+      "pct_sol_real": 52.6882,
+      "pct_sol_proy": 53.3602,
+      "pct_tierra_real": 0.0,
+      "pct_tierra_proy": 0.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-01",
+      "pct_sol_real": 52.4194,
+      "pct_sol_proy": 53.0914,
+      "pct_tierra_real": 0.0,
+      "pct_tierra_proy": 0.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-02",
+      "pct_sol_real": 48.5632,
+      "pct_sol_proy": 49.569,
+      "pct_tierra_real": 0.0,
+      "pct_tierra_proy": 0.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-03",
+      "pct_sol_real": 51.6129,
+      "pct_sol_proy": 52.4194,
+      "pct_tierra_real": 0.0,
+      "pct_tierra_proy": 0.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-04",
+      "pct_sol_real": 49.8611,
+      "pct_sol_proy": 50.4167,
+      "pct_tierra_real": 0.0,
+      "pct_tierra_proy": 0.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-05",
+      "pct_sol_real": 49.7312,
+      "pct_sol_proy": 49.5968,
+      "pct_tierra_real": 0.0,
+      "pct_tierra_proy": 0.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     }
+    ],
+    "aciertos_energia": 12,
+    "aciertos_comunicacion": 12,
+    "aciertos_global": 12
+   },
+   "sol_elevacion_ajuste_directo": false
+  },
+  "change6": {
+   "exploracion": {
+    "paso_h": 1.0,
+    "sol_visibles": {
+     "tramos_completos": 5,
+     "duracion_media_h": 352.4,
+     "duracion_min_h": 348.0,
+     "duracion_max_h": 358.0
+    },
+    "sol_oscuras": {
+     "tramos_completos": 6,
+     "duracion_media_h": 356.7,
+     "duracion_min_h": 352.0,
+     "duracion_max_h": 360.0
+    },
+    "tierra_visibles": {
+     "tramos_completos": 0,
+     "duracion_media_h": null,
+     "duracion_min_h": null,
+     "duracion_max_h": null
+    },
+    "tierra_oscuras": {
+     "tramos_completos": 0,
+     "duracion_media_h": null,
+     "duracion_min_h": null,
+     "duracion_max_h": null
+    },
+    "dias_lunares_completos": 6,
+    "horas_sol_por_dia_lunar_media": 352.2,
+    "sol_el_max_por_dia_lunar": [
+     49.81,
+     49.3,
+     48.52,
+     47.7,
+     47.08,
+     46.83
+    ],
+    "sol_el_max_diaria": {
+     "min": -49.208,
+     "max": 49.809
+    },
+    "libracion": {
+     "tierra_az_rango_deg": 14.31,
+     "tierra_az_std_deg": 3.52,
+     "tierra_el_rango_deg": 18.24,
+     "tierra_el_std_deg": 6.01,
+     "tierra_el_media_deg": -42.65
+    },
+    "picos_fft": {
+     "sol_el_deg": [
+      {
+       "periodo_dias": 29.57,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "sinodico",
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 240.64,
+       "amplitud_rel": 0.05,
+       "candidatos": [
+        "anio_de_eclipses"
+       ]
+      },
+      {
+       "periodo_dias": 9.86,
+       "amplitud_rel": 0.03,
+       "candidatos": []
+      }
+     ],
+     "tierra_el_deg": [
+      {
+       "periodo_dias": 27.38,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 14.31,
+       "amplitud_rel": 0.05,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 20.16,
+       "amplitud_rel": 0.03,
+       "candidatos": []
+      }
+     ],
+     "tierra_az_deg": [
+      {
+       "periodo_dias": 27.38,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 14.81,
+       "amplitud_rel": 0.19,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 20.4,
+       "amplitud_rel": 0.03,
+       "candidatos": []
+      }
+     ]
+    }
+   },
+   "periodo_sinodico_dias": 29.525,
+   "ventana_dias": 182.0,
+   "errores": {
+    "sol_az_deg": {
+     "mae_deg": 1.2856,
+     "rmse_deg": 1.7143,
+     "rmse_por_mes_deg": [
+      0.1387,
+      0.2986,
+      0.533,
+      0.8834,
+      1.3636,
+      1.9193,
+      2.4266,
+      2.7312,
+      2.7027,
+      2.2828,
+      1.5271,
+      0.6475
+     ],
+     "rmse_referencia_ingenua_deg": 2.3976
+    },
+    "sol_el_deg": {
+     "mae_deg": 0.8668,
+     "rmse_deg": 1.1895,
+     "rmse_por_mes_deg": [
+      0.1453,
+      0.2862,
+      0.4322,
+      0.5998,
+      0.8494,
+      1.2042,
+      1.5959,
+      1.8932,
+      1.9521,
+      1.6906,
+      1.1166,
+      0.3793
+     ],
+     "rmse_referencia_ingenua_deg": 1.7812
+    },
+    "tierra_az_deg": {
+     "mae_deg": 0.5258,
+     "rmse_deg": 0.6121,
+     "rmse_por_mes_deg": [
+      0.3161,
+      0.472,
+      0.5552,
+      0.6339,
+      0.721,
+      0.6948,
+      0.6724,
+      0.7159,
+      0.6779,
+      0.6426,
+      0.5734,
+      0.5454
+     ],
+     "rmse_referencia_ingenua_deg": 3.0798
+    },
+    "tierra_el_deg": {
+     "mae_deg": 0.2394,
+     "rmse_deg": 0.3213,
+     "rmse_por_mes_deg": [
+      0.056,
+      0.1136,
+      0.1673,
+      0.1937,
+      0.2034,
+      0.2059,
+      0.2027,
+      0.2581,
+      0.3987,
+      0.5234,
+      0.5484,
+      0.4787
+     ],
+     "rmse_referencia_ingenua_deg": 2.3252
+    }
+   },
+   "puestas_sol": {
+    "eventos_reales": 25,
+    "eventos_proyectados": 25,
+    "emparejados_pct": 100.0,
+    "mae_h": 2.64,
+    "mediana_h": 2.0,
+    "max_h": 8.0
+   },
+   "puestas_tierra": {
+    "eventos_reales": 0,
+    "eventos_proyectados": 0,
+    "emparejados_pct": null,
+    "mae_h": null,
+    "mediana_h": null,
+    "max_h": null
+   },
+   "semaforo": {
+    "meses": 12,
+    "meses_detalle": [
+     {
+      "mes": "2027-06",
+      "pct_sol_real": 50.2778,
+      "pct_sol_proy": 50.1389,
+      "pct_tierra_real": 0.0,
+      "pct_tierra_proy": 0.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-07",
+      "pct_sol_real": 52.2849,
+      "pct_sol_proy": 52.1505,
+      "pct_tierra_real": 0.0,
+      "pct_tierra_proy": 0.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-08",
+      "pct_sol_real": 52.5538,
+      "pct_sol_proy": 52.5538,
+      "pct_tierra_real": 0.0,
+      "pct_tierra_proy": 0.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-09",
+      "pct_sol_real": 51.25,
+      "pct_sol_proy": 51.25,
+      "pct_tierra_real": 0.0,
+      "pct_tierra_proy": 0.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-10",
+      "pct_sol_real": 52.957,
+      "pct_sol_proy": 53.0914,
+      "pct_tierra_real": 0.0,
+      "pct_tierra_proy": 0.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-11",
+      "pct_sol_real": 51.3889,
+      "pct_sol_proy": 51.6667,
+      "pct_tierra_real": 0.0,
+      "pct_tierra_proy": 0.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-12",
+      "pct_sol_real": 52.6882,
+      "pct_sol_proy": 53.2258,
+      "pct_tierra_real": 0.0,
+      "pct_tierra_proy": 0.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-01",
+      "pct_sol_real": 52.2849,
+      "pct_sol_proy": 52.957,
+      "pct_tierra_real": 0.0,
+      "pct_tierra_proy": 0.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-02",
+      "pct_sol_real": 48.7069,
+      "pct_sol_proy": 49.7126,
+      "pct_tierra_real": 0.0,
+      "pct_tierra_proy": 0.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-03",
+      "pct_sol_real": 48.6559,
+      "pct_sol_proy": 49.328,
+      "pct_tierra_real": 0.0,
+      "pct_tierra_proy": 0.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-04",
+      "pct_sol_real": 48.3333,
+      "pct_sol_proy": 48.8889,
+      "pct_tierra_real": 0.0,
+      "pct_tierra_proy": 0.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-05",
+      "pct_sol_real": 46.7742,
+      "pct_sol_proy": 47.043,
+      "pct_tierra_real": 0.0,
+      "pct_tierra_proy": 0.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     }
+    ],
+    "aciertos_energia": 12,
+    "aciertos_comunicacion": 12,
+    "aciertos_global": 12
+   },
+   "sol_elevacion_ajuste_directo": false
+  },
+  "slim": {
+   "exploracion": {
+    "paso_h": 1.0,
+    "sol_visibles": {
+     "tramos_completos": 6,
+     "duracion_media_h": 355.0,
+     "duracion_min_h": 353.0,
+     "duracion_max_h": 357.0
+    },
+    "sol_oscuras": {
+     "tramos_completos": 5,
+     "duracion_media_h": 354.4,
+     "duracion_min_h": 353.0,
+     "duracion_max_h": 355.0
+    },
+    "tierra_visibles": {
+     "tramos_completos": 0,
+     "duracion_media_h": null,
+     "duracion_min_h": null,
+     "duracion_max_h": null
+    },
+    "tierra_oscuras": {
+     "tramos_completos": 0,
+     "duracion_media_h": null,
+     "duracion_min_h": null,
+     "duracion_max_h": null
+    },
+    "dias_lunares_completos": 6,
+    "horas_sol_por_dia_lunar_media": 355.0,
+    "sol_el_max_por_dia_lunar": [
+     77.92,
+     77.26,
+     76.42,
+     75.66,
+     75.2,
+     75.16
+    ],
+    "sol_el_max_diaria": {
+     "min": -76.562,
+     "max": 77.925
+    },
+    "libracion": {
+     "tierra_az_rango_deg": 38.35,
+     "tierra_az_std_deg": 12.64,
+     "tierra_el_rango_deg": 10.41,
+     "tierra_el_std_deg": 2.35,
+     "tierra_el_media_deg": 60.67
+    },
+    "picos_fft": {
+     "sol_el_deg": [
+      {
+       "periodo_dias": 29.57,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "sinodico",
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 9.86,
+       "amplitud_rel": 0.09,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 215.89,
+       "amplitud_rel": 0.05,
+       "candidatos": []
+      }
+     ],
+     "tierra_el_deg": [
+      {
+       "periodo_dias": 27.26,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 13.35,
+       "amplitud_rel": 0.21,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 15.42,
+       "amplitud_rel": 0.14,
+       "candidatos": []
+      }
+     ],
+     "tierra_az_deg": [
+      {
+       "periodo_dias": 27.42,
+       "amplitud_rel": 1.0,
+       "candidatos": [
+        "anomalistico",
+        "draconico"
+       ]
+      },
+      {
+       "periodo_dias": 13.98,
+       "amplitud_rel": 0.08,
+       "candidatos": []
+      },
+      {
+       "periodo_dias": 20.19,
+       "amplitud_rel": 0.03,
+       "candidatos": []
+      }
+     ]
+    }
+   },
+   "periodo_sinodico_dias": 29.525,
+   "ventana_dias": 182.0,
+   "errores": {
+    "sol_az_deg": {
+     "mae_deg": 1.648,
+     "rmse_deg": 2.7234,
+     "rmse_por_mes_deg": [
+      0.2654,
+      0.5476,
+      1.0087,
+      1.4799,
+      2.1314,
+      2.9601,
+      3.782,
+      4.3327,
+      4.3431,
+      3.6903,
+      2.4307,
+      0.9096
+     ],
+     "rmse_referencia_ingenua_deg": 3.9489
+    },
+    "sol_el_deg": {
+     "mae_deg": 1.1346,
+     "rmse_deg": 1.4276,
+     "rmse_por_mes_deg": [
+      0.1092,
+      0.2572,
+      0.4369,
+      0.7161,
+      1.1205,
+      1.5981,
+      2.0368,
+      2.2942,
+      2.2585,
+      1.889,
+      1.2512,
+      0.5161
+     ],
+     "rmse_referencia_ingenua_deg": 1.9259
+    },
+    "tierra_az_deg": {
+     "mae_deg": 0.4699,
+     "rmse_deg": 0.6308,
+     "rmse_por_mes_deg": [
+      0.127,
+      0.2023,
+      0.3047,
+      0.3461,
+      0.3337,
+      0.3744,
+      0.4407,
+      0.5024,
+      0.7247,
+      1.0105,
+      1.1115,
+      1.0051
+     ],
+     "rmse_referencia_ingenua_deg": 4.7951
+    },
+    "tierra_el_deg": {
+     "mae_deg": 0.4039,
+     "rmse_deg": 0.4731,
+     "rmse_por_mes_deg": [
+      0.2508,
+      0.3824,
+      0.4316,
+      0.4639,
+      0.5166,
+      0.5145,
+      0.4983,
+      0.5363,
+      0.5359,
+      0.5359,
+      0.4901,
+      0.4406
+     ],
+     "rmse_referencia_ingenua_deg": 2.3308
+    }
+   },
+   "puestas_sol": {
+    "eventos_reales": 25,
+    "eventos_proyectados": 25,
+    "emparejados_pct": 100.0,
+    "mae_h": 2.48,
+    "mediana_h": 2.0,
+    "max_h": 6.0
+   },
+   "puestas_tierra": {
+    "eventos_reales": 0,
+    "eventos_proyectados": 0,
+    "emparejados_pct": null,
+    "mae_h": null,
+    "mediana_h": null,
+    "max_h": null
+   },
+   "semaforo": {
+    "meses": 12,
+    "meses_detalle": [
+     {
+      "mes": "2027-06",
+      "pct_sol_real": 49.0278,
+      "pct_sol_proy": 49.0278,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-07",
+      "pct_sol_real": 47.4462,
+      "pct_sol_proy": 47.4462,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-08",
+      "pct_sol_real": 47.7151,
+      "pct_sol_proy": 47.5806,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-09",
+      "pct_sol_real": 49.4444,
+      "pct_sol_proy": 49.3056,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-10",
+      "pct_sol_real": 47.9839,
+      "pct_sol_proy": 47.8495,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-11",
+      "pct_sol_real": 49.4444,
+      "pct_sol_proy": 49.5833,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2027-12",
+      "pct_sol_real": 47.9839,
+      "pct_sol_proy": 48.1183,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-01",
+      "pct_sol_real": 47.8495,
+      "pct_sol_proy": 48.5215,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-02",
+      "pct_sol_real": 51.0057,
+      "pct_sol_proy": 50.8621,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-03",
+      "pct_sol_real": 49.8656,
+      "pct_sol_proy": 50.672,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-04",
+      "pct_sol_real": 50.6944,
+      "pct_sol_proy": 50.6944,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     },
+     {
+      "mes": "2028-05",
+      "pct_sol_real": 52.4194,
+      "pct_sol_proy": 52.2849,
+      "pct_tierra_real": 100.0,
+      "pct_tierra_proy": 100.0,
+      "acierta": {
+       "energia": true,
+       "comunicacion": true,
+       "global": true
+      }
+     }
+    ],
+    "aciertos_energia": 12,
+    "aciertos_comunicacion": 12,
+    "aciertos_global": 12
+   },
+   "sol_elevacion_ajuste_directo": false
+  }
+ }
+}

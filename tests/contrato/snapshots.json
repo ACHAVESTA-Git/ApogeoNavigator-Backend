@@ -228,6 +228,23 @@
     ]
    }
   },
+  "/api/simulacion/{site_id}": {
+   "GET": {
+    "cuerpo": null,
+    "parametros": [
+     "path:site_id:obligatorio",
+     "query:desde:opcional",
+     "query:hasta:opcional",
+     "query:paso_horas:opcional"
+    ],
+    "respuestas": [
+     "200",
+     "404",
+     "422",
+     "503"
+    ]
+   }
+  },
   "/api/sites": {
    "GET": {
     "cuerpo": null,
