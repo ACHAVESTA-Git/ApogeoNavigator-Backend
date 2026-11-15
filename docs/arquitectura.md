@@ -85,12 +85,19 @@ How it works:
 * The limiter is per process: with several Cloud Run instances each keeps its own counters (acceptable for the demo; a shared
   store is future work). Google OAuth is future work.
 
+## Test-user seed
+
+`python -m app.cli.seed_usuarios` (`app/cli/seed_usuarios.py`, a thin command) calls `app/services/semilla_usuarios.py`, which reuses
+the key service (`ClavesServiceImpl.generar`) so the keys, the audit events and the one-time delivery follow exactly the same
+path as the API. Passwords and private keys go only to a `600` file; the command is idempotent and refuses to run in production
+without `--forzar-produccion`.
+
 ## Testing
 
 * Business rules: `tests/test_servicio_claves.py` (fake repository, auditor and crypto manager) and
   `tests/test_servicio_carga.py` (fake audit, datastore and store).
 * End to end over HTTP with a real SQLite database: `tests/test_gestor_claves.py`.
-* Login, sessions, roles and CSRF: `tests/test_auth_login.py`.
+* Login, sessions, roles and CSRF: `tests/test_auth_login.py`. Test-user seed: `tests/test_semilla_usuarios.py`.
 * Contract: `tests/test_contrato_congelado.py` (the three `/api/auth` operations were added to the snapshot on purpose; nothing existing changed).
 
 ## Future work (after the hackathon)
