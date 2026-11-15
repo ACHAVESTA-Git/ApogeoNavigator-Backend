@@ -24,7 +24,7 @@ def test_pool_pequeno_con_pre_ping_en_postgresql(url):
 
 
 def test_sqlite_no_recibe_parametros_de_pool_ni_de_psycopg():
-    assert db_session.engine_options("sqlite://") == {"pool_pre_ping": True}
+    assert db_session.engine_options("sqlite://") == {"pool_pre_ping": True, "hide_parameters": True}
 
 
 @pytest.mark.parametrize("url", [LOCAL, SUPABASE_POOLER, SUPABASE_DIRECTO, CLOUD_SQL])

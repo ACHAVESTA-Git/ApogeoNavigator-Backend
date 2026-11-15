@@ -413,3 +413,84 @@ def test_configurar_logging_es_idempotente(restaurar_logging):
     for _ in range(3):
         configurar_logging()
     assert len([h for h in logging.getLogger(c.LOGGER_ROOT).handlers if getattr(h, "_apogeo_handler", False)]) == 1
+
+
+# ------------------------------------------------------------------ revisión del #27: falsificación de logs, nombre de archivo y SQL
+FORJADO = "/api/%0d%0aFORJADO%20INFO%20deadbeef%20GET%20/x%20%E2%86%92%20200%20OK"
+
+
+def test_una_ruta_con_crlf_no_falsifica_lineas_de_log(real, acceso, monkeypatch, capsys, restaurar_logging):
+    monkeypatch.setenv("LOG_FORMAT", "texto")
+    configurar_logging()
+    r = real.get(FORJADO)
+    registros = [x for x in acceso() if r.headers["x-request-id"] in x.getMessage()]
+    assert len(registros) == 1
+    linea = registros[0].getMessage()
+    assert "\r" not in linea and "\n" not in linea and "\\r\\nFORJADO" in linea
+    salida = capsys.readouterr().err.splitlines()
+    assert not [l for l in salida if l.startswith("FORJADO")]              # ninguna línea falsa en la consola
+    assert len([l for l in salida if r.headers["x-request-id"] in l]) == 1
+
+
+def test_el_500_con_ruta_hostil_tampoco_falsifica_la_traza(real, caplog, monkeypatch):
+    real_app.dependency_overrides[datastore.refresh_if_stale] = lambda: (_ for _ in ()).throw(RuntimeError("x"))
+    caplog.set_level(logging.DEBUG, logger=c.LOGGER_ROOT)
+    real.get("/api/%0d%0aFORJADO%20ERROR%20x/sites")
+    for rec in caplog.records:
+        assert "\r" not in rec.getMessage() and "\n" not in rec.getMessage()
+
+
+@pytest.mark.parametrize("caracter,escape", [("\r", "\\r"), ("\n", "\\n"), ("\t", "\\t"), ("\x7f", "\\x7f"), ("\x85", "\\x85"),
+                                             (" ", "\\u2028"), (" ", "\\u2029"), ("‮", "\\u202e"), ("​", "\\u200b"),
+                                             ("\x00", "\\x00"), ("\x1b", "\\x1b")])
+def test_escapar_control_sustituye_cada_caracter_peligroso(caracter, escape):
+    from app.utils.text import escapar_control
+    assert escapar_control(f"a{caracter}b") == f"a{escape}b"
+
+
+def test_escapar_control_deja_pasar_lo_normal_y_recorta():
+    from app.utils.text import escapar_control
+    assert escapar_control("/api/efemerides/shackleton?x=1 ñ→") == "/api/efemerides/shackleton?x=1 ñ→"
+    assert escapar_control("x" * 500, 200) == "x" * 200 + "…"
+
+
+@pytest.mark.parametrize("caracter", ["\x7f", "\x85", "\x9f", " ", " ", "‮", "⁦", "​", "‏", "﻿", "\r", "\n", "\t", "\x00"])
+def test_clean_text_y_sanitize_filename_filtran_controles_c1_separadores_y_bidi(caracter):
+    from app.utils.text import clean_text, sanitize_filename
+    assert clean_text(f"ab{caracter}cd", 50) == "abcd" and sanitize_filename(f"ab{caracter}cd.csv") == "abcd.csv"
+    assert clean_text("Cráter ñandú – Mar", 50) == "Cráter ñandú – Mar"            # lo legítimo se conserva
+
+
+def test_el_resumen_del_csv_no_refleja_el_nombre_del_archivo(real):
+    r = upload(real, "sites", fixture_bytes("rango.csv"), "x<script>alert(1)</script>.csv")
+    assert r.status_code == 422
+    assert "script" not in json.dumps(r.json()["error"], ensure_ascii=False)
+    assert "6 error(es)" in r.json()["error"]["mensaje"] or r.json()["error"]["codigo"] in ("CSV_INVALIDO", "DATOS_INVALIDOS")
+
+
+def test_las_excepciones_sql_no_llevan_los_parametros():
+    from sqlalchemy import create_engine, text
+    from sqlalchemy.exc import SQLAlchemyError
+    from app.db.session import engine_options
+    engine = create_engine("sqlite://", **engine_options("sqlite://"))
+    with pytest.raises(SQLAlchemyError) as exc:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT x FROM tabla_inexistente WHERE clave = :clave"), {"clave": "hunter2-contraseña"})
+    assert "hunter2" not in str(exc.value) and "hidden" in str(exc.value)
+
+
+def test_la_traza_de_un_error_sql_en_el_log_no_lleva_los_parametros(caplog):
+    from sqlalchemy import create_engine, text
+    from app.db.session import engine_options
+    engine = create_engine("sqlite://", **engine_options("sqlite://"))
+    app = FastAPI()
+    register_handlers(app)
+
+    def ruta():
+        with engine.connect() as conn:
+            conn.execute(text("SELECT x FROM tabla_inexistente WHERE clave = :clave"), {"clave": "hunter2-contraseña"})
+    app.add_api_route("/sql", ruta, methods=["GET"])
+    caplog.set_level(logging.DEBUG)
+    r = TestClient(app, raise_server_exceptions=False).get("/sql")
+    assert r.status_code in (500, 503) and "hunter2" not in r.text          # SQLite da OperationalError (503); PostgreSQL, ProgrammingError (500)
+    assert "hunter2" not in caplog.text and "hunter2" not in " ".join(str(rec.exc_info[1]) for rec in caplog.records if rec.exc_info)
