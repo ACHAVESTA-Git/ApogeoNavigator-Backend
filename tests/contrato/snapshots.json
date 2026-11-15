@@ -2104,6 +2104,32 @@
     "fin_utc": "str",
     "horas_sol": "number",
     "horas_tierra_visible": "number",
+    "indicadores_astronauta": {
+     "apagon_tierra_mas_largo": {
+      "fin_utc": "str",
+      "horas": "number",
+      "inicio_utc": "str",
+      "trunca_fin": "bool",
+      "trunca_inicio": "bool"
+     },
+     "noche_mas_larga": {
+      "fin_utc": "null",
+      "horas": "number",
+      "inicio_utc": "null",
+      "trunca_fin": "bool",
+      "trunca_inicio": "bool"
+     },
+     "proxima_puesta_sol_utc": "null",
+     "proxima_puesta_tierra_utc": "null",
+     "sol_el_media_horas_sol_deg": "number",
+     "ventana_sol_y_tierra": {
+      "fin_utc": "null",
+      "horas": "number",
+      "inicio_utc": "null",
+      "trunca_fin": "bool",
+      "trunca_inicio": "bool"
+     }
+    },
     "inicio_utc": "str",
     "origen": "str",
     "pct_sol": "number",
@@ -2228,6 +2254,32 @@
      "fin_utc": "str",
      "horas_sol": "number",
      "horas_tierra_visible": "number",
+     "indicadores_astronauta": {
+      "apagon_tierra_mas_largo": {
+       "fin_utc": "str",
+       "horas": "number",
+       "inicio_utc": "str",
+       "trunca_fin": "bool",
+       "trunca_inicio": "bool"
+      },
+      "noche_mas_larga": {
+       "fin_utc": "null",
+       "horas": "number",
+       "inicio_utc": "null",
+       "trunca_fin": "bool",
+       "trunca_inicio": "bool"
+      },
+      "proxima_puesta_sol_utc": "null",
+      "proxima_puesta_tierra_utc": "null",
+      "sol_el_media_horas_sol_deg": "number",
+      "ventana_sol_y_tierra": {
+       "fin_utc": "null",
+       "horas": "number",
+       "inicio_utc": "null",
+       "trunca_fin": "bool",
+       "trunca_inicio": "bool"
+      }
+     },
      "inicio_utc": "str",
      "origen": "str",
      "pct_sol": "number",
@@ -2289,6 +2341,32 @@
      "fin_utc": "str",
      "horas_sol": "number",
      "horas_tierra_visible": "number",
+     "indicadores_astronauta": {
+      "apagon_tierra_mas_largo": {
+       "fin_utc": "str",
+       "horas": "number",
+       "inicio_utc": "str",
+       "trunca_fin": "bool",
+       "trunca_inicio": "bool"
+      },
+      "noche_mas_larga": {
+       "fin_utc": "str",
+       "horas": "number",
+       "inicio_utc": "str",
+       "trunca_fin": "bool",
+       "trunca_inicio": "bool"
+      },
+      "proxima_puesta_sol_utc": "null",
+      "proxima_puesta_tierra_utc": "str",
+      "sol_el_media_horas_sol_deg": "null",
+      "ventana_sol_y_tierra": {
+       "fin_utc": "null",
+       "horas": "number",
+       "inicio_utc": "null",
+       "trunca_fin": "bool",
+       "trunca_inicio": "bool"
+      }
+     },
      "inicio_utc": "str",
      "origen": "str",
      "pct_sol": "number",
@@ -2358,6 +2436,32 @@
      "fin_utc": "str",
      "horas_sol": "number",
      "horas_tierra_visible": "number",
+     "indicadores_astronauta": {
+      "apagon_tierra_mas_largo": {
+       "fin_utc": "null|str",
+       "horas": "number",
+       "inicio_utc": "null|str",
+       "trunca_fin": "bool",
+       "trunca_inicio": "bool"
+      },
+      "noche_mas_larga": {
+       "fin_utc": "null|str",
+       "horas": "number",
+       "inicio_utc": "null|str",
+       "trunca_fin": "bool",
+       "trunca_inicio": "bool"
+      },
+      "proxima_puesta_sol_utc": "null|str",
+      "proxima_puesta_tierra_utc": "null|str",
+      "sol_el_media_horas_sol_deg": "number",
+      "ventana_sol_y_tierra": {
+       "fin_utc": "null|str",
+       "horas": "number",
+       "inicio_utc": "null|str",
+       "trunca_fin": "bool",
+       "trunca_inicio": "bool"
+      }
+     },
      "inicio_utc": "str",
      "origen": "str",
      "pct_sol": "number",
@@ -2404,6 +2508,32 @@
      "fin_utc": "str",
      "horas_sol": "number",
      "horas_tierra_visible": "number",
+     "indicadores_astronauta": {
+      "apagon_tierra_mas_largo": {
+       "fin_utc": "str",
+       "horas": "number",
+       "inicio_utc": "str",
+       "trunca_fin": "bool",
+       "trunca_inicio": "bool"
+      },
+      "noche_mas_larga": {
+       "fin_utc": "null",
+       "horas": "number",
+       "inicio_utc": "null",
+       "trunca_fin": "bool",
+       "trunca_inicio": "bool"
+      },
+      "proxima_puesta_sol_utc": "null",
+      "proxima_puesta_tierra_utc": "str",
+      "sol_el_media_horas_sol_deg": "number",
+      "ventana_sol_y_tierra": {
+       "fin_utc": "str",
+       "horas": "number",
+       "inicio_utc": "str",
+       "trunca_fin": "bool",
+       "trunca_inicio": "bool"
+      }
+     },
      "inicio_utc": "str",
      "origen": "str",
      "pct_sol": "number",

@@ -261,7 +261,12 @@ CAMPOS_FRONTEND = {
     ("efemerides_ok", ("forma", "filas", 0)): {"utc", "sol_az_deg", "sol_el_deg", "tierra_az_deg", "tierra_el_deg"},
     ("metricas_un_sitio", ("forma", "resultados", 0)): {"site_id", "inicio_utc", "fin_utc", "horas_sol", "pct_sol", "sol_el_max_deg",
                                                       "sol_el_media_deg", "horas_tierra_visible", "pct_tierra", "semaforo", "avisos",
-                                                      "origen", "referencia"},
+                                                      "origen", "referencia", "indicadores_astronauta"},
+    ("metricas_un_sitio", ("forma", "resultados", 0, "indicadores_astronauta")): {
+        "noche_mas_larga", "apagon_tierra_mas_largo", "ventana_sol_y_tierra", "proxima_puesta_sol_utc", "proxima_puesta_tierra_utc",
+        "sol_el_media_horas_sol_deg"},
+    ("metricas_un_sitio", ("forma", "resultados", 0, "indicadores_astronauta", "noche_mas_larga")): {
+        "horas", "inicio_utc", "fin_utc", "trunca_inicio", "trunca_fin"},
     ("metricas_un_sitio", ("forma", "resultados", 0, "semaforo")): {"energia", "comunicacion", "global"},
     ("metricas_un_sitio", ("forma", "resultados", 0, "referencia")): {"horas_sol", "pct_sol", "sol_el_max_deg", "sol_el_media_deg",
                                                                     "horas_tierra_visible", "pct_tierra", "coincide"},
