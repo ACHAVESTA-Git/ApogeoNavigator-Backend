@@ -53,7 +53,7 @@ def test_los_puntos_de_datos_son_las_efemerides(api):
 
 
 def test_el_rango_que_cruza_el_final_mezcla_datos_y_proyeccion(api):
-    body = get(api, desde="2027-05-30T00:00Z", hasta="2027-06-03T00:00Z", paso_horas=6).json()
+    body = get(api, "apollo15", desde="2027-05-30T00:00Z", hasta="2027-06-03T00:00Z", paso_horas=6).json()
     origins = [p["origen"] for p in body["puntos"]]
     assert origins == ["datos"] * 9 + ["proyeccion"] * 8                  # el último dato (01/06 00:00) aún es real
     projected = next(p for p in body["puntos"] if p["origen"] == "proyeccion")
@@ -137,12 +137,12 @@ def test_la_tabla_de_errores_no_hace_falta_si_todo_es_dato_real(api, monkeypatch
 def test_un_sitio_sin_validacion_avisa_en_vez_de_callar(api, monkeypatch, tmp_path):
     import json
     table = json.loads(Path(c.ERRORS_PATH).read_text(encoding="utf-8"))
-    del table[c.KEY_SITES]["slim"]
+    del table[c.KEY_SITES]["apollo15"]
     path = tmp_path / "errores.json"
     path.write_text(json.dumps(table), encoding="utf-8")
     monkeypatch.setattr(c, "ERRORS_PATH", path)
     lectura.clear_cache()
-    body = get(api, desde="2027-06-02T00:00Z", hasta="2027-06-03T00:00Z").json()
+    body = get(api, "apollo15", desde="2027-06-02T00:00Z", hasta="2027-06-03T00:00Z").json()
     assert body["puntos"][0]["incertidumbre_deg"] is None
     assert [a["codigo"] for a in body["avisos"]] == [c.AVISO_PROYECCION, c.AVISO_SIN_INCERTIDUMBRE]
 
