@@ -112,6 +112,7 @@ ESCENARIOS = {
     "puestas_sin_desde": lambda c: c.client.get("/api/puestas/apollo11"),
     "puestas_sitio_inexistente_404": lambda c: c.client.get("/api/puestas/no_existe"),
     "ruta_inexistente_404": lambda c: c.client.get("/api/no-existe"),
+    "metodo_no_permitido_405": lambda c: c.client.post("/api/sites"),
     # ---- seguridad (público)
     "seguridad_clave_publica": lambda c: c.client.get("/api/seguridad/clave-publica"),
     "seguridad_manifiesto_sin_generar_404": lambda c: c.client.get("/api/seguridad/manifiesto"),
@@ -158,6 +159,8 @@ def observar(respuesta) -> dict:
     tipo = respuesta.headers.get("content-type", "").split(";")[0]
     observado = {"estado": respuesta.status_code, "tipo_contenido": tipo}
     cabeceras = {k: respuesta.headers[k] for k in CABECERAS_CONGELADAS if k in respuesta.headers}
+    if "x-request-id" in respuesta.headers:          # el valor cambia en cada petición: se congela solo que esté
+        cabeceras["x-request-id"] = "presente"
     if cabeceras:
         observado["cabeceras"] = cabeceras
     if tipo == "application/json":
