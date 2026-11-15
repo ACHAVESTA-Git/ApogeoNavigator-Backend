@@ -3,7 +3,10 @@
 **Where are the Sun and the Earth in the sky of a lunar landing site, hour by hour?** This is the API behind *Lunar Landing Site Navigator*, built by **Apogeo Team** for the NASA Space Apps Challenge 2026. It serves NASA/JPL Horizons ephemerides for ten landing sites, computes sunlight and Earth-visibility metrics from them, and lets a trusted operator upload new data with strict validation and a tamper-evident trail.
 
 - Frontend (React): https://github.com/ACHAVESTA-Git/ApogeoNavigator-Frontend
-- Live demo, video and challenge submission: links will be added here once published.
+- **Live demo:** https://apogeo-514716.web.app
+- **Live API (interactive docs):** https://apogeo-backend-rgtyw5oh5q-uc.a.run.app/docs
+- Video and challenge submission: links will be added here once published.
+- [Changelog](CHANGELOG.md)
 - [Quick start](#quick-start) · [API](#api) · [NASA data and sources](#nasa-data-and-sources) · [Integrity and security](#integrity-and-security) · [Limitations](#limitations) · [Tests](#tests) · [AI usage declaration](#ai-usage-declaration) · [License](#license) · [Resumen en español](#resumen-en-español)
 
 ## Why it matters
@@ -107,7 +110,9 @@ Field names and some texts (site names, notes, warning messages) are currently i
 `POST /api/auth/login` (e-mail and password), `POST /api/auth/logout` and `GET /api/auth/me` (id, name, role and the fingerprints of the user's active public keys; **never** private keys). The session is an opaque token in an `httpOnly`, `SameSite=Strict` cookie named `__session` (`Secure` in production; Firebase Hosting only forwards that name) that lasts 8 hours; only its hash is stored, and passwords are hashed with Argon2id. Failed attempts are limited per e-mail and per IP (429 with `Retry-After`) and audited. `POST /api/auth/login` and the requests that change data and are authenticated by cookie must send `X-Requested-With` (any value) or a trusted `Origin` (CSRF). Roles: CSV upload accepts `analista`, `revisor` and `admin`; the key manager only `admin` (403 otherwise). The `X-API-Key` of scripts keeps working. Google OAuth is future work. The image sets `MALLOC_ARENA_MAX=2` on purpose: glibc keeps one malloc arena (about 19 MiB with Argon2id) per thread, and without the cap 30 simultaneous logins peaked above 512 MB; with it the same test stays around 72 MB. Keep it if you build your own image.
 
 ### Test users (local demo)
-`python -m app.cli.seed_usuarios` (in Docker: `docker compose exec backend python -m app.cli.seed_usuarios`; `scripts/seed_usuarios.sh` is only a local shortcut and is not shipped in the image) creates three accounts, `analista@apogeo.test`, `revisor@apogeo.test` and `admin@apogeo.test` (`.test` is a reserved domain), each with a random password and its two post-quantum key pairs (ML-KEM-1024 and ML-DSA-65). The server keeps only the public keys. The passwords and the private keys are delivered **once**, in a credentials file with mode `600` (`.seed_credentials.local`-style path: `.seed_credenciales.local` by default, `SEED_CREDENTIALS_FILE` or `--salida` to change it; `/srv/.seed/credenciales.local` in the image). They are never printed or logged, and the file is git- and docker-ignored. Read it in the container with `docker compose exec backend cat /srv/.seed/credenciales.local`.
+No credentials are published in this repository or in this README: they are generated at random on each machine.
+
+`python -m app.cli.seed_usuarios` (in Docker: `docker compose exec backend python -m app.cli.seed_usuarios`; `scripts/seed_usuarios.sh` is only a local shortcut and is not shipped in the image) creates three accounts, `analista@apogeo.test`, `revisor@apogeo.test` and `admin@apogeo.test` (`.test` is a reserved domain), each with a random password and its two post-quantum key pairs (ML-KEM-1024 and ML-DSA-65). The server keeps only the public keys. The passwords and the private keys are delivered **once**, in a credentials file with mode `600` (`.seed_credenciales.local` by default; change it with `SEED_CREDENTIALS_FILE` or `--salida`; `/srv/.seed/credenciales.local` in the image). They are never printed or logged, and the file is git- and docker-ignored. Read it in the container with `docker compose exec backend cat /srv/.seed/credenciales.local`.
 
 The command is idempotent (it only creates the missing accounts and never touches existing ones). In production it refuses to run unless you pass `--forzar-produccion`; there the credentials file is meant to be moved to Secret Manager and deleted. It needs the database with the migrations applied.
 
@@ -133,13 +138,15 @@ The goal is that anyone can check that the data they are shown have not been alt
   ```bash
   pip install "cryptography>=47"
   python scripts/pqc/verificar_manifiesto.py \
-    --manifiesto https://<host>/api/seguridad/manifiesto \
-    --clave-publica https://<host>/api/seguridad/clave-publica \
-    --huella <OFFICIAL_FINGERPRINT> --datos ./data
+    --manifiesto https://apogeo-backend-rgtyw5oh5q-uc.a.run.app/api/seguridad/manifiesto \
+    --clave-publica https://apogeo-backend-rgtyw5oh5q-uc.a.run.app/api/seguridad/clave-publica \
+    --huella 6e30ff26837f2827e41e37a866b2949a9fb990cd20a302cb872b460a8e59710c
   ```
-  The expected output is `CORRECTO: firma ML-DSA-65 válida; 12 archivos comprobados`. The fingerprint must come from a channel other than the server (this README). Official public-key fingerprint: to be published here when the production keys are generated.
+  Without `--datos` it checks the signature and the key fingerprint (`CORRECTO: firma ML-DSA-65 válida; archivos NO comprobados (sin --datos); huella …`). To also check every CSV against the manifest, download the data files into a folder and add `--datos ./data`. The fingerprint must come from a channel other than the server: this README is that channel.
+
+  **Production public-key fingerprint (SHA3-256, ML-DSA-65):** `6e30ff26837f2827e41e37a866b2949a9fb990cd20a302cb872b460a8e59710c`. If `GET /api/seguridad/clave-publica` ever returns a different `huella_sha3_256`, do not trust the manifest.
 - **Audit log:** with a database configured, every validation and upload is recorded as an event whose hash includes the previous one (SHA3-256) and is signed with ML-DSA-65. `GET /api/auditoria/verificar` checks the chain. On PostgreSQL a trigger blocks `UPDATE`, `DELETE` and `TRUNCATE` on the log. Deleting the last events or restarting the chain is **not** detectable without an external anchor (the head hash is written to the logs). IPs are never stored, only an HMAC with a secret salt.
-- **Personal data:** user emails are stored encrypted (ML-KEM-1024, FIPS 203, with AES-GCM) and searched by an HMAC. Login is not implemented yet.
+- **Personal data:** user emails are stored encrypted (ML-KEM-1024, FIPS 203, with AES-GCM) and searched by an HMAC. Login is local (e-mail and password with Argon2id); see [Login and roles](#login-and-roles).
 - **Fail closed in production:** if signing, the bucket or the database is unavailable, an upload is refused instead of being saved without evidence.
 
 Post-quantum signatures are used here for their long-term integrity guarantees on our own files. This does not mean that NASA uses them, and the implementation has not been independently audited. Details: [`docs/bd/modelo-datos.md`](docs/bd/modelo-datos.md) (Spanish).
@@ -225,7 +232,7 @@ Everything is configured with environment variables; see [`.env.example`](.env.e
 
 ## Tests
 ```bash
-pytest                                  # more than 650 tests; no database, bucket or network needed
+pytest                                  # about 1,500 tests; no database, bucket or network needed
 TEST_DATABASE_URL=postgresql+psycopg://user:pass@localhost:5432/apogeo_test pytest tests/test_postgres.py
 ```
 `tests/test_contrato_congelado.py` freezes the HTTP contract the frontend depends on (status codes, error texts and the shape of every JSON response, plus the OpenAPI operations) against `tests/contrato/snapshots.json`. A refactor must keep it green; if a contract change is deliberate, regenerate with `UPDATE_CONTRATO=1 pytest tests/test_contrato_congelado.py` and review the snapshot diff in the pull request.
@@ -233,7 +240,9 @@ TEST_DATABASE_URL=postgresql+psycopg://user:pass@localhost:5432/apogeo_test pyte
 The second command runs the PostgreSQL-specific tests (immutable audit trigger, migrations, concurrency) against a throwaway database whose name must contain `test`; they are skipped otherwise.
 
 ## AI usage declaration
-> **To be completed by the project owner.** The final declaration text, as required by the Space Apps guidelines, will be placed here and mirrored in the challenge submission form.
+> **PENDING: to be written by the project owner.** The final declaration text, as required by the Space Apps guidelines, goes here and is mirrored in the challenge submission form.
+>
+> _(placeholder: describe which AI tools were used, for what, and how the team reviewed the output)_
 
 ## Contributing
 See [CONTRIBUTING.md](CONTRIBUTING.md) (in Spanish): branch flow, commit conventions and pull requests.
