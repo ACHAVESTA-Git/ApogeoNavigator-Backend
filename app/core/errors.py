@@ -40,7 +40,7 @@ async def validation_error(request: Request, exc: RequestValidationError) -> JSO
 
 
 async def servicio_error(request: Request, exc: ErrorServicio) -> JSONResponse:
-    return respuesta_error(request, exc.status, exc.detail)
+    return respuesta_error(request, exc.status, exc.detail, headers=exc.headers)
 
 
 async def store_error(request: Request, exc: StoreError) -> JSONResponse:

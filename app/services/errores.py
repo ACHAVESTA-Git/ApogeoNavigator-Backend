@@ -5,7 +5,8 @@ Los servicios no importan FastAPI: lanzan `ErrorServicio` y el router (o el mane
 
 
 class ErrorServicio(Exception):
-    def __init__(self, status: int, detail: str):
+    def __init__(self, status: int, detail: str, headers: dict | None = None):
         super().__init__(detail)
         self.status = status
         self.detail = detail
+        self.headers = headers
