@@ -8,6 +8,7 @@ import httpx
 
 DATA = Path(__file__).resolve().parents[1] / "data"
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+COLUMNS = " Date__(UT)__HR:MN, , ,Azi_(a-app), Elev_(a-app),\n"
 HEADER = "Center body name: Moon (301)\nAtmos refraction: NO (AIRLESS)\n"
 
 
@@ -20,13 +21,14 @@ def load_rows(site_id: str = "shackleton") -> list[dict]:
         return [{**r, "t": datetime.strptime(r["utc"], "%Y-%m-%dT%H:%MZ").replace(tzinfo=timezone.utc)} for r in csv.DictReader(f)]
 
 
-def horizons_text(rows: list[tuple[datetime, float, float]], header: str = HEADER) -> str:
+def horizons_text(rows: list[tuple[datetime, float, float]], header: str = HEADER, columns: str = COLUMNS) -> str:
     lines = [f" {t.year}-{MONTHS[t.month - 1]}-{t.day:02d} {t:%H:%M},*,i, {az:.6f}, {el:.6f}," for t, az, el in rows]
-    return f"*** cabecera ***\n{header}$$SOE\n" + "\n".join(lines) + "\n$$EOE\n*** pie ***\n"
+    return f"*** cabecera ***\n{header}{columns}$$SOE\n" + "\n".join(lines) + "\n$$EOE\n*** pie ***\n"
 
 
 class FakeHorizons:
-    """Transporte httpx. Guarda las peticiones; `mode` fuerza fallos: http500, timeout, sin_soe, otro_centro, desfase."""
+    """Transporte httpx. Guarda las peticiones; `mode` fuerza fallos: http500, timeout, sin_soe, otro_centro, desfase,
+    sin_columnas, enorme, decodificacion, protocolo."""
 
     def __init__(self, site_id: str = "shackleton", mode: str = "ok", fail_first: int = 0):
         self.rows = load_rows(site_id)
@@ -44,6 +46,12 @@ class FakeHorizons:
             raise httpx.ReadTimeout("simulado", request=request)
         if self.mode == "sin_soe":
             return httpx.Response(200, text="No ephemeris for target SECRETO-INTERNO-JPL")
+        if self.mode == "decodificacion":
+            raise httpx.DecodingError("simulado", request=request)
+        if self.mode == "protocolo":
+            raise httpx.RemoteProtocolError("simulado", request=request)
+        if self.mode == "enorme":
+            return httpx.Response(200, content=b"x" * 3_000_000)
         start, stop = _instant(params["START_TIME"]), _instant(params["STOP_TIME"])
         step = int(re.match(r"(\d+)", params["STEP_SIZE"].strip("'")).group(1))
         key = ("sol" if params["COMMAND"] == "'10'" else "tierra")
@@ -52,4 +60,4 @@ class FakeHorizons:
             chosen = chosen[:-1]
         series = [(r["t"], float(r[f"{key}_az_deg"]), float(r[f"{key}_el_deg"])) for r in chosen]
         header = "Center body name: Earth (399)\n" if self.mode == "otro_centro" else HEADER
-        return httpx.Response(200, text=horizons_text(series, header))
+        return httpx.Response(200, text=horizons_text(series, header, "" if self.mode == "sin_columnas" else COLUMNS))

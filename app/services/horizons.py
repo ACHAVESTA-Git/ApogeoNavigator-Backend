@@ -83,6 +83,17 @@ def _params(body: str, lat: float, lon: float, start: datetime, end: datetime, s
     }
 
 
+def _read_capped(response: httpx.Response, where: str) -> str:
+    """Lee el cuerpo (ya descomprimido) hasta `HORIZONS_MAX_RESPONSE_BYTES`; si lo supera, 502 sin seguir leyendo."""
+    body = bytearray()
+    for chunk in response.iter_bytes():
+        body += chunk
+        if len(body) > c.HORIZONS_MAX_RESPONSE_BYTES:
+            log.warning(c.MSG_HORIZONS_LOG_REJECTED, where, "respuesta demasiado grande")
+            raise _fail(c.HTTP_BAD_GATEWAY, c.MSG_HORIZONS_UNEXPECTED)
+    return body.decode(response.encoding or "utf-8", errors="replace")
+
+
 def _get_text(client: httpx.Client, params: dict[str, str], where: str) -> str:
     """GET con reintentos. Timeout -> 504; cualquier otro fallo del servicio externo -> 502."""
     last: Exception | None = None
@@ -90,17 +101,17 @@ def _get_text(client: httpx.Client, params: dict[str, str], where: str) -> str:
         if attempt:
             time.sleep(c.HORIZONS_RETRY_BACKOFF_S)
         try:
-            response = client.get(c.HORIZONS_URL, params=params)
-            if response.status_code in c.HORIZONS_RETRY_STATUS:
-                last = httpx.HTTPStatusError(str(response.status_code), request=response.request, response=response)
-                continue
-            if response.status_code != c.HTTP_OK:
-                log.warning(c.MSG_HORIZONS_LOG_FAILED, f"HTTP {response.status_code}", where)
-                raise _fail(c.HTTP_BAD_GATEWAY, c.MSG_HORIZONS_FAILED)
-            return response.text
+            with client.stream("GET", c.HORIZONS_URL, params=params) as response:
+                if response.status_code in c.HORIZONS_RETRY_STATUS:
+                    last = httpx.HTTPStatusError(str(response.status_code), request=response.request, response=response)
+                    continue
+                if response.status_code != c.HTTP_OK:
+                    log.warning(c.MSG_HORIZONS_LOG_FAILED, f"HTTP {response.status_code}", where)
+                    raise _fail(c.HTTP_BAD_GATEWAY, c.MSG_HORIZONS_FAILED)
+                return _read_capped(response, where)
         except httpx.TimeoutException as exc:
             last = exc
-        except httpx.TransportError as exc:
+        except httpx.RequestError as exc:                 # transporte, DecodingError, TooManyRedirects...
             last = exc
     log.warning(c.MSG_HORIZONS_LOG_FAILED, type(last).__name__, where)
     if isinstance(last, httpx.TimeoutException):
@@ -123,7 +134,10 @@ def parse_ephemeris(text: str, where: str) -> list[tuple[datetime, float, float]
         raise _fail(c.HTTP_BAD_GATEWAY, c.MSG_HORIZONS_UNEXPECTED)
     if c.HORIZONS_HEADER_MOON not in text or c.HORIZONS_HEADER_AIRLESS not in text:
         raise _fail(c.HTTP_BAD_GATEWAY, c.MSG_HORIZONS_NOT_MOON)
-    block = text.split(c.HORIZONS_SOE, 1)[1].split(c.HORIZONS_EOE, 1)[0]
+    head, block = text.split(c.HORIZONS_SOE, 1)
+    if not all(column in head for column in c.HORIZONS_HEADER_COLUMNS):
+        raise _fail(c.HTTP_BAD_GATEWAY, c.MSG_HORIZONS_UNEXPECTED)
+    block = block.split(c.HORIZONS_EOE, 1)[0]
     rows: list[tuple[datetime, float, float]] = []
     try:
         for line in block.splitlines():
@@ -153,9 +167,15 @@ def _fetch(lat: float, lon: float, start: datetime, end: datetime, step_h: int) 
     where = f"{lat},{lon}"
     timeout = httpx.Timeout(c.HORIZONS_TIMEOUT_S, connect=c.HORIZONS_CONNECT_TIMEOUT_S)
     headers = {"User-Agent": c.HORIZONS_USER_AGENT}
-    with _gate, httpx.Client(timeout=timeout, headers=headers, transport=_transport) as client:
-        sun = parse_ephemeris(_get_text(client, _params(c.HORIZONS_BODY_SUN, lat, lon, start, end, step_h), where), where)
-        earth = parse_ephemeris(_get_text(client, _params(c.HORIZONS_BODY_EARTH, lat, lon, start, end, step_h), where), where)
+    if not _gate.acquire(timeout=c.HORIZONS_GATE_WAIT_S):        # no se bloquea un hilo de FastAPI indefinidamente
+        raise HTTPException(status_code=c.HTTP_UNAVAILABLE, detail=c.MSG_HORIZONS_BUSY.format(seconds=c.HORIZONS_GATE_RETRY_AFTER_S),
+                            headers={c.HORIZONS_RETRY_AFTER_HEADER: str(c.HORIZONS_GATE_RETRY_AFTER_S)})
+    try:
+        with httpx.Client(timeout=timeout, headers=headers, transport=_transport) as client:
+            sun = parse_ephemeris(_get_text(client, _params(c.HORIZONS_BODY_SUN, lat, lon, start, end, step_h), where), where)
+            earth = parse_ephemeris(_get_text(client, _params(c.HORIZONS_BODY_EARTH, lat, lon, start, end, step_h), where), where)
+    finally:
+        _gate.release()
     if [r[0] for r in sun] != [r[0] for r in earth]:
         raise _fail(c.HTTP_BAD_GATEWAY, c.MSG_HORIZONS_UNEXPECTED)
     expected_max = int((end - start) / (step_h * _HOUR)) + 2

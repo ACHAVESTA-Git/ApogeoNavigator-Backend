@@ -135,7 +135,8 @@ def test_limites_validos_se_aceptan(api):
 
 
 # ------------------------------------------------------------------ fallos de JPL
-@pytest.mark.parametrize("modo, estado", [("http500", 502), ("timeout", 504), ("sin_soe", 502), ("otro_centro", 502), ("desfase", 502)])
+@pytest.mark.parametrize("modo, estado", [("http500", 502), ("timeout", 504), ("sin_soe", 502), ("otro_centro", 502), ("desfase", 502),
+                                         ("sin_columnas", 502), ("enorme", 502), ("decodificacion", 502), ("protocolo", 502)])
 def test_fallos_de_jpl(api, fake, modo, estado):
     fake.mode = modo
     response = get(api, **OK)
@@ -161,6 +162,48 @@ def test_un_fallo_no_queda_en_cache(api, fake):
     assert get(api, **OK).status_code == 504
     fake.mode = "ok"
     assert get(api, **OK).json()["en_cache"] is False
+
+
+def test_la_respuesta_enorme_se_corta_sin_leerla_entera(api, fake, monkeypatch):
+    fake.mode = "enorme"
+    monkeypatch.setattr(c, "HORIZONS_MAX_RESPONSE_BYTES", 1000)
+    leidos = []
+    original = service._read_capped
+
+    def espiar(response, where):
+        try:
+            return original(response, where)
+        finally:
+            leidos.append(True)
+    monkeypatch.setattr(service, "_read_capped", espiar)
+    assert get(api, **OK).status_code == 502 and leidos
+
+
+def test_una_respuesta_normal_cabe_en_el_tope(api):
+    assert get(api, **{**OK, "hasta": "2027-01-05T00:00Z"}).status_code == 200          # 35 días a 1 h ≈ 840 filas
+
+
+def test_sin_hueco_en_la_cola_responde_503_con_retry_after_sin_bloquear(api, fake, monkeypatch):
+    import threading
+    import time
+    puerta = threading.BoundedSemaphore(1)
+    puerta.acquire()                                       # otra consulta ocupa el único hueco
+    monkeypatch.setattr(service, "_gate", puerta)
+    monkeypatch.setattr(c, "HORIZONS_GATE_WAIT_S", 0.05)
+    inicio = time.monotonic()
+    response = get(api, **OK)
+    assert response.status_code == 503 and int(response.headers["Retry-After"]) >= 1 and "detail" in response.json()
+    assert time.monotonic() - inicio < 2 and fake.requests == []
+    puerta.release()
+    assert get(api, **OK).status_code == 200               # y el hueco se libera: el servicio se recupera
+
+
+def test_el_hueco_se_libera_aunque_jpl_falle(api, fake):
+    fake.mode = "http500"
+    for _ in range(c.HORIZONS_MAX_CONCURRENT + 2):
+        assert get(api, **{**OK, "lat": -80 - _}).status_code == 502
+    fake.mode = "ok"
+    assert get(api, **OK).status_code == 200
 
 
 # ------------------------------------------------------------------ límite de consultas
