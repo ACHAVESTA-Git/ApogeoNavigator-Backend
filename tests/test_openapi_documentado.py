@@ -68,7 +68,8 @@ def test_los_parametros_de_lectura_tienen_descripcion_y_ejemplo(ruta):
 
 def test_los_parametros_de_lectura_no_ganan_restricciones_que_cambien_los_errores():
     """Con pattern, ge/le o datetime, el 422 pasaría de texto a lista y el contrato del frontend se rompería."""
-    for ruta in ("/api/efemerides/{site_id}", "/api/metricas", "/api/puestas/{site_id}", "/api/simulacion/{site_id}"):
+    for ruta in ("/api/efemerides/{site_id}", "/api/metricas", "/api/puestas/{site_id}", "/api/simulacion/{site_id}",
+                 "/api/analisis/{site_id}"):
         for parametro in ESQUEMA["paths"][ruta]["get"]["parameters"]:
             esquema = parametro["schema"]
             base = esquema.get("items", esquema) if esquema.get("type") == "array" else esquema
@@ -86,7 +87,8 @@ def _descripciones():
         for campo, prop in esquema.get("properties", {}).items():
             if prop.get("description"):
                 yield f"{nombre}.{campo}", prop["description"]
-    for ruta in ("/api/efemerides/{site_id}", "/api/metricas", "/api/puestas/{site_id}", "/api/simulacion/{site_id}"):
+    for ruta in ("/api/efemerides/{site_id}", "/api/metricas", "/api/puestas/{site_id}", "/api/simulacion/{site_id}",
+                 "/api/analisis/{site_id}"):
         for p in ESQUEMA["paths"][ruta]["get"]["parameters"]:
             yield f"{ruta}:{p['name']}", p.get("description", "")
         yield f"{ruta}:doc", ESQUEMA["paths"][ruta]["get"].get("description", "")
@@ -105,3 +107,13 @@ def test_la_simulacion_documenta_desde_hasta_y_paso_horas():
     assert "0.25" in params["paso_horas"]["description"] and "366" in params["hasta"]["description"]
     assert all(p["schema"].get("examples") or p.get("examples") for p in params.values())
     assert SimulacionOut.model_config["json_schema_extra"]["examples"][0]["site_id"] == "shackleton"
+
+
+def test_el_analisis_esta_documentado_con_etiqueta_resumen_y_parametros():
+    op = ESQUEMA["paths"]["/api/analisis/{site_id}"]["get"]
+    assert op["tags"] == [c.ROUTER_TAG_ANALISIS] and op["summary"][0].isupper() and not op["summary"].endswith(".")
+    params = {p["name"]: p for p in op["parameters"]}
+    assert set(params) == {"site_id", "desde", "hasta", "variable"}
+    assert all(p.get("description") and (p["schema"].get("examples") or p.get("examples")) for p in params.values())
+    assert "366" in params["hasta"]["description"] and "sol_el_deg" in params["variable"]["description"]
+    assert any(t["name"] == c.ROUTER_TAG_ANALISIS and t.get("description") for t in ESQUEMA["tags"])
