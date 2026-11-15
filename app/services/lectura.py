@@ -187,13 +187,13 @@ def _racha_fmt(racha: dict) -> dict:
     return {**racha, **{k: fmt(racha[k]) if racha[k] else None for k in (c.COL_INICIO, c.COL_FIN)}}
 
 
-def astronaut_indicators(sample: list[Row], step_h: float, end: datetime, sun_el_media: float | None) -> dict:
+def astronaut_indicators(sample: list[Row], step_h: float, sun_el_media: float | None) -> dict:
     """Indicadores para astronautas sobre las muestras del rango: noche más larga (Sol ≤ 0), apagón de Tierra más
     largo (Tierra ≤ 0), ventana continua con Sol y Tierra a la vez, próxima puesta de cada cuerpo y elevación solar
-    media en las horas de sol. Las rachas se miden sobre la serie del rango; si tocan un borde, `trunca_*` lo avisa."""
-    sun_down = racha_mas_larga(sample, lambda r: r[c.COL_SOL_EL] <= 0, step_h, end)
-    earth_down = racha_mas_larga(sample, lambda r: r[c.COL_TIERRA_EL] <= 0, step_h, end)
-    both_up = racha_mas_larga(sample, lambda r: r[c.COL_SOL_EL] > 0 and r[c.COL_TIERRA_EL] > 0, step_h, end)
+    media en las horas de sol (la misma cifra que `sol_el_media_deg`, agrupada con el resto de indicadores). Las rachas se miden sobre la serie del rango; si tocan un borde, `trunca_*` lo avisa."""
+    sun_down = racha_mas_larga(sample, lambda r: r[c.COL_SOL_EL] <= 0, step_h)
+    earth_down = racha_mas_larga(sample, lambda r: r[c.COL_TIERRA_EL] <= 0, step_h)
+    both_up = racha_mas_larga(sample, lambda r: r[c.COL_SOL_EL] > 0 and r[c.COL_TIERRA_EL] > 0, step_h)
     first = sample[0][c.COL_UTC]
     sunset = _events(sample, 0, c.COL_SOL_EL, first)[c.KEY_PUESTA]
     earthset = _events(sample, 0, c.COL_TIERRA_EL, first)[c.KEY_PUESTA]
@@ -224,7 +224,7 @@ def compute_metrics(site_id: str, rows: list[Row], step_h: float, start: datetim
         c.KEY_SEMAFORO: traffic_light(pct_sun, pct_earth), c.KEY_AVISOS: warnings_for(max(sun)),
         c.KEY_ORIGEN: c.ORIGEN_CALCULADO,
     }
-    result[c.KEY_INDICADORES] = astronaut_indicators(sample, step_h, end, result[c.COL_SOL_EL_MEDIA])
+    result[c.KEY_INDICADORES] = astronaut_indicators(sample, step_h, result[c.COL_SOL_EL_MEDIA])
     return result
 
 
