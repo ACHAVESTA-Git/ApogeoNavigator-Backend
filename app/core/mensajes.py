@@ -112,6 +112,16 @@ DOMINIO: dict[str, Mensaje] = {m.codigo: m for m in (
        "Reintenta en unos minutos."),
     _m("FIRMA_NO_DISPONIBLE", 503, "Firma no disponible", "La firma post-cuántica no está disponible; no se guardó nada.",
        "Avisa al equipo con el código de seguimiento: faltan las claves de firma."),
+    _m("CREDENCIALES_INVALIDAS", 401, "No se pudo iniciar sesión", "El correo o la contraseña no son correctos.",
+       "Revisa tus datos e inténtalo de nuevo."),
+    _m("SESION_INVALIDA", 401, "Sesión caducada", "Tu sesión no es válida o ya caducó.", "Inicia sesión de nuevo."),
+    _m("ROL_INSUFICIENTE", 403, "Sin permiso", "Tu rol no permite esta operación.",
+       "Usa una cuenta con el rol necesario o pide acceso a un administrador."),
+    _m("ORIGEN_NO_PERMITIDO", 403, "Petición no permitida", "La petición no parece venir de la aplicación.",
+       "Recarga la página e inténtalo de nuevo."),
+    _m("LOGIN_OCUPADO", 503, "Inicio de sesión ocupado", "Hay muchos inicios de sesión a la vez.", "Vuelve a intentarlo en unos segundos."),
+    _m("DEMASIADOS_INTENTOS", 429, "Demasiados intentos", "Se hicieron demasiados intentos de inicio de sesión.",
+       "Espera unos minutos antes de volver a intentarlo."),
     _m("CLAVE_DUPLICADA", 409, "Clave ya activa", "Ya hay una clave activa para ese usuario y tipo.", "Revócala o rótala en lugar de generar otra."),
     _m("CLAVE_YA_REVOCADA", 409, "Clave ya revocada", "La clave ya está revocada.", "No hace falta revocarla de nuevo; rota o genera una nueva."),
     _m("USUARIO_INACTIVO", 409, "Usuario desactivado", "El usuario está desactivado; no se le pueden emitir claves.", "Activa al usuario antes de emitirle claves."),
@@ -135,6 +145,8 @@ _POR_DETALLE: dict[str, str] = {
     c.MSG_KEYS_NO_USER: "USUARIO_NO_ENCONTRADO", c.MSG_KEYS_NO_KEY: "CLAVE_NO_ENCONTRADA",
     c.MSG_KEYS_ALREADY_REVOKED: "CLAVE_YA_REVOCADA", c.MSG_KEYS_INACTIVE_USER: "USUARIO_INACTIVO",
     c.MSG_KEYS_ALREADY_ACTIVE_GENERIC: "CLAVE_DUPLICADA",
+    c.MSG_LOGIN_INVALID: "CREDENCIALES_INVALIDAS", c.MSG_SESSION_INVALID: "SESION_INVALIDA", c.MSG_ROLE_FORBIDDEN: "ROL_INSUFICIENTE",
+    c.MSG_CSRF_FORBIDDEN: "ORIGEN_NO_PERMITIDO", c.MSG_LOGIN_BUSY: "LOGIN_OCUPADO", c.MSG_LOGIN_TOO_MANY: "DEMASIADOS_INTENTOS",
 }
 def _plantilla(texto: str) -> re.Pattern:
     """Regex de un mensaje con {campos}: sirve para reconocer el `detail` ya formateado."""

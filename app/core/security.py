@@ -1,3 +1,4 @@
+import logging
 import secrets
 
 from fastapi import Header, HTTPException
@@ -30,3 +31,13 @@ def require_api_key(x_api_key: str | None = Header(default=None, alias=config.AP
     """Exige X-API-Key. Si UPLOAD_API_KEY no está definida, la carga queda cerrada (401)."""
     if not is_valid_api_key(x_api_key):
         raise HTTPException(status_code=config.HTTP_UNAUTHORIZED, detail=config.MSG_API_KEY_INVALID)
+
+
+def require_admin_key(x_api_key: str | None = Header(default=None, alias=config.API_KEY_HEADER)) -> None:
+    """Exige la clave de administración. Cerrado (401) sin ADMIN_API_KEY o si es igual a UPLOAD_API_KEY."""
+    expected = config.get_admin_api_key()
+    if expected and expected == config.get_upload_api_key():
+        logging.getLogger(config.KEYS_LOGGER).error(config.MSG_KEYS_SAME_KEY_LOG)
+        raise HTTPException(status_code=config.HTTP_UNAUTHORIZED, detail=config.MSG_KEYS_ADMIN_KEY)
+    if not matches_api_key(x_api_key, expected):
+        raise HTTPException(status_code=config.HTTP_UNAUTHORIZED, detail=config.MSG_KEYS_ADMIN_KEY)

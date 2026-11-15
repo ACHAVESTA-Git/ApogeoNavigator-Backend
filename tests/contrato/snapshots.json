@@ -135,6 +135,40 @@
     ]
    }
   },
+  "/api/auth/login": {
+   "POST": {
+    "cuerpo": [
+     "application/json"
+    ],
+    "parametros": [],
+    "respuestas": [
+     "200",
+     "401",
+     "422",
+     "429",
+     "503"
+    ]
+   }
+  },
+  "/api/auth/logout": {
+   "POST": {
+    "cuerpo": null,
+    "parametros": [],
+    "respuestas": [
+     "204"
+    ]
+   }
+  },
+  "/api/auth/me": {
+   "GET": {
+    "cuerpo": null,
+    "parametros": [],
+    "respuestas": [
+     "200",
+     "401"
+    ]
+   }
+  },
   "/api/datos/validar/{tipo}": {
    "POST": {
     "cuerpo": [

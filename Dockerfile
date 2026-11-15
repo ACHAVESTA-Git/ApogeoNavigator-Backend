@@ -21,6 +21,8 @@ COPY data ./seed-data
 RUN mkdir -p /srv/data /srv/.pqc_dev && chown -R app:app /srv/data /srv/.pqc_dev
 
 # Cloud Run inyecta $PORT; 8080 por defecto en local.
+# glibc crea un arena de malloc (~19 MiB con Argon2id) por hilo: con 30 logins en 30 hilos el pico pasaba de 512 MB. Con 2 arenas, ~72 MB.
+ENV MALLOC_ARENA_MAX=2
 ENV PORT=8080 DATA_DIR=/srv/data DATA_SEED_DIR=/srv/seed-data PQC_DEV_KEY_DIR=/srv/.pqc_dev
 EXPOSE 8080
 USER app

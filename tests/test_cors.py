@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 
 from app.core import config
 from app.core.cors import add_cors
-from app.core.limits import upload_guard
+from app.core.limits import UploadGuard
 from tests.conftest import API_KEY
 
 LOCAL = "http://localhost:5173"
@@ -17,7 +17,7 @@ def build(monkeypatch, origins=None, regex=None) -> TestClient:
     for name, value in (("CORS_ORIGINS", origins), ("CORS_ORIGIN_REGEX", regex)):
         monkeypatch.delenv(name, raising=False) if value is None else monkeypatch.setenv(name, value)
     app = FastAPI()
-    app.middleware("http")(upload_guard)
+    app.add_middleware(UploadGuard)
     add_cors(app)
 
     @app.get("/api/x")
@@ -84,11 +84,13 @@ def test_preflight_de_origen_no_permitido_no_concede_nada(monkeypatch):
     assert r.status_code == 400 and "access-control-allow-origin" not in r.headers
 
 
-def test_nunca_hay_credenciales(monkeypatch):
+def test_credenciales_solo_para_origenes_permitidos(monkeypatch):
+    """La cookie de sesión exige credenciales CORS, pero solo con orígenes de la lista (el «*» sigue prohibido)."""
     c = build(monkeypatch)
-    assert "access-control-allow-credentials" not in c.get("/api/x", headers={"Origin": LOCAL}).headers
-    assert "access-control-allow-credentials" not in preflight(c, LOCAL).headers
-    assert config.CORS_ALLOW_CREDENTIALS is False
+    assert c.get("/api/x", headers={"Origin": LOCAL}).headers["access-control-allow-credentials"] == "true"
+    assert preflight(c, LOCAL).headers["access-control-allow-credentials"] == "true"
+    assert "access-control-allow-origin" not in c.get("/api/x", headers={"Origin": "https://malo.example"}).headers
+    assert config.CORS_ALLOW_CREDENTIALS is True
 
 
 def test_la_respuesta_401_del_guardia_lleva_cabeceras_cors(monkeypatch):
@@ -119,7 +121,7 @@ def test_un_archivo_dentro_del_limite_no_recibe_413(monkeypatch):
 def test_la_aplicacion_real_tiene_cors(monkeypatch):
     from app.main import app
     nombres = [m.cls.__name__ for m in app.user_middleware]
-    assert nombres.index("CORSMiddleware") < nombres.index("BaseHTTPMiddleware")      # primero en la lista = más externo
+    assert nombres.index("CORSMiddleware") < nombres.index("UploadGuard")      # primero en la lista = más externo
 
 
 def test_se_exponen_x_request_id_y_retry_after_para_que_el_frontend_los_lea(monkeypatch):

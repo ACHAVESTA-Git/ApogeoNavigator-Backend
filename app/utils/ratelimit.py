@@ -65,6 +65,20 @@ class SlidingWindowLimiter:
             self._events.move_to_end(key)
             return 0.0
 
+    def refund(self, key: Hashable = None) -> None:
+        """Devuelve el último evento registrado de la clave (p. ej. una reserva de intento que al final fue correcta)."""
+        with self._lock:
+            queue = self._events.get(key)
+            if queue:
+                queue.pop()
+                if not queue:
+                    del self._events[key]
+
+    def forget(self, key: Hashable = None) -> None:
+        """Olvida el historial de una clave (p. ej. tras un login correcto)."""
+        with self._lock:
+            self._events.pop(key, None)
+
     def __len__(self) -> int:
         with self._lock:
             return len(self._events)
