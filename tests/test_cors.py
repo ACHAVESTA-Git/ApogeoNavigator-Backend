@@ -84,11 +84,13 @@ def test_preflight_de_origen_no_permitido_no_concede_nada(monkeypatch):
     assert r.status_code == 400 and "access-control-allow-origin" not in r.headers
 
 
-def test_nunca_hay_credenciales(monkeypatch):
+def test_credenciales_solo_para_origenes_permitidos(monkeypatch):
+    """La cookie de sesión exige credenciales CORS, pero solo con orígenes de la lista (el «*» sigue prohibido)."""
     c = build(monkeypatch)
-    assert "access-control-allow-credentials" not in c.get("/api/x", headers={"Origin": LOCAL}).headers
-    assert "access-control-allow-credentials" not in preflight(c, LOCAL).headers
-    assert config.CORS_ALLOW_CREDENTIALS is False
+    assert c.get("/api/x", headers={"Origin": LOCAL}).headers["access-control-allow-credentials"] == "true"
+    assert preflight(c, LOCAL).headers["access-control-allow-credentials"] == "true"
+    assert "access-control-allow-origin" not in c.get("/api/x", headers={"Origin": "https://malo.example"}).headers
+    assert config.CORS_ALLOW_CREDENTIALS is True
 
 
 def test_la_respuesta_401_del_guardia_lleva_cabeceras_cors(monkeypatch):
