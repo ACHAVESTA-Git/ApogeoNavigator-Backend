@@ -1,0 +1,18 @@
+{
+  "version": "armonico-v1",
+  "metodo": "Ajuste armónico por mínimos cuadrados del vector de dirección del Sol y de la Tierra con los periodos sinódico (afinado con la FFT), anomalístico y dracónico, libración y bandas laterales; entrenado solo con nuestras efemérides.",
+  "entrenado_desde": "2026-12-01T00:00Z",
+  "entrenado_hasta": "2027-06-01T00:00Z",
+  "proyectado_hasta": "2028-07-31T23:00Z",
+  "error": {
+    "rmse_deg": {
+      "sol_el_deg": null,
+      "tierra_el_deg": null,
+      "sol_az_deg": null,
+      "tierra_az_deg": null
+    },
+    "por_horizonte": null,
+    "control_horizons": null,
+    "aciertos_semaforo_control": null
+  }
+}
