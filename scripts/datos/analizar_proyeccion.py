@@ -193,8 +193,8 @@ def main() -> None:
             "entrenamiento": {"inicio": first[0].strftime(c.UTC_FORMAT), "fin": first[-1].strftime(c.UTC_FORMAT)},
             "validacion": {"inicio": last_truth[0].strftime(c.UTC_FORMAT), "fin": last_truth[-1].strftime(c.UTC_FORMAT)}}
     RESULTS.write_text(json.dumps({**meta, "sitios": results}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    table = {sid: {col: {k: v for k, v in r["errores"][col].items() if k in ("mae_deg", "rmse_deg", "rmse_por_mes_deg")}
-                   for col in r["errores"]} for sid, r in results.items()}
+    table = {sid: {**{col: {k: v for k, v in r["errores"][col].items() if k in ("mae_deg", "rmse_deg", "rmse_por_mes_deg")}
+                      for col in r["errores"]}, c.KEY_ANGULAR: r[c.KEY_ANGULAR]} for sid, r in results.items()}
     ERRORS.write_text(json.dumps({"version": c.ERRORS_VERSION, **meta, "sitios": table}, ensure_ascii=False, indent=1) + "\n",
                       encoding="utf-8")
     fig_windows(train); fig_spectrum(train["apollo15"])
