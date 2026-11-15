@@ -577,3 +577,30 @@ def get_cors_origins() -> list[str]:
 
 def get_cors_origin_regex() -> str | None:
     return os.getenv(ENV_CORS_ORIGIN_REGEX) or None
+
+# ---------------------------------------------------------------- documentación OpenAPI (/docs)
+TAG_SYSTEM = "sistema"
+TAG_SITES = "sitios"
+API_DESCRIPTION = """
+**Lunar Landing Site Navigator** answers one question for ten lunar landing sites: *where are the Sun and the Earth in the
+sky, hour by hour?* Built by Apogeo Team for the NASA Space Apps Challenge 2026.
+
+* **Data:** hourly Sun and Earth azimuth and elevation from **NASA/JPL Horizons** (observer on the Moon, DE441, no refraction),
+  2026-12-01 to 2027-06-01. Site coordinates come from NSSDC, LROC and NASA/LRO. NASA does not endorse this project.
+* **Time:** every timestamp is **UTC** in the form `YYYY-MM-DDTHH:MMZ` (no seconds). Angles are in degrees; elevation is measured
+  against the *ideal* horizon (a smooth Moon, no terrain).
+* **Reading** (`lectura`, `sitios`, `seguridad`) is public. **Uploads and the audit log** need the `X-API-Key` header;
+  the key manager (`admin-claves`) needs the administration key.
+* **Errors** are JSON `{"detail": ...}`: a text, a list (request validation) or a CSV report (rejected uploads).
+"""
+OPENAPI_TAGS = [
+    {"name": TAG_SYSTEM, "description": "Service health."},
+    {"name": TAG_SITES, "description": "Catalogue of the ten landing sites with their coordinates and NASA source."},
+    {"name": ROUTER_TAG_LECTURA, "description": "Ephemerides, sunlight and Earth-visibility metrics with a traffic light, and next sunset/sunrise."},
+    {"name": ROUTER_TAG, "description": "Validate and upload CSV data (`X-API-Key`). Strict validation, atomic save, audited."},
+    {"name": ROUTER_TAG_SECURITY, "description": "Public ML-DSA-65 key and the signed manifest of the data files, for independent verification."},
+    {"name": ROUTER_TAG_AUDIT, "description": "Hash-chained, signed audit log of validations and uploads (`X-API-Key`)."},
+    {"name": KEYS_ROUTER_TAG, "description": "Per-user key manager: generate, revoke and rotate ML-KEM/ML-DSA key pairs (administration key)."},
+]
+API_CONTACT = {"name": "Apogeo Team", "url": "https://github.com/ACHAVESTA-Git/ApogeoNavigator-Backend"}
+API_LICENSE = {"name": "MIT", "url": "https://opensource.org/license/mit"}
