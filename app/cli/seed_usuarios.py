@@ -4,11 +4,13 @@ Crea 3 usuarios de prueba (analista, revisor y admin, @apogeo.test) con contrase
 Las credenciales y las claves privadas van al archivo de credenciales (permisos 600), nunca a la salida ni a los logs.
 """
 import argparse
+import logging
 import os
 import sys
 from pathlib import Path
 
 from app.core import config as c
+from app.core.logging_config import configurar_logging
 from app.db import session as db_session
 from app.services.semilla_usuarios import sembrar
 
@@ -25,8 +27,14 @@ def main(argv: list[str] | None = None) -> int:
     if not db_session.db_enabled():
         print(c.MSG_SEED_NO_DB, file=sys.stderr)
         return 2
+    configurar_logging()
+    log = logging.getLogger(c.SEED_LOGGER)
+    if c.is_production():
+        log.warning(c.MSG_SEED_FORCED_PRODUCTION)
+        print(c.MSG_SEED_FORCED_PRODUCTION, file=sys.stderr)
     with db_session.session_scope() as session:
         resultado = sembrar(session, args.salida)
+    log.info(c.MSG_SEED_DONE_LOG, len(resultado.creados), len(resultado.existentes))      # solo recuentos: nada de secretos
     for email in resultado.creados:
         print(f"creado: {email}")
     for email in resultado.existentes:
