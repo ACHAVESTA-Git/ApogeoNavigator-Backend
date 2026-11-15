@@ -87,6 +87,23 @@
     ]
    }
   },
+  "/api/analisis/{site_id}": {
+   "GET": {
+    "cuerpo": null,
+    "parametros": [
+     "path:site_id:obligatorio",
+     "query:desde:opcional",
+     "query:hasta:opcional",
+     "query:variable:opcional"
+    ],
+    "respuestas": [
+     "200",
+     "404",
+     "422",
+     "503"
+    ]
+   }
+  },
   "/api/auditoria": {
    "GET": {
     "cuerpo": null,
@@ -254,6 +271,632 @@
     ]
    }
   }
+ },
+ "analisis_ok": {
+  "estado": 200,
+  "forma": {
+   "desde_utc": "str",
+   "entrada": {
+    "archivo": "str",
+    "bytes": "number",
+    "calidad": {
+     "filas_con_error": "number",
+     "filas_validas": "number",
+     "huecos": "number",
+     "paso_constante": "bool"
+    },
+    "filas": "number",
+    "fin_utc": "str",
+    "inicio_utc": "str",
+    "origen": {
+     "coincide_con_semilla": "null",
+     "descripcion": "str",
+     "manifiesto": "null",
+     "sha3_256": "str",
+     "tipo": "str",
+     "ultima_carga": "null"
+    },
+    "paso_horas": "number"
+   },
+   "espectro": {
+    "nota": "str",
+    "resolucion_dias": "number",
+    "series": [
+     {
+      "nombre": "str",
+      "picos": [
+       {
+        "amplitud_rel": "number",
+        "candidatos": [
+         "str"
+        ],
+        "es_sinodico": "bool",
+        "periodo_dias": "number"
+       }
+      ],
+      "variable": "str"
+     }
+    ],
+    "sinodico_afinado_dias": "number",
+    "sinodico_teorico_dias": "number",
+    "ventana_dias": "number"
+   },
+   "hasta_utc": "str",
+   "limitaciones": [
+    {
+     "aplica": "bool",
+     "codigo": "str",
+     "mensaje": "str"
+    }
+   ],
+   "modelo": {
+    "ajuste_directo_elevacion_sol": "bool",
+    "periodos": [
+     {
+      "cuerpo": "str",
+      "periodo_dias": "number",
+      "rol": "str"
+     }
+    ],
+    "r2": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "residuos": {
+     "sol_az_deg": {
+      "mae_deg": "number",
+      "max_abs_deg": "number",
+      "p95_abs_deg": "number",
+      "rmse_deg": "number",
+      "sesgo_deg": "number"
+     },
+     "sol_el_deg": {
+      "mae_deg": "number",
+      "max_abs_deg": "number",
+      "p95_abs_deg": "number",
+      "rmse_deg": "number",
+      "sesgo_deg": "number"
+     },
+     "tierra_az_deg": {
+      "mae_deg": "number",
+      "max_abs_deg": "number",
+      "p95_abs_deg": "number",
+      "rmse_deg": "number",
+      "sesgo_deg": "number"
+     },
+     "tierra_el_deg": {
+      "mae_deg": "number",
+      "max_abs_deg": "number",
+      "p95_abs_deg": "number",
+      "rmse_deg": "number",
+      "sesgo_deg": "number"
+     }
+    },
+    "terminos_por_cuerpo": {
+     "Sol": "number",
+     "Tierra": "number"
+    }
+   },
+   "pasos": [
+    {
+     "descripcion": "str",
+     "estado": "str",
+     "id": "str",
+     "nombre": "str",
+     "resultado": [
+      {
+       "nombre": "str",
+       "unidad": "str",
+       "valor": "bool|number|str"
+      }
+     ]
+    }
+   ],
+   "serie": {
+    "fin_datos_utc": "str",
+    "nombre": "str",
+    "paso_horas": "number",
+    "puntos": [
+     {
+      "ajustado": "null|number",
+      "observado": "null|number",
+      "proyectado": "null|number",
+      "utc": "str"
+     }
+    ],
+    "variable": "str"
+   },
+   "site_id": "str",
+   "validacion": {
+    "disponible": "bool",
+    "filas_entrenamiento_validadas": "number",
+    "mae_deg": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "mejora_frente_a_ingenua": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "motivo": "null",
+    "puestas_sol": {
+     "emparejados_pct": "number",
+     "eventos_reales": "number",
+     "mae_h": "number"
+    },
+    "rmse_deg": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "rmse_por_mes_deg": {
+     "sol_az_deg": [
+      "number"
+     ],
+     "sol_el_deg": [
+      "number"
+     ],
+     "tierra_az_deg": [
+      "number"
+     ],
+     "tierra_el_deg": [
+      "number"
+     ]
+    },
+    "rmse_referencia_ingenua_deg": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "semaforo_aciertos": {
+     "aciertos_comunicacion": "number",
+     "aciertos_energia": "number",
+     "aciertos_global": "number",
+     "meses": "number"
+    },
+    "validacion_desde_utc": "str",
+    "validacion_hasta_utc": "str",
+    "vigente": "bool"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "analisis_otra_variable_y_rango": {
+  "estado": 200,
+  "forma": {
+   "desde_utc": "str",
+   "entrada": {
+    "archivo": "str",
+    "bytes": "number",
+    "calidad": {
+     "filas_con_error": "number",
+     "filas_validas": "number",
+     "huecos": "number",
+     "paso_constante": "bool"
+    },
+    "filas": "number",
+    "fin_utc": "str",
+    "inicio_utc": "str",
+    "origen": {
+     "coincide_con_semilla": "null",
+     "descripcion": "str",
+     "manifiesto": "null",
+     "sha3_256": "str",
+     "tipo": "str",
+     "ultima_carga": "null"
+    },
+    "paso_horas": "number"
+   },
+   "espectro": {
+    "nota": "str",
+    "resolucion_dias": "number",
+    "series": [
+     {
+      "nombre": "str",
+      "picos": [
+       {
+        "amplitud_rel": "number",
+        "candidatos": [
+         "str"
+        ],
+        "es_sinodico": "bool",
+        "periodo_dias": "number"
+       }
+      ],
+      "variable": "str"
+     }
+    ],
+    "sinodico_afinado_dias": "number",
+    "sinodico_teorico_dias": "number",
+    "ventana_dias": "number"
+   },
+   "hasta_utc": "str",
+   "limitaciones": [
+    {
+     "aplica": "bool",
+     "codigo": "str",
+     "mensaje": "str"
+    }
+   ],
+   "modelo": {
+    "ajuste_directo_elevacion_sol": "bool",
+    "periodos": [
+     {
+      "cuerpo": "str",
+      "periodo_dias": "number",
+      "rol": "str"
+     }
+    ],
+    "r2": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "residuos": {
+     "sol_az_deg": {
+      "mae_deg": "number",
+      "max_abs_deg": "number",
+      "p95_abs_deg": "number",
+      "rmse_deg": "number",
+      "sesgo_deg": "number"
+     },
+     "sol_el_deg": {
+      "mae_deg": "number",
+      "max_abs_deg": "number",
+      "p95_abs_deg": "number",
+      "rmse_deg": "number",
+      "sesgo_deg": "number"
+     },
+     "tierra_az_deg": {
+      "mae_deg": "number",
+      "max_abs_deg": "number",
+      "p95_abs_deg": "number",
+      "rmse_deg": "number",
+      "sesgo_deg": "number"
+     },
+     "tierra_el_deg": {
+      "mae_deg": "number",
+      "max_abs_deg": "number",
+      "p95_abs_deg": "number",
+      "rmse_deg": "number",
+      "sesgo_deg": "number"
+     }
+    },
+    "terminos_por_cuerpo": {
+     "Sol": "number",
+     "Tierra": "number"
+    }
+   },
+   "pasos": [
+    {
+     "descripcion": "str",
+     "estado": "str",
+     "id": "str",
+     "nombre": "str",
+     "resultado": [
+      {
+       "nombre": "str",
+       "unidad": "str",
+       "valor": "bool|number|str"
+      }
+     ]
+    }
+   ],
+   "serie": {
+    "fin_datos_utc": "str",
+    "nombre": "str",
+    "paso_horas": "number",
+    "puntos": [
+     {
+      "ajustado": "null|number",
+      "observado": "null|number",
+      "proyectado": "null|number",
+      "utc": "str"
+     }
+    ],
+    "variable": "str"
+   },
+   "site_id": "str",
+   "validacion": {
+    "disponible": "bool",
+    "filas_entrenamiento_validadas": "number",
+    "mae_deg": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "mejora_frente_a_ingenua": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "motivo": "null",
+    "puestas_sol": {
+     "emparejados_pct": "number",
+     "eventos_reales": "number",
+     "mae_h": "number"
+    },
+    "rmse_deg": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "rmse_por_mes_deg": {
+     "sol_az_deg": [
+      "number"
+     ],
+     "sol_el_deg": [
+      "number"
+     ],
+     "tierra_az_deg": [
+      "number"
+     ],
+     "tierra_el_deg": [
+      "number"
+     ]
+    },
+    "rmse_referencia_ingenua_deg": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "semaforo_aciertos": {
+     "aciertos_comunicacion": "number",
+     "aciertos_energia": "number",
+     "aciertos_global": "number",
+     "meses": "number"
+    },
+    "validacion_desde_utc": "str",
+    "validacion_hasta_utc": "str",
+    "vigente": "bool"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "analisis_rango_invalido_422": {
+  "detail": "'hasta' debe ser posterior a 'desde'",
+  "estado": 422,
+  "forma": {
+   "detail": "str"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "analisis_sitio_inexistente_404": {
+  "detail": "El sitio no existe en sites.csv",
+  "estado": 404,
+  "forma": {
+   "detail": "str"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "analisis_tras_subir_efemerides": {
+  "estado": 200,
+  "forma": {
+   "desde_utc": "str",
+   "entrada": {
+    "archivo": "str",
+    "bytes": "number",
+    "calidad": {
+     "filas_con_error": "number",
+     "filas_validas": "number",
+     "huecos": "number",
+     "paso_constante": "bool"
+    },
+    "filas": "number",
+    "fin_utc": "str",
+    "inicio_utc": "str",
+    "origen": {
+     "coincide_con_semilla": "null",
+     "descripcion": "str",
+     "manifiesto": {
+      "coincide": "bool",
+      "firmado": "bool",
+      "generado_utc": "str",
+      "sha3_256": "str"
+     },
+     "sha3_256": "str",
+     "tipo": "str",
+     "ultima_carga": {
+      "archivo": "str",
+      "cargado_por": "str",
+      "cargado_utc": "str",
+      "coincide": "bool",
+      "sha3_256": "str"
+     }
+    },
+    "paso_horas": "number"
+   },
+   "espectro": {
+    "nota": "str",
+    "resolucion_dias": "number",
+    "series": [
+     {
+      "nombre": "str",
+      "picos": [
+       {
+        "amplitud_rel": "number",
+        "candidatos": [
+         "str"
+        ],
+        "es_sinodico": "bool",
+        "periodo_dias": "number"
+       }
+      ],
+      "variable": "str"
+     }
+    ],
+    "sinodico_afinado_dias": "number",
+    "sinodico_teorico_dias": "number",
+    "ventana_dias": "number"
+   },
+   "hasta_utc": "str",
+   "limitaciones": [
+    {
+     "aplica": "bool",
+     "codigo": "str",
+     "mensaje": "str"
+    }
+   ],
+   "modelo": {
+    "ajuste_directo_elevacion_sol": "bool",
+    "periodos": [
+     {
+      "cuerpo": "str",
+      "periodo_dias": "number",
+      "rol": "str"
+     }
+    ],
+    "r2": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "residuos": {
+     "sol_az_deg": {
+      "mae_deg": "number",
+      "max_abs_deg": "number",
+      "p95_abs_deg": "number",
+      "rmse_deg": "number",
+      "sesgo_deg": "number"
+     },
+     "sol_el_deg": {
+      "mae_deg": "number",
+      "max_abs_deg": "number",
+      "p95_abs_deg": "number",
+      "rmse_deg": "number",
+      "sesgo_deg": "number"
+     },
+     "tierra_az_deg": {
+      "mae_deg": "number",
+      "max_abs_deg": "number",
+      "p95_abs_deg": "number",
+      "rmse_deg": "number",
+      "sesgo_deg": "number"
+     },
+     "tierra_el_deg": {
+      "mae_deg": "number",
+      "max_abs_deg": "number",
+      "p95_abs_deg": "number",
+      "rmse_deg": "number",
+      "sesgo_deg": "number"
+     }
+    },
+    "terminos_por_cuerpo": {
+     "Sol": "number",
+     "Tierra": "number"
+    }
+   },
+   "pasos": [
+    {
+     "descripcion": "str",
+     "estado": "str",
+     "id": "str",
+     "nombre": "str",
+     "resultado": [
+      {
+       "nombre": "str",
+       "unidad": "str",
+       "valor": "bool|number|str"
+      }
+     ]
+    }
+   ],
+   "serie": {
+    "fin_datos_utc": "str",
+    "nombre": "str",
+    "paso_horas": "number",
+    "puntos": [
+     {
+      "ajustado": "null|number",
+      "observado": "null|number",
+      "proyectado": "null|number",
+      "utc": "str"
+     }
+    ],
+    "variable": "str"
+   },
+   "site_id": "str",
+   "validacion": {
+    "disponible": "bool",
+    "filas_entrenamiento_validadas": "number",
+    "mae_deg": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "mejora_frente_a_ingenua": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "motivo": "null",
+    "puestas_sol": {
+     "emparejados_pct": "number",
+     "eventos_reales": "number",
+     "mae_h": "number"
+    },
+    "rmse_deg": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "rmse_por_mes_deg": {
+     "sol_az_deg": [
+      "number"
+     ],
+     "sol_el_deg": [
+      "number"
+     ],
+     "tierra_az_deg": [
+      "number"
+     ],
+     "tierra_el_deg": [
+      "number"
+     ]
+    },
+    "rmse_referencia_ingenua_deg": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "semaforo_aciertos": {
+     "aciertos_comunicacion": "number",
+     "aciertos_energia": "number",
+     "aciertos_global": "number",
+     "meses": "number"
+    },
+    "validacion_desde_utc": "str",
+    "validacion_hasta_utc": "str",
+    "vigente": "bool"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "analisis_variable_invalida_422": {
+  "detail": "'variable' debe ser una de: sol_az_deg, sol_el_deg, tierra_az_deg, tierra_el_deg",
+  "estado": 422,
+  "forma": {
+   "detail": "str"
+  },
+  "tipo_contenido": "application/json"
  },
  "auditoria_listar": {
   "estado": 200,
@@ -1107,6 +1750,87 @@
  },
  "seguridad_manifiesto_sin_generar_404": {
   "detail": "Aún no hay manifiesto firmado de los datos",
+  "estado": 404,
+  "forma": {
+   "detail": "str"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "simulacion_con_proyeccion": {
+  "estado": 200,
+  "forma": {
+   "avisos": [
+    {
+     "codigo": "str",
+     "mensaje": "str"
+    }
+   ],
+   "desde_utc": "str",
+   "fin_datos_utc": "str",
+   "hasta_utc": "str",
+   "paso_horas": "number",
+   "puntos": [
+    {
+     "incertidumbre_deg": {
+      "__o__?": [
+       "null",
+       {
+        "sol_az_deg": "number",
+        "sol_el_deg": "number",
+        "tierra_az_deg": "number",
+        "tierra_el_deg": "number"
+       }
+      ],
+      "sol_az_deg?": "number",
+      "sol_el_deg?": "number",
+      "tierra_az_deg?": "number",
+      "tierra_el_deg?": "number"
+     },
+     "origen": "str",
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number",
+     "utc": "str"
+    }
+   ],
+   "site_id": "str"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "simulacion_datos": {
+  "estado": 200,
+  "forma": {
+   "avisos": [],
+   "desde_utc": "str",
+   "fin_datos_utc": "str",
+   "hasta_utc": "str",
+   "paso_horas": "number",
+   "puntos": [
+    {
+     "incertidumbre_deg": "null",
+     "origen": "str",
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number",
+     "utc": "str"
+    }
+   ],
+   "site_id": "str"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "simulacion_paso_invalido_422": {
+  "detail": "'paso_horas' debe estar entre 0.25 y 24",
+  "estado": 422,
+  "forma": {
+   "detail": "str"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "simulacion_sitio_inexistente_404": {
+  "detail": "El sitio no existe en sites.csv",
   "estado": 404,
   "forma": {
    "detail": "str"
