@@ -24,7 +24,7 @@ def clave_publica() -> ClavePublicaOut:
             responses={config.HTTP_OK: {"description": "Exact bytes of the signed manifest.json (not re-serialised, so the signature stays valid)",
                                         "content": {config.JSON_MEDIA_TYPE: {}}}})
 def manifiesto() -> Response:
-    """Devuelve data/manifest.json tal cual está. Cambia con cada carga: no se cachea."""
+    """Returns data/manifest.json exactly as it is on disk. It changes with every upload, so it is never cached."""
     path = config.get_data_dir() / pqc.MANIFEST_FILENAME
     try:
         body = path.read_bytes()

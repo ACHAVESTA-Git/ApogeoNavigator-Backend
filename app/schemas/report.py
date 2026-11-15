@@ -12,11 +12,11 @@ class Issue(BaseModel):
     model_config = ConfigDict(json_schema_extra={"examples": [
         {"fila": 2, "columna": "lat_deg", "codigo": "E_RANGO", "mensaje": "Debe estar entre -90 y 90", "valor": "91"}]})
 
-    fila: int = Field(description="Fila del archivo (1 = cabecera, 2 = primer dato). Los errores de archivo usan 1.")
-    columna: str | None = Field(None, description="Columna afectada; null si el error es de la fila o del archivo.")
-    codigo: str = Field(description="Código estable: E_* bloquea la carga, W_* es una advertencia.")
-    mensaje: str = Field(description="Explicación legible del problema.")
-    valor: str | None = Field(None, description="Valor recibido, recortado a 50 caracteres.")
+    fila: int = Field(description="File row (1 = header, 2 = first data row). File-level errors use 1.")
+    columna: str | None = Field(None, description="Affected column; null if the error belongs to the row or the file.")
+    codigo: str = Field(description="Stable code: E_* blocks the upload, W_* is a warning.")
+    mensaje: str = Field(description="Human-readable explanation of the problem.")
+    valor: str | None = Field(None, description="Value received, truncated to 50 characters.")
 
 
 class Report(BaseModel):
@@ -25,13 +25,13 @@ class Report(BaseModel):
         "errores": [{"fila": 2, "columna": "lat_deg", "codigo": "E_RANGO", "mensaje": "Debe estar entre -90 y 90", "valor": "91"}],
         "advertencias": []}]})
 
-    archivo: str = Field(description="Nombre del archivo subido (saneado).")
-    tipo: TipoArchivo = Field(description="Tipo de datos: sites, efemerides o metricas.")
-    valido: bool = Field(description="true si no hay ningún error (las advertencias no bloquean).")
-    total_filas: int = Field(0, description="Filas de datos leídas (sin la cabecera).")
-    total_errores: int = Field(0, description="Errores encontrados; `errores` lista como mucho los 100 primeros.")
-    errores: list[Issue] = Field(default_factory=list, description="Errores que impiden guardar el archivo.")
-    advertencias: list[Issue] = Field(default_factory=list, description="Avisos que no bloquean la carga.")
+    archivo: str = Field(description="Name of the uploaded file (sanitised).")
+    tipo: TipoArchivo = Field(description="Data type: sites, efemerides or metricas.")
+    valido: bool = Field(description="true if there are no errors (warnings do not block).")
+    total_filas: int = Field(0, description="Data rows read (header excluded).")
+    total_errores: int = Field(0, description="Errors found; `errores` lists at most the first 100.")
+    errores: list[Issue] = Field(default_factory=list, description="Errors that prevent the file from being saved.")
+    advertencias: list[Issue] = Field(default_factory=list, description="Warnings that do not block the upload.")
 
 
 class ErrorValidacionOut(BaseModel):

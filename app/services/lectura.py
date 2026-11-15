@@ -29,26 +29,30 @@ class LecturaError(Exception):
 
 
 # ---------------------------------------------------------------- caché por mtime
-_cache: dict[Path, tuple[tuple[int, int], Any]] = {}
+_cache: dict[tuple[Path, str], tuple[tuple[int, int], Any]] = {}
 _lock = threading.Lock()
 
 
-def _cached(path: Path, loader: Callable[[Path], Any]) -> Any | None:
-    """Resultado de `loader(path)`; se recalcula si el archivo cambió. None si no existe."""
+def cached_by_mtime(path: Path, loader: Callable[[Path], Any], kind: str = "") -> Any | None:
+    """Resultado de `loader(path)`; se recalcula si el archivo cambió. None si no existe.
+
+    `kind` permite guardar varios resultados derivados del mismo archivo (filas, modelo ajustado...).
+    """
+    slot = (path, kind)
     try:
         stat = path.stat()
     except FileNotFoundError:
         with _lock:
-            _cache.pop(path, None)
+            _cache.pop(slot, None)
         return None
     key = (stat.st_mtime_ns, stat.st_size)
     with _lock:
-        hit = _cache.get(path)
+        hit = _cache.get(slot)
         if hit and hit[0] == key:
             return hit[1]
     value = loader(path)
     with _lock:
-        _cache[path] = (key, value)
+        _cache[slot] = (key, value)
     return value
 
 
@@ -73,7 +77,7 @@ def _records(tipo: str, ctx_factory: Callable[[], Context], bad_msg: str) -> Cal
 # ---------------------------------------------------------------- acceso a datos
 def _sites() -> dict[str, Row]:
     path = c.get_data_dir() / c.SITES_FILENAME
-    rows = _cached(path, _records(c.TIPO_SITES, Context, c.MSG_SITES_INVALID))
+    rows = cached_by_mtime(path, _records(c.TIPO_SITES, Context, c.MSG_SITES_INVALID))
     if rows is None:
         raise LecturaError(c.HTTP_UNAVAILABLE, c.MSG_NO_SITES)
     return {r[c.COL_SITE_ID]: r for r in rows}
@@ -89,7 +93,7 @@ def ephemeris(site_id: str) -> list[Row]:
     require_site(site_id)
     path = c.get_data_dir() / c.EFEMERIDES_FILENAME.format(site_id=site_id)
     loader = _records(c.TIPO_EFEMERIDES, lambda: Context(known_site_ids={site_id}), c.MSG_EPHEM_INVALID)
-    rows = _cached(path, loader)
+    rows = cached_by_mtime(path, loader)
     if rows is None:
         raise LecturaError(c.HTTP_NOT_FOUND, c.MSG_NO_EPHEMERIS)
     return rows
@@ -100,7 +104,7 @@ def _reference_metrics() -> list[Row]:
     path = c.get_data_dir() / c.METRICS_FILENAME
     ctx = lambda: Context(known_site_ids=set(_sites()))     # noqa: E731
     try:
-        return _cached(path, _records(c.TIPO_METRICAS, ctx, c.MSG_METRICS_INVALID)) or []
+        return cached_by_mtime(path, _records(c.TIPO_METRICAS, ctx, c.MSG_METRICS_INVALID)) or []
     except LecturaError:
         return []
 
@@ -110,7 +114,7 @@ def fmt(moment: datetime) -> str:
     return moment.strftime(c.UTC_FORMAT)
 
 
-def _instant(param: str, value: str | None) -> datetime | None:
+def parse_instant(param: str, value: str | None) -> datetime | None:
     if value is None:
         return None
     try:
@@ -127,8 +131,8 @@ def step_hours(rows: list[Row]) -> float:
 def resolve_range(rows: list[Row], desde: str | None, hasta: str | None) -> tuple[datetime, datetime]:
     """Rango [desde, hasta] dentro de los datos y de como máximo QUERY_MAX_RANGE_DAYS días."""
     first, last = rows[0][c.COL_UTC], rows[-1][c.COL_UTC]
-    start = _instant(c.PARAM_DESDE, desde) or first
-    end = _instant(c.PARAM_HASTA, hasta) or min(start + timedelta(days=c.QUERY_MAX_RANGE_DAYS), last)
+    start = parse_instant(c.PARAM_DESDE, desde) or first
+    end = parse_instant(c.PARAM_HASTA, hasta) or min(start + timedelta(days=c.QUERY_MAX_RANGE_DAYS), last)
     if not first <= start <= last:
         raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_OUT_OF_DATA.format(param=c.PARAM_DESDE))
     if end > last:
@@ -261,14 +265,19 @@ def _events(rows: list[Row], idx: int, key: str, moment: datetime) -> dict:
     }
 
 
-def sunsets(site_id: str, desde: str | None) -> dict:
-    rows = ephemeris(site_id)
-    moment = _instant(c.PARAM_DESDE, desde) or rows[0][c.COL_UTC]
-    if not rows[0][c.COL_UTC] <= moment <= rows[-1][c.COL_UTC]:
-        raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_OUT_OF_DATA.format(param=c.PARAM_DESDE))
-    idx = max(i for i, r in enumerate(rows) if r[c.COL_UTC] <= moment)
+def sunsets_from_rows(site_id: str, rows: list[Row], moment: datetime, idx: int = 0) -> dict:
+    """Puestas y salidas a partir de filas ya cargadas (la fila `idx` es la última con utc <= moment)."""
     return {
         c.COL_SITE_ID: site_id, c.KEY_DESDE_UTC: fmt(moment),
         c.KEY_SOL: _events(rows, idx, c.COL_SOL_EL, moment),
         c.KEY_TIERRA: _events(rows, idx, c.COL_TIERRA_EL, moment),
     }
+
+
+def sunsets(site_id: str, desde: str | None) -> dict:
+    rows = ephemeris(site_id)
+    moment = parse_instant(c.PARAM_DESDE, desde) or rows[0][c.COL_UTC]
+    if not rows[0][c.COL_UTC] <= moment <= rows[-1][c.COL_UTC]:
+        raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_OUT_OF_DATA.format(param=c.PARAM_DESDE))
+    idx = max(i for i, r in enumerate(rows) if r[c.COL_UTC] <= moment)
+    return sunsets_from_rows(site_id, rows, moment, idx)
