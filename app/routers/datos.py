@@ -1,18 +1,17 @@
-"""Carga de CSV: dry-run (validar) y guardado atómico. Protegido con X-API-Key."""
+"""Carga de CSV: dry-run (validar) y guardado atómico. Protegido con X-API-Key o con sesión (analista, revisor o admin)."""
 from fastapi import APIRouter, Depends, Request, UploadFile
 from fastapi.responses import JSONResponse
 
-from app.api.deps import get_carga_service
+from app.api.deps import autenticar_carga, get_carga_service
 from app.core import config
 from app.core.respuestas import respuesta_error
-from app.core.security import require_api_key
 from app.db.enums import AccionAuditoria
 from app.schemas.common import ErrorOut
 from app.schemas.report import ErrorValidacionOut, Report, SaveResult
 from app.services.carga import CargaService
 from app.validation.engine import ValidationResult
 
-router = APIRouter(prefix=config.UPLOAD_ROUTER_PREFIX, tags=[config.ROUTER_TAG], dependencies=[Depends(require_api_key)])
+router = APIRouter(prefix=config.UPLOAD_ROUTER_PREFIX, tags=[config.ROUTER_TAG], dependencies=[Depends(autenticar_carga)])
 
 RESPONSES = {
     401: {"description": "Missing or invalid API key", "model": ErrorOut},

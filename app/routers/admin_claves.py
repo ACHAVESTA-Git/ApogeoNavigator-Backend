@@ -11,37 +11,21 @@
 """
 from __future__ import annotations
 
-import logging
 import uuid
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response
+from fastapi import APIRouter, Depends, Query, Response
 from fastapi.responses import JSONResponse
 from starlette.background import BackgroundTask
 
-from app.api.deps import get_claves_service
+from app.api.deps import autenticar_admin, get_claves_service
 from app.core import config as c
-from app.core.security import matches_api_key
 from app.mappers.claves import nombre_archivo_publica
 from app.models.claves import EstadoClave, TipoClave
 from app.schemas.claves import (FORMATO_DESCRIPTION, PUBLICA_DESCRIPTION, PUBLICA_PEM_CONTENT, ClaveOut, Entrega, GenerarIn,
                                 HuellaOut, PaginaClaves, PublicaOut, RevocarIn, RotarIn)
 from app.services.claves import ClavesService, EntregaPendiente
 
-log = logging.getLogger(c.KEYS_LOGGER)
-
-
-# ---------------------------------------------------------------- autenticación
-def require_admin_key(x_api_key: str | None = Header(default=None, alias=c.API_KEY_HEADER)) -> None:
-    """Exige la clave de administración. Cerrado (401) sin ADMIN_API_KEY o si es igual a UPLOAD_API_KEY."""
-    expected = c.get_admin_api_key()
-    if expected and expected == c.get_upload_api_key():
-        log.error(c.MSG_KEYS_SAME_KEY_LOG)
-        raise HTTPException(status_code=c.HTTP_UNAUTHORIZED, detail=c.MSG_KEYS_ADMIN_KEY)
-    if not matches_api_key(x_api_key, expected):
-        raise HTTPException(status_code=c.HTTP_UNAUTHORIZED, detail=c.MSG_KEYS_ADMIN_KEY)
-
-
-router = APIRouter(prefix=c.KEYS_ROUTE_PREFIX, tags=[c.KEYS_ROUTER_TAG], dependencies=[Depends(require_admin_key)])
+router = APIRouter(prefix=c.KEYS_ROUTE_PREFIX, tags=[c.KEYS_ROUTER_TAG], dependencies=[Depends(autenticar_admin)])
 
 
 # ---------------------------------------------------------------- endpoints

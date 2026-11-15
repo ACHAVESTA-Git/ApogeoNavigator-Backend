@@ -8,7 +8,8 @@ from app.core.security import is_valid_api_key
 
 async def upload_guard(request: Request, call_next):
     if request.url.path.startswith(config.UPLOAD_ROUTER_PREFIX) and request.method == "POST":
-        if not is_valid_api_key(request.headers.get(config.API_KEY_HEADER)):
+        con_sesion = bool(request.cookies.get(config.AUTH_COOKIE_NAME))   # la sesión se valida en el router (necesita la BD)
+        if not con_sesion and not is_valid_api_key(request.headers.get(config.API_KEY_HEADER)):
             return respuesta_error(request, config.HTTP_UNAUTHORIZED, config.MSG_API_KEY_INVALID)
         declared = request.headers.get(config.CONTENT_LENGTH_HEADER, "")
         if declared.isdigit() and int(declared) > config.MAX_FILE_BYTES + config.MULTIPART_OVERHEAD_BYTES:
