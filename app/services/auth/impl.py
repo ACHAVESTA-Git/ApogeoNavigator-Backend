@@ -24,11 +24,15 @@ from app.utils.text import clean_text
 
 _limite_email = SlidingWindowLimiter(*c.AUTH_LOGIN_LIMIT_EMAIL)
 _limite_ip = SlidingWindowLimiter(*c.AUTH_LOGIN_LIMIT_IP)
+_audit_limite_clave = SlidingWindowLimiter(1, c.AUTH_AUDIT_LIMIT_WINDOW_S)
+_audit_limite_global = SlidingWindowLimiter(*c.AUTH_AUDIT_LIMIT_GLOBAL)
 
 
 def reiniciar_limites() -> None:
     _limite_email.reset()
     _limite_ip.reset()
+    _audit_limite_clave.reset()
+    _audit_limite_global.reset()
 
 
 def hash_token(token: str) -> str:
@@ -41,27 +45,40 @@ def _normalizar(email: str) -> str:
 
 class AuthServiceImpl:
     def __init__(self, repo: AuthRepository, auditor: Auditor, ahora=lambda: datetime.now(timezone.utc),
-                 limite_email: SlidingWindowLimiter = _limite_email, limite_ip: SlidingWindowLimiter = _limite_ip):
+                 limite_email: SlidingWindowLimiter = _limite_email, limite_ip: SlidingWindowLimiter = _limite_ip,
+                 audit_limite_clave: SlidingWindowLimiter = _audit_limite_clave,
+                 audit_limite_global: SlidingWindowLimiter = _audit_limite_global):
         self.repo, self.auditor, self.ahora = repo, auditor, ahora
         self.limite_email, self.limite_ip = limite_email, limite_ip
+        self.audit_limite_clave, self.audit_limite_global = audit_limite_clave, audit_limite_global
 
     # ------------------------------------------------------------ login
     def login(self, email: str, password: str, origen: object, token_previo: str | None = None) -> SesionNueva:
         clave_email = hashlib.sha3_256(_normalizar(email).encode()).hexdigest()
         ip = auditoria_util.trusted_client_ip(origen)
-        espera = max(self.limite_email.peek(clave_email), self.limite_ip.peek(ip))
+        # El intento se RESERVA antes de verificar: una ráfaga concurrente no puede pasar el límite mientras se calcula el hash.
+        espera = self.limite_email.hit(clave_email)
+        if espera <= 0:
+            espera = self.limite_ip.hit(ip)
+            if espera > 0:
+                self.limite_email.refund(clave_email)
         if espera > 0:
-            self.auditor.login_fallido(c.MOTIVO_LOGIN_LIMITE, origen)
+            self._auditar_limite(clave_email, origen)
             raise ErrorServicio(c.HTTP_TOO_MANY_REQUESTS, c.MSG_LOGIN_TOO_MANY,
                                 headers={c.RETRY_AFTER_HEADER: str(max(1, math.ceil(espera)))})
         usuario = self.repo.usuario_por_email(email)
-        correcta = passwords.verify_password(usuario.password_hash if usuario else None, password)
+        try:
+            correcta = passwords.verify_password(usuario.password_hash if usuario else None, password)
+        except passwords.VerificadorOcupado:
+            self.limite_email.refund(clave_email)           # no fue un intento del usuario: no le cuesta
+            self.limite_ip.refund(ip)
+            raise ErrorServicio(c.HTTP_UNAVAILABLE, c.MSG_LOGIN_BUSY,
+                                headers={c.RETRY_AFTER_HEADER: str(c.AUTH_BUSY_RETRY_AFTER_S)}) from None
         if usuario is None or not usuario.activo or not correcta:
-            self.limite_email.hit(clave_email)
-            self.limite_ip.hit(ip)
             self.auditor.login_fallido(c.MOTIVO_LOGIN_CREDENCIALES, origen)
             raise ErrorServicio(c.HTTP_UNAUTHORIZED, c.MSG_LOGIN_INVALID)
-        self.limite_email.forget(clave_email)
+        self.limite_email.forget(clave_email)               # un login correcto no cuenta como intento fallido
+        self.limite_ip.refund(ip)
         if token_previo:                                    # rotación: la cookie anterior deja de valer
             self._revocar(token_previo)
         if passwords.needs_rehash(usuario.password_hash):
@@ -76,6 +93,12 @@ class AuthServiceImpl:
         perfil = self.perfil(usuario)
         self.repo.commit()
         return SesionNueva(token=token, expira_utc=expira, usuario=perfil)
+
+    def _auditar_limite(self, clave_email: str, origen: object) -> None:
+        """Cuando salta el límite se firma UN evento por clave y ventana (y pocos por minuto en total), no uno por cada 429:
+        si no, el propio ataque llenaría la cadena de auditoría y gastaría CPU de firma."""
+        if self.audit_limite_clave.hit(clave_email) <= 0 and self.audit_limite_global.hit("global") <= 0:
+            self.auditor.login_fallido(c.MOTIVO_LOGIN_LIMITE, origen)
 
     # ------------------------------------------------------------ logout y sesión
     def logout(self, token: str | None, origen: object) -> None:

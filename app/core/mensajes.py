@@ -119,6 +119,7 @@ DOMINIO: dict[str, Mensaje] = {m.codigo: m for m in (
        "Usa una cuenta con el rol necesario o pide acceso a un administrador."),
     _m("ORIGEN_NO_PERMITIDO", 403, "Petición no permitida", "La petición no parece venir de la aplicación.",
        "Recarga la página e inténtalo de nuevo."),
+    _m("LOGIN_OCUPADO", 503, "Inicio de sesión ocupado", "Hay muchos inicios de sesión a la vez.", "Vuelve a intentarlo en unos segundos."),
     _m("DEMASIADOS_INTENTOS", 429, "Demasiados intentos", "Se hicieron demasiados intentos de inicio de sesión.",
        "Espera unos minutos antes de volver a intentarlo."),
     _m("CLAVE_DUPLICADA", 409, "Clave ya activa", "Ya hay una clave activa para ese usuario y tipo.", "Revócala o rótala en lugar de generar otra."),
@@ -145,7 +146,7 @@ _POR_DETALLE: dict[str, str] = {
     c.MSG_KEYS_ALREADY_REVOKED: "CLAVE_YA_REVOCADA", c.MSG_KEYS_INACTIVE_USER: "USUARIO_INACTIVO",
     c.MSG_KEYS_ALREADY_ACTIVE_GENERIC: "CLAVE_DUPLICADA",
     c.MSG_LOGIN_INVALID: "CREDENCIALES_INVALIDAS", c.MSG_SESSION_INVALID: "SESION_INVALIDA", c.MSG_ROLE_FORBIDDEN: "ROL_INSUFICIENTE",
-    c.MSG_CSRF_FORBIDDEN: "ORIGEN_NO_PERMITIDO", c.MSG_LOGIN_TOO_MANY: "DEMASIADOS_INTENTOS",
+    c.MSG_CSRF_FORBIDDEN: "ORIGEN_NO_PERMITIDO", c.MSG_LOGIN_BUSY: "LOGIN_OCUPADO", c.MSG_LOGIN_TOO_MANY: "DEMASIADOS_INTENTOS",
 }
 def _plantilla(texto: str) -> re.Pattern:
     """Regex de un mensaje con {campos}: sirve para reconocer el `detail` ya formateado."""
