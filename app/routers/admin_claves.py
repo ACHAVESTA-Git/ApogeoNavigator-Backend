@@ -15,11 +15,9 @@ import base64
 import logging
 import uuid
 from contextlib import contextmanager
-from datetime import datetime
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -32,7 +30,9 @@ from app.db.enums import AccionAuditoria
 from app.db.models import Usuario, utcnow
 from app.db.session import get_db
 from app.models.claves import ClaveUsuario, EstadoClave, TipoClave
-from app.schemas.common import Page
+from app.schemas.claves import (ClaveEntregada, ClaveOut, Entrega, GenerarIn, HuellaOut, PaginaClaves, PublicaOut, RevocarIn,
+                                RotarIn)
+from app.schemas.claves import FORMATO_DESCRIPTION, PUBLICA_DESCRIPTION, PUBLICA_PEM_CONTENT
 from app.security import gestor_claves as gk
 from app.utils import auditoria_util
 
@@ -51,71 +51,6 @@ def require_admin_key(x_api_key: str | None = Header(default=None, alias=c.API_K
 
 
 router = APIRouter(prefix=c.KEYS_ROUTE_PREFIX, tags=[c.KEYS_ROUTER_TAG], dependencies=[Depends(require_admin_key)])
-
-
-# ---------------------------------------------------------------- esquemas
-class ClaveOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    id: uuid.UUID
-    usuario_id: uuid.UUID
-    usuario_email: str | None = None
-    usuario_nombre: str | None = None
-    tipo: TipoClave
-    algoritmo: str
-    estado: EstadoClave
-    huella_sha3_256: str
-    tamano_publica: int
-    tamano_privada: int = Field(description="Bytes de la privada entregada (semilla); no se guarda")
-    tamano_privada_fips: int = Field(description="Tamaño de la clave privada expandida según el estándar")
-    creada_utc: datetime
-    revocada_utc: datetime | None
-    motivo_revocacion: str | None
-    reemplazada_por: uuid.UUID | None
-    backups: int = Field(description="Copias de la privada entregadas: 0 (sin entregar) o 1")
-
-
-PaginaClaves = Page[ClaveOut]
-
-
-class ClaveEntregada(ClaveOut):
-    clave_publica_pem: str
-    privada_pem: str = Field(description="Se entrega UNA sola vez; no se puede recuperar")
-    nombre_archivo_privada: str
-
-
-class Entrega(BaseModel):
-    aviso: str
-    claves: list[ClaveEntregada]
-
-
-class GenerarIn(BaseModel):
-    usuario_id: uuid.UUID
-    tipos: list[TipoClave] = Field(default_factory=lambda: [TipoClave.KEM, TipoClave.FIRMA], min_length=1, max_length=2)
-
-
-class RevocarIn(BaseModel):
-    motivo: str = Field(min_length=c.KEYS_MOTIVE_MIN, max_length=c.KEYS_MOTIVE_MAX)
-
-
-class RotarIn(BaseModel):
-    motivo: str = Field(default=c.KEYS_MOTIVE_ROTATION, min_length=c.KEYS_MOTIVE_MIN, max_length=c.KEYS_MOTIVE_MAX)
-
-
-class PublicaOut(BaseModel):
-    id: uuid.UUID
-    tipo: TipoClave
-    algoritmo: str
-    estado: EstadoClave
-    huella_sha3_256: str
-    clave_publica_pem: str
-    clave_publica_b64: str
-
-
-class HuellaOut(BaseModel):
-    id: uuid.UUID
-    algoritmo: str
-    estado: EstadoClave
-    huella_sha3_256: str
 
 
 # ---------------------------------------------------------------- utilidades
@@ -240,7 +175,7 @@ def _usuario_activo(db: Session, usuario_id: uuid.UUID) -> Usuario:
 # ---------------------------------------------------------------- endpoints
 @router.get("", response_model=PaginaClaves, summary="List keys (filters and pagination)")
 def listar(usuario_id: uuid.UUID | None = None, estado: EstadoClave | None = None, tipo: TipoClave | None = None,
-           q: str | None = Query(None, max_length=c.KEYS_Q_MAX, description="Texto en el nombre del usuario, o su email completo (exacto: el email se guarda cifrado)"),
+           q: str | None = Query(None, max_length=c.KEYS_Q_MAX, description="Text in the user name, or the full email (exact match: the email is stored encrypted)"),
            limite: int = Query(c.KEYS_PAGE_DEFAULT, ge=1, le=c.KEYS_PAGE_MAX), offset: int = Query(0, ge=0),
            db: Session = Depends(get_db)):
     consulta = select(ClaveUsuario, Usuario).join(Usuario, Usuario.id == ClaveUsuario.usuario_id)
@@ -283,8 +218,9 @@ def generar(cuerpo: GenerarIn, db: Session = Depends(get_db)):
     return _entregar(db, usuario, creadas)
 
 
-@router.get("/{clave_id}/publica", response_model=PublicaOut, summary="Public key (JSON or PEM)")
-def publica(clave_id: uuid.UUID, formato: str = Query(c.KEYS_FORMAT_JSON, pattern=c.KEYS_FORMAT_PATTERN),
+@router.get("/{clave_id}/publica", response_model=PublicaOut, summary="Public key (JSON or PEM)",
+            responses={c.HTTP_OK: {"description": PUBLICA_DESCRIPTION, "content": {c.PEM_MEDIA_TYPE: PUBLICA_PEM_CONTENT}}})
+def publica(clave_id: uuid.UUID, formato: str = Query(c.KEYS_FORMAT_JSON, pattern=c.KEYS_FORMAT_PATTERN, description=FORMATO_DESCRIPTION),
             db: Session = Depends(get_db)):
     """Pública (también si está revocada: sirve para verificar lo firmado antes)."""
     clave = _get(db, clave_id)

@@ -69,6 +69,10 @@ docker volume rm $(docker volume ls -q --filter name=pqc_dev_keys)
 rm ApogeoNavigator-Backend/data/manifest.json
 docker compose up --build
 ```
+On startup without a bucket (local, never in production) the backend signs `manifest.json` with the development keys when it is missing. To regenerate it by hand in a running container (`scripts/pqc/` is not shipped in the image):
+```bash
+docker compose exec backend python -c "from app.security import pqc; from app.core import config as c; d=c.get_data_dir(); pqc.escribir_manifiesto(d, pqc.generar_manifiesto(d))"
+```
 Rotating makes any email encrypted with the old development KEM key unreadable. In production the keys come from Secret Manager and this volume is not used.
 
 ## API

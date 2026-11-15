@@ -133,6 +133,7 @@ def startup() -> None:
     store = get_store()
     if store is None:
         _seed_local_if_empty()
+        _manifest_local_if_missing()
         return
     with _lock:
         if not [b for b in store.list() if _is_data_object(b.name)]:
@@ -146,6 +147,17 @@ def _seed_local_if_empty() -> None:
         return
     for name, data in _seed_files().items():
         _write_local(name, data)
+
+
+def _manifest_local_if_missing() -> None:
+    """Desarrollo local sin bucket: si falta manifest.json lo firma con las claves de desarrollo. Nunca en producción."""
+    folder = c.get_data_dir()
+    if c.is_production() or not folder.is_dir() or (folder / c.MANIFEST_NAME).exists():
+        return
+    try:
+        pqc.escribir_manifiesto(folder, pqc.generar_manifiesto(folder))
+    except pqc.ErrorClavesPQC as exc:
+        log.warning(c.MSG_LOCAL_MANIFEST_SKIPPED, type(exc).__name__)
 
 
 def _seed_bucket(store: BlobStore) -> None:

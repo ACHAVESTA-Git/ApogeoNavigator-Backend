@@ -470,6 +470,7 @@ MSG_DB_ERROR_LOG = "[%s] Error de base de datos en %s %s (%s)"
 UTC_FIELD_PATTERN = rf"^{UTC_RE.pattern}$"      # patrón anclado para campos UTC de los DTO
 MSG_BUCKET_UNAVAILABLE = "No se pudo acceder al almacenamiento de datos; no se guardó nada"
 MSG_DATA_CONFLICT = "Otro proceso modificó los datos a la vez; se recargó la versión vigente. Reintenta la carga"
+MSG_LOCAL_MANIFEST_SKIPPED = "No se pudo firmar el manifiesto local (%s); se creará con la primera carga válida"
 MSG_SEED_MANIFEST_SKIPPED = "No se pudo firmar el manifiesto de la semilla (%s); se publicará con la primera carga"
 HTTP_CONFLICT = 409
 
