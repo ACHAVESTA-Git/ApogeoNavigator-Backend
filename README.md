@@ -59,6 +59,18 @@ docker build -t apogeo-backend .
 docker run --rm -p 8080:8080 apogeo-backend
 ```
 
+### Local development keys with Docker Compose
+Without `PQC_PRIVATE_KEY` and `PQC_KEM_*`, development generates a local ML-DSA signing pair and an ML-KEM pair in `PQC_DEV_KEY_DIR` (`/srv/.pqc_dev` in the image). The compose file at the workspace root mounts a named volume there (`pqc_dev_keys`, owned by the `app` user, uid 10001, directory mode `0700`), so the keys survive `docker compose up --build`. This matters because `data/manifest.json` also persists: with new keys the manifest fingerprint would no longer match (`/api/analisis` would report `firmado: false`), and emails already encrypted with the old KEM key could not be decrypted.
+
+To rotate the development keys, delete the volume and the local manifest, then start again:
+```bash
+docker compose down
+docker volume rm $(docker volume ls -q --filter name=pqc_dev_keys)
+rm ApogeoNavigator-Backend/data/manifest.json
+docker compose up --build
+```
+Rotating makes any email encrypted with the old development KEM key unreadable. In production the keys come from Secret Manager and this volume is not used.
+
 ## API
 Main endpoints (all `GET`, no authentication). Times are UTC (`YYYY-MM-DDTHH:MMZ`).
 
