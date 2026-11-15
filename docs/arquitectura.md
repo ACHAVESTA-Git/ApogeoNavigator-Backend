@@ -6,7 +6,7 @@ under *Future work*.
 
 ```
 router (app/routers)        HTTP only: parameters, status codes, response headers
-  └─ service (app/services/<domain>)   business rules; no FastAPI, no SQL
+  └─ service (app/services/<domain>)   business rules; no FastAPI, no queries
        ├─ repository (app/repositories)   all queries and the session lifecycle
        ├─ mapper (app/mappers)            entities -> DTOs (app/schemas)
        └─ collaborators                   crypto manager, auditor: injected, replaceable
@@ -21,7 +21,10 @@ app/api/deps.py             the only place that wires implementations together
    (`ClavesService`), `app/api/deps.py` builds the implementation. Services raise `ErrorServicio(status, detail)`;
    `register_handlers` turns it into the standard error body, so the JSON the clients see does not change.
 3. **Repositories own persistence.** `ClavesRepository` is a protocol and `SqlClavesRepository` the SQLAlchemy
-   implementation (including row locks and the page query). Services never import `sqlalchemy.select`.
+   implementation (including row locks and the page query). Services write no queries and never import
+   `sqlalchemy.select`. They are not fully persistence-agnostic: they still build ORM entities (`ClaveUsuario`) and
+   catch `sqlalchemy.exc.IntegrityError` to turn the unique-index race into a 409. Decoupling that completely (domain
+   objects plus a repository-level `Conflicto` error) is future work.
 4. **Mappers are pure functions** from entities to DTOs. They do no I/O and no cryptography (the decrypted e-mail is
    passed in by the service).
 5. **Collaborators are injected.** `ClavesServiceImpl(repo, auditor, gestor)` receives the audit writer and the crypto
@@ -66,4 +69,5 @@ for the IP hash of the audit event.
 
 * Apply the same pattern to the audit endpoints (`routers/auditoria.py`, `utils/auditoria_util.py`, which is really a
   service with database access) and to the read and simulation endpoints (`services/lectura.py` is already close).
+* Make the key service independent of the ORM (domain objects and a repository-raised conflict error).
 * Unify the two ORM model locations (`app/db/models.py` and `app/models/`).

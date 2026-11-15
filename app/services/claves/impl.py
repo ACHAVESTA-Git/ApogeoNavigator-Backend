@@ -3,8 +3,6 @@ import base64
 import logging
 import uuid
 from contextlib import contextmanager
-from typing import Protocol
-
 from sqlalchemy.exc import IntegrityError
 
 from app.core import config as c
@@ -14,16 +12,12 @@ from app.models.claves import ClaveUsuario, EstadoClave, TipoClave
 from app.repositories.claves import ClavesRepository
 from app.schemas.claves import ClaveOut, Entrega, GenerarIn, HuellaOut, PaginaClaves, PublicaOut, RevocarIn, RotarIn
 from app.security import gestor_claves as gk
-from app.services.claves.servicio import EntregaPendiente
+from app.services.claves.servicio import Auditor, EntregaPendiente
 from app.services.errores import ErrorServicio
 
 log = logging.getLogger(c.KEYS_LOGGER)
 
 Creadas = list[tuple[ClaveUsuario, gk.ParNuevo]]
-
-
-class Auditor(Protocol):
-    def registrar(self, operacion: str, clave: ClaveUsuario, motivo: str | None = None, extra: dict | None = None) -> None: ...
 
 
 class ClavesServiceImpl:
