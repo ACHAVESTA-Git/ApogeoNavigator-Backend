@@ -163,3 +163,24 @@ def test_clave_inexistente_es_404_y_el_cierre_borra_las_privadas_aunque_falle_el
     repo.marcar_entregadas = lambda ids: (_ for _ in ()).throw(RuntimeError("base caída"))
     servicio.cerrar_entrega(pendiente)
     assert len(gestor.borrados) == 2
+
+
+def test_el_gancho_antes_de_confirmar_ve_las_privadas_antes_del_commit():
+    usuario = _usuario()
+    servicio, repo, _ = _servicio(usuario)
+    vistas = []
+    servicio.generar(GenerarIn(usuario_id=usuario.id),
+                     antes_de_confirmar=lambda ent: vistas.append((len(ent.entrega.claves), "commit" in repo.eventos)))
+    assert vistas == [(2, False)] and repo.eventos[-1] == "commit"
+
+
+def test_si_el_gancho_falla_no_se_confirma_y_se_borran_las_privadas():
+    usuario = _usuario()
+    servicio, repo, gestor = _servicio(usuario)
+
+    def roto(_):
+        raise OSError("disco lleno")
+
+    with pytest.raises(OSError):
+        servicio.generar(GenerarIn(usuario_id=usuario.id), antes_de_confirmar=roto)
+    assert "commit" not in repo.eventos and len(gestor.borrados) == 2

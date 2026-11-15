@@ -18,12 +18,12 @@ COPY alembic ./alembic
 COPY data ./seed-data
 
 # DATA_DIR (réplica local, efímera en Cloud Run) y la carpeta de claves de desarrollo deben ser escribibles.
-RUN mkdir -p /srv/data /srv/.pqc_dev && chown -R app:app /srv/data /srv/.pqc_dev
+RUN mkdir -p /srv/data /srv/.pqc_dev /srv/.seed && chown -R app:app /srv/data /srv/.pqc_dev /srv/.seed && chmod 700 /srv/.seed
 
 # Cloud Run inyecta $PORT; 8080 por defecto en local.
 # glibc crea un arena de malloc (~19 MiB con Argon2id) por hilo: con 30 logins en 30 hilos el pico pasaba de 512 MB. Con 2 arenas, ~72 MB.
 ENV MALLOC_ARENA_MAX=2
-ENV PORT=8080 DATA_DIR=/srv/data DATA_SEED_DIR=/srv/seed-data PQC_DEV_KEY_DIR=/srv/.pqc_dev
+ENV PORT=8080 DATA_DIR=/srv/data DATA_SEED_DIR=/srv/seed-data PQC_DEV_KEY_DIR=/srv/.pqc_dev SEED_CREDENTIALS_FILE=/srv/.seed/credenciales.local
 EXPOSE 8080
 USER app
 

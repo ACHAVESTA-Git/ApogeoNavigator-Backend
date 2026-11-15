@@ -18,3 +18,5 @@ scripts
 data/_historial
 data/manifest.json
 data/.tmp_*
+.seed_credenciales.local
+**/*.local

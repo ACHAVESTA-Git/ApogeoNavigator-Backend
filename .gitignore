@@ -11,3 +11,7 @@ data/_historial/
 # El manifiesto firmado de data/ se genera y firma en el despliegue (no se versiona)
 data/manifest.json
 .pqc_dev/
+
+# Credenciales de usuarios de prueba (semilla): nunca al repositorio
+.seed_credenciales.local
+*.local

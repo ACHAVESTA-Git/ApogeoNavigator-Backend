@@ -1013,3 +1013,19 @@ MSG_CSRF_FORBIDDEN = "Origen de la petición no permitido"
 MOTIVO_LOGIN_CREDENCIALES = "credenciales"
 MSG_CORS_REGEX_UNSAFE = "CORS_ORIGIN_REGEX es demasiado permisiva: con credenciales no puede aceptar orígenes de terceros"
 MOTIVO_LOGIN_LIMITE = "limite_de_intentos"
+
+
+# ---------------------------------------------------------------- semilla de usuarios de prueba (app/cli/seed_usuarios.py)
+ENV_SEED_CREDENTIALS_FILE = "SEED_CREDENTIALS_FILE"
+SEED_CREDENTIALS_DEFAULT = ".seed_credenciales.local"
+SEED_CREDENTIALS_MODE = 0o600
+SEED_EMAIL_DOMAIN = "apogeo.test"            # dominio reservado (RFC 2606): nunca resuelve ni recibe correo
+SEED_PASSWORD_BYTES = 18                     # 144 bits de entropía
+SEED_USERS = (("analista", "Analista de prueba"), ("revisor", "Revisor de prueba"), ("admin", "Administrador de prueba"))
+FLAG_FORCE_PRODUCTION = "--forzar-produccion"
+MSG_SEED_PRODUCTION = "Estás en producción: la semilla de usuarios de prueba no se ejecuta sin " + FLAG_FORCE_PRODUCTION
+MSG_SEED_FILE_UNSAFE = "El archivo de credenciales no es un archivo normal propio: no se escribe en él"
+MSG_SEED_FORCED_PRODUCTION = "Semilla de usuarios de prueba ejecutada en PRODUCCIÓN con --forzar-produccion"
+SEED_LOGGER = "apogeo.semilla"
+MSG_SEED_DONE_LOG = "Semilla de usuarios: %d creados, %d ya existían"
+MSG_SEED_NO_DB = "La semilla necesita la base de datos (DATABASE_URL) con las migraciones aplicadas"
