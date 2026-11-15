@@ -14,6 +14,7 @@ from app.core import config as c
 from app.services import storage
 from app.services.errores import ErrorServicio
 from app.utils import dates
+from app.utils.rachas import racha_mas_larga
 from app.utils.errors import CellError
 from app.validation.coherence import Context
 from app.validation.engine import validate_csv
@@ -131,11 +132,12 @@ def step_hours(rows: list[Row]) -> float:
     return (rows[1][c.COL_UTC] - rows[0][c.COL_UTC]).total_seconds() / c.SECONDS_PER_HOUR
 
 
-def resolve_range(rows: list[Row], desde: str | None, hasta: str | None) -> tuple[datetime, datetime]:
-    """Rango [desde, hasta] dentro de los datos y de como máximo QUERY_MAX_RANGE_DAYS días."""
+def resolve_range(rows: list[Row], desde: str | None, hasta: str | None,
+                  max_days: int | None = c.QUERY_MAX_RANGE_DAYS) -> tuple[datetime, datetime]:
+    """Rango [desde, hasta] dentro de los datos y de como máximo `max_days` días (sin tope si es None: por defecto, todos los datos)."""
     first, last = rows[0][c.COL_UTC], rows[-1][c.COL_UTC]
     start = parse_instant(c.PARAM_DESDE, desde) or first
-    end = parse_instant(c.PARAM_HASTA, hasta) or min(start + timedelta(days=c.QUERY_MAX_RANGE_DAYS), last)
+    end = parse_instant(c.PARAM_HASTA, hasta) or (last if max_days is None else min(start + timedelta(days=max_days), last))
     if not first <= start <= last:
         raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_OUT_OF_DATA.format(param=c.PARAM_DESDE))
     if end > last:
@@ -143,8 +145,8 @@ def resolve_range(rows: list[Row], desde: str | None, hasta: str | None) -> tupl
     if end <= start:
         raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_RANGE_ORDER)
     days = (end - start).total_seconds() / (c.SECONDS_PER_HOUR * c.HOURS_PER_DAY)
-    if days > c.QUERY_MAX_RANGE_DAYS:
-        raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_QUERY_RANGE.format(max=c.QUERY_MAX_RANGE_DAYS, days=days))
+    if max_days is not None and days > max_days:
+        raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_QUERY_RANGE.format(max=max_days, days=days))
     return start, end
 
 
@@ -181,6 +183,28 @@ def warnings_for(sun_el_max: float) -> list[dict[str, str]]:
     return []
 
 
+def _racha_fmt(racha: dict) -> dict:
+    """Racha con sus instantes ya en formato UTC del contrato (nulos si no hay racha)."""
+    return {**racha, **{k: fmt(racha[k]) if racha[k] else None for k in (c.COL_INICIO, c.COL_FIN)}}
+
+
+def astronaut_indicators(sample: list[Row], step_h: float, sun_el_media: float | None) -> dict:
+    """Indicadores para astronautas sobre las muestras del rango: noche más larga (Sol ≤ 0), apagón de Tierra más
+    largo (Tierra ≤ 0), ventana continua con Sol y Tierra a la vez, próxima puesta de cada cuerpo y elevación solar
+    media en las horas de sol (la misma cifra que `sol_el_media_deg`, agrupada con el resto de indicadores). Las rachas se miden sobre la serie del rango; si tocan un borde, `trunca_*` lo avisa."""
+    sun_down = racha_mas_larga(sample, lambda r: r[c.COL_SOL_EL] <= 0, step_h)
+    earth_down = racha_mas_larga(sample, lambda r: r[c.COL_TIERRA_EL] <= 0, step_h)
+    both_up = racha_mas_larga(sample, lambda r: r[c.COL_SOL_EL] > 0 and r[c.COL_TIERRA_EL] > 0, step_h)
+    first = sample[0][c.COL_UTC]
+    sunset = _events(sample, 0, c.COL_SOL_EL, first)[c.KEY_PUESTA]
+    earthset = _events(sample, 0, c.COL_TIERRA_EL, first)[c.KEY_PUESTA]
+    return {
+        c.KEY_NOCHE_LARGA: _racha_fmt(sun_down), c.KEY_APAGON_TIERRA: _racha_fmt(earth_down),
+        c.KEY_VENTANA_SOL_TIERRA: _racha_fmt(both_up), c.KEY_PUESTA_SOL: sunset, c.KEY_PUESTA_TIERRA: earthset,
+        c.KEY_SOL_EL_MEDIA_DIA: sun_el_media,
+    }
+
+
 def compute_metrics(site_id: str, rows: list[Row], step_h: float, start: datetime, end: datetime) -> dict:
     """Métricas de las muestras en [start, end). Una muestra cuenta `step_h` horas."""
     sample = [r for r in rows if start <= r[c.COL_UTC] < end]
@@ -193,7 +217,7 @@ def compute_metrics(site_id: str, rows: list[Row], step_h: float, start: datetim
     hours_sun, hours_earth = len(sun_up) * step_h, sum(1 for e in earth if e > 0) * step_h
     pct_sun = round(hours_sun / total * c.PCT_FULL_SCALE, c.ROUND_PCT)
     pct_earth = round(hours_earth / total * c.PCT_FULL_SCALE, c.ROUND_PCT)
-    return {
+    result = {
         c.COL_SITE_ID: site_id, c.COL_INICIO: fmt(start), c.COL_FIN: fmt(end),
         c.COL_HORAS_SOL: hours_sun, c.COL_PCT_SOL: pct_sun, c.COL_SOL_EL_MAX: round(max(sun), c.ROUND_DEG),
         c.COL_SOL_EL_MEDIA: round(sum(sun_up) / len(sun_up), c.ROUND_DEG) if sun_up else None,
@@ -201,6 +225,8 @@ def compute_metrics(site_id: str, rows: list[Row], step_h: float, start: datetim
         c.KEY_SEMAFORO: traffic_light(pct_sun, pct_earth), c.KEY_AVISOS: warnings_for(max(sun)),
         c.KEY_ORIGEN: c.ORIGEN_CALCULADO,
     }
+    result[c.KEY_INDICADORES] = astronaut_indicators(sample, step_h, result[c.COL_SOL_EL_MEDIA])
+    return result
 
 
 def _same(computed: Any, reference: Any, tol: float) -> bool:

@@ -107,6 +107,12 @@ def autenticar_admin(request: Request, x_api_key: str | None = Header(default=No
     return Principal("api_key")
 
 
+def autenticar_solo_admin_sesion(request: Request, db: Session | None = Depends(get_db_opcional)) -> Principal:
+    """Solo una persona con sesión de rol admin. La X-API-Key NO da acceso: es una credencial compartida de scripts, sin
+    persona detrás, y la consulta se audita con el usuario real."""
+    return _por_sesion(request, db, c.ROLES_ADMIN, c.MSG_PROJ_SESSION_REQUIRED)
+
+
 def get_claves_service(db: Session = Depends(get_db), principal: "Principal" = Depends(autenticar_admin)) -> ClavesService:
     """El actor de la auditoría es quien hace el cambio: el usuario de la sesión o, con la API key, `admin-api-key`."""
     actor, usuario_id = principal.actor()

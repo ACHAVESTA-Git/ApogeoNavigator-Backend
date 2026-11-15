@@ -167,7 +167,11 @@ def test_enums_de_la_migracion_coinciden_con_enums_py():
     spec.loader.exec_module(mod)
     assert mod.ROLES == tuple(m.value for m in RolUsuario)
     assert mod.TIPOS == tuple(m.value for m in TipoCarga)
-    assert mod.ACCIONES == tuple(m.value for m in AccionAuditoria)
+    spec6 = importlib.util.spec_from_file_location("m0006", ROOT / "alembic" / "versions" / "0006_auditoria_proyeccion.py")
+    mod6 = importlib.util.module_from_spec(spec6)
+    spec6.loader.exec_module(mod6)
+    # 0001 no se edita: las acciones que llegaron después se suman desde su migración.
+    assert mod.ACCIONES + (mod6.NUEVA_ACCION,) == tuple(m.value for m in AccionAuditoria)
 
 
 def test_indices_de_auditoria(engine):

@@ -66,21 +66,24 @@ def get_store() -> BlobStore | None:
 
 # ------------------------------------------------------------------ utilidades de disco
 def _write_local(name: str, data: bytes) -> None:
-    folder = c.get_data_dir()
+    destination = c.get_data_dir() / name
+    folder = destination.parent
     folder.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(dir=folder, prefix=c.TMP_PREFIX, suffix=c.TMP_SUFFIX)
     try:
         with os.fdopen(fd, "wb") as f:
             f.write(data)
         os.chmod(tmp, c.FILE_MODE)
-        os.replace(tmp, folder / name)
+        os.replace(tmp, destination)
     except BaseException:
         Path(tmp).unlink(missing_ok=True)
         raise
 
 
 def _is_data_object(name: str) -> bool:
-    return c.BUCKET_PATH_SEP not in name and (name.endswith(c.SEED_SUFFIX) or name == c.MANIFEST_NAME)
+    if c.BUCKET_PATH_SEP in name:
+        return bool(c.PROYECCION_OBJECT_RE.fullmatch(name))      # data/proyecciones/: fuera del manifiesto firmado
+    return name.endswith(c.SEED_SUFFIX) or name == c.MANIFEST_NAME
 
 
 def _seed_files() -> dict[str, bytes]:

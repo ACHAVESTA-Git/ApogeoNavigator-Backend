@@ -1,0 +1,3256 @@
+{
+  "version": "armonico-v1",
+  "origen": "proyeccion",
+  "advertencia": "Proyección estadística con error medido; no es una efeméride.",
+  "extension": "parametros_modelo.json: columnas origen y modelo_version del contrato inicial pasan aquí como metadatos; los CSV siguen el estándar de efemérides (5 columnas).",
+  "generado_utc": "2026-11-15T23:40Z",
+  "formula": "prediccion(t) = constante + Σ cos·cos(2π·f·t) + sin·sin(2π·f·t), con t = días desde t0_utc. Sol y Tierra: vector (este, norte, arriba) que se normaliza y se pasa a azimut = atan2(este, norte) mod 360 y elevación = asin(arriba). sol_el_directo, si existe, sustituye a la elevación del Sol del vector.",
+  "sitios": {
+    "apollo11": {
+      "t0_utc": "2026-12-01T00:00Z",
+      "n_filas_entrenamiento": 4369,
+      "periodo_sinodico_dias": 29.52498921403805,
+      "picos_fft_dias": [
+        29.56979796403805
+      ],
+      "sol": {
+        "constante": {
+          "este": -0.0006911288384996729,
+          "norte": -0.003839553800002066,
+          "arriba": 0.0012464295210949932
+        },
+        "terminos": [
+          {
+            "nombre": "banda lateral 1·sinódico − anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.002422033,
+            "cos": {
+              "este": -1.9185899508046807e-05,
+              "norte": -0.025040986933662135,
+              "arriba": -0.00027212717666573444
+            },
+            "sin": {
+              "este": 0.00022740905911784428,
+              "norte": 0.01846508752643757,
+              "arriba": 9.652866451143995e-05
+            }
+          },
+          {
+            "nombre": "banda lateral 2·sinódico − anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.031447582,
+            "cos": {
+              "este": -0.016983483367464657,
+              "norte": -0.0004347166322320834,
+              "arriba": -0.01200401172769059
+            },
+            "sin": {
+              "este": 0.01192763789461391,
+              "norte": -0.00027166512207526297,
+              "arriba": -0.017003807159960665
+            }
+          },
+          {
+            "nombre": "armónico 1 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.033869614,
+            "cos": {
+              "este": -0.9750741664070844,
+              "norte": 0.0023366765123509466,
+              "arriba": -0.2194104908989753
+            },
+            "sin": {
+              "este": 0.2194410308458944,
+              "norte": 0.012565675603578304,
+              "arriba": -0.9748331490846692
+            }
+          },
+          {
+            "nombre": "mes anomalístico (libración en longitud)",
+            "frecuencia_ciclos_dia": 0.036291647,
+            "cos": {
+              "este": 0.020036471768651472,
+              "norte": 0.001058750420511164,
+              "arriba": -0.0036660812208513084
+            },
+            "sin": {
+              "este": 0.003856868542515482,
+              "norte": 0.00024267774943314494,
+              "arriba": 0.01997749327237113
+            }
+          },
+          {
+            "nombre": "armónico 2 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.067739229,
+            "cos": {
+              "este": 4.747675758239227e-05,
+              "norte": -0.0004875520820221092,
+              "arriba": 0.001209814198560574
+            },
+            "sin": {
+              "este": -0.0012660444721184234,
+              "norte": 0.0002850999610763449,
+              "arriba": 0.00012495690852957236
+            }
+          },
+          {
+            "nombre": "banda lateral 1·sinódico + anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.070161261,
+            "cos": {
+              "este": 3.7918585480986045e-05,
+              "norte": 0.0005651826585698419,
+              "arriba": 0.00018820278636223517
+            },
+            "sin": {
+              "este": -5.305222899095519e-05,
+              "norte": 0.0006245133093594794,
+              "arriba": 9.701893240645043e-05
+            }
+          },
+          {
+            "nombre": "2.º armónico del mes anomalístico",
+            "frecuencia_ciclos_dia": 0.072583294,
+            "cos": {
+              "este": -2.8059649352063687e-05,
+              "norte": 0.0003010033951554424,
+              "arriba": 4.651646021973955e-05
+            },
+            "sin": {
+              "este": -2.517135538195356e-05,
+              "norte": -0.0003067193424375539,
+              "arriba": -0.00010842619357139606
+            }
+          },
+          {
+            "nombre": "armónico 3 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.101608843,
+            "cos": {
+              "este": -7.442890474906829e-06,
+              "norte": -2.3963471619782104e-05,
+              "arriba": 2.775608527985412e-06
+            },
+            "sin": {
+              "este": -3.4379257670376317e-06,
+              "norte": 2.430804892445981e-05,
+              "arriba": -3.087147589005837e-06
+            }
+          },
+          {
+            "nombre": "banda lateral 2·sinódico + anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.104030876,
+            "cos": {
+              "este": -2.2291283293622512e-05,
+              "norte": 3.6789397080504385e-05,
+              "arriba": 2.236734434761046e-05
+            },
+            "sin": {
+              "este": -1.09006509008844e-05,
+              "norte": 8.220688425917853e-05,
+              "arriba": -1.1929751414067379e-05
+            }
+          },
+          {
+            "nombre": "armónico 4 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.135478458,
+            "cos": {
+              "este": 3.880016118419797e-06,
+              "norte": 3.814229602456831e-05,
+              "arriba": 5.82275984549818e-06
+            },
+            "sin": {
+              "este": 3.861730625398698e-06,
+              "norte": 2.6010322250450794e-05,
+              "arriba": 4.895475971951959e-06
+            }
+          },
+          {
+            "nombre": "armónico 5 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.169348072,
+            "cos": {
+              "este": 3.4219646562472567e-06,
+              "norte": 2.1823847692142613e-05,
+              "arriba": 4.356048593350278e-06
+            },
+            "sin": {
+              "este": 3.2712629805413505e-06,
+              "norte": 3.732792551780671e-05,
+              "arriba": 8.302968088817258e-06
+            }
+          },
+          {
+            "nombre": "armónico 6 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.203217686,
+            "cos": {
+              "este": 1.1848508965306196e-06,
+              "norte": 2.9379124025742046e-06,
+              "arriba": 1.8282369590122262e-07
+            },
+            "sin": {
+              "este": 3.5707411931928683e-06,
+              "norte": 3.5304350258617885e-05,
+              "arriba": 7.461397816060539e-06
+            }
+          },
+          {
+            "nombre": "armónico 7 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.237087301,
+            "cos": {
+              "este": -2.172744311882268e-07,
+              "norte": -7.5797113425467635e-06,
+              "arriba": -2.004766633583046e-06
+            },
+            "sin": {
+              "este": 2.4913547510943165e-06,
+              "norte": 2.183282155894383e-05,
+              "arriba": 4.357219469202034e-06
+            }
+          },
+          {
+            "nombre": "armónico 8 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.270956915,
+            "cos": {
+              "este": -2.5992544204467464e-07,
+              "norte": -4.85117889069521e-06,
+              "arriba": -1.2261619524989202e-06
+            },
+            "sin": {
+              "este": 1.0755170702751826e-06,
+              "norte": 7.882534553066327e-06,
+              "arriba": 1.2990102808948765e-06
+            }
+          }
+        ]
+      },
+      "tierra": {
+        "constante": {
+          "este": -0.3994950980166704,
+          "norte": -0.007296621667920342,
+          "arriba": 0.9095050917040016
+        },
+        "terminos": [
+          {
+            "nombre": "evección: 2·sinódico − anomalístico",
+            "frecuencia_ciclos_dia": 0.031434737,
+            "cos": {
+              "este": 0.01989893026190345,
+              "norte": 0.002208037629419277,
+              "arriba": 0.00904341872567357
+            },
+            "sin": {
+              "este": -0.005764773021520872,
+              "norte": -0.0022381027574442333,
+              "arriba": -0.0018790715784700917
+            }
+          },
+          {
+            "nombre": "mes anomalístico (libración en longitud)",
+            "frecuencia_ciclos_dia": 0.036291647,
+            "cos": {
+              "este": 0.07955289942464712,
+              "norte": 0.000744960447509229,
+              "arriba": 0.036763733669407085
+            },
+            "sin": {
+              "este": 0.07050172758766103,
+              "norte": -0.0017019956327762947,
+              "arriba": 0.030520353289556785
+            }
+          },
+          {
+            "nombre": "mes dracónico (libración en latitud)",
+            "frecuencia_ciclos_dia": 0.036748195,
+            "cos": {
+              "este": -0.0007425424632323802,
+              "norte": 0.007749785627057699,
+              "arriba": -0.00255663227613164
+            },
+            "sin": {
+              "este": -0.005938274149733197,
+              "norte": 0.11722898782974513,
+              "arriba": -0.0011326333014213684
+            }
+          },
+          {
+            "nombre": "variación lunar: 2·sinódico",
+            "frecuencia_ciclos_dia": 0.067726384,
+            "cos": {
+              "este": 0.004626308932303806,
+              "norte": 0.0014036413519568657,
+              "arriba": 0.0013373653839197372
+            },
+            "sin": {
+              "este": -0.009818019702040793,
+              "norte": -0.00045396280986790996,
+              "arriba": -0.005115094941668267
+            }
+          },
+          {
+            "nombre": "2.º armónico del mes anomalístico",
+            "frecuencia_ciclos_dia": 0.072583294,
+            "cos": {
+              "este": 0.0008856254340833745,
+              "norte": 0.005863911143865575,
+              "arriba": 0.00274839352995028
+            },
+            "sin": {
+              "este": -0.0009314101235135731,
+              "norte": 0.002466631703278048,
+              "arriba": -0.0059567990200027985
+            }
+          },
+          {
+            "nombre": "evección: 2·sinódico + anomalístico",
+            "frecuencia_ciclos_dia": 0.104018031,
+            "cos": {
+              "este": -0.00011948060652025275,
+              "norte": 5.299054349493429e-05,
+              "arriba": -0.0007675406724076557
+            },
+            "sin": {
+              "este": -0.0008921801974592037,
+              "norte": -0.0006760131338939188,
+              "arriba": -0.0001152472413316265
+            }
+          }
+        ]
+      },
+      "sol_el_directo": null
+    },
+    "apollo15": {
+      "t0_utc": "2026-12-01T00:00Z",
+      "n_filas_entrenamiento": 4369,
+      "periodo_sinodico_dias": 29.52499018658112,
+      "picos_fft_dias": [
+        29.569206436581123
+      ],
+      "sol": {
+        "constante": {
+          "este": -0.00020981899404861376,
+          "norte": -0.0040766104656034885,
+          "arriba": -0.00038524946625194937
+        },
+        "terminos": [
+          {
+            "nombre": "banda lateral 1·sinódico − anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.002422034,
+            "cos": {
+              "este": -1.03682105364227e-05,
+              "norte": -0.02249487302089475,
+              "arriba": -0.011005027202936885
+            },
+            "sin": {
+              "este": 0.00017296022946010854,
+              "norte": 0.016661380537013895,
+              "arriba": 0.007961557228095495
+            }
+          },
+          {
+            "nombre": "banda lateral 2·sinódico − anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.03144758,
+            "cos": {
+              "este": -0.02004731864034589,
+              "norte": 0.0019149233079112813,
+              "arriba": -0.005210943378983188
+            },
+            "sin": {
+              "este": 0.005450045289518053,
+              "norte": 0.008402315189254782,
+              "arriba": -0.018197851124842956
+            }
+          },
+          {
+            "nombre": "armónico 1 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.033869613,
+            "cos": {
+              "este": -0.9916690500292588,
+              "norte": -0.055070171739868896,
+              "arriba": 0.11169507541509666
+            },
+            "sin": {
+              "este": -0.124461268336,
+              "norte": 0.4376965467617736,
+              "arriba": -0.8896870482356202
+            }
+          },
+          {
+            "nombre": "mes anomalístico (libración en longitud)",
+            "frecuencia_ciclos_dia": 0.036291647,
+            "cos": {
+              "este": 0.017598868548627307,
+              "norte": 0.005430619432064441,
+              "arriba": -0.008763847631433988
+            },
+            "sin": {
+              "este": 0.010406420488981504,
+              "norte": -0.007269576656041013,
+              "arriba": 0.0159025176219016
+            }
+          },
+          {
+            "nombre": "armónico 2 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.067739227,
+            "cos": {
+              "este": 0.0004553117136006479,
+              "norte": -0.0009217755925364518,
+              "arriba": 0.0008043359411678376
+            },
+            "sin": {
+              "este": -0.0011505394891983122,
+              "norte": 1.84536151369515e-05,
+              "arriba": 0.0006129786058640763
+            }
+          },
+          {
+            "nombre": "banda lateral 1·sinódico + anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.07016126,
+            "cos": {
+              "este": 9.715895972156731e-05,
+              "norte": 0.0004398605601262234,
+              "arriba": 0.00039156037168439393
+            },
+            "sin": {
+              "este": -1.9376549719047022e-05,
+              "norte": 0.0005166279803034613,
+              "arriba": 0.00036734283073328587
+            }
+          },
+          {
+            "nombre": "2.º armónico del mes anomalístico",
+            "frecuencia_ciclos_dia": 0.072583294,
+            "cos": {
+              "este": -1.1770537832285253e-05,
+              "norte": 0.0002487352836927841,
+              "arriba": 0.00017759516062118978
+            },
+            "sin": {
+              "este": -5.91784158530022e-05,
+              "norte": -0.00023684782427838865,
+              "arriba": -0.00021645558033947803
+            }
+          },
+          {
+            "nombre": "armónico 3 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.10160884,
+            "cos": {
+              "este": -5.958390586308699e-06,
+              "norte": -2.3863314166879467e-05,
+              "arriba": -5.689011095255555e-06
+            },
+            "sin": {
+              "este": -4.3751519763132255e-06,
+              "norte": 2.2670512231300634e-05,
+              "arriba": 8.893439375024063e-06
+            }
+          },
+          {
+            "nombre": "banda lateral 2·sinódico + anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.104030874,
+            "cos": {
+              "este": -1.3518559559256625e-05,
+              "norte": 2.0843244256279577e-05,
+              "arriba": 4.163511489109165e-05
+            },
+            "sin": {
+              "este": -1.4634121397583113e-05,
+              "norte": 7.738515166172049e-05,
+              "arriba": 2.8576951505766185e-05
+            }
+          },
+          {
+            "nombre": "armónico 4 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.135478453,
+            "cos": {
+              "este": 5.471386655230298e-06,
+              "norte": 3.2656628310595006e-05,
+              "arriba": 2.0184199700661117e-05
+            },
+            "sin": {
+              "este": 5.191098466270102e-06,
+              "norte": 2.2077666860466904e-05,
+              "arriba": 1.4178926780548102e-05
+            }
+          },
+          {
+            "nombre": "armónico 5 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.169348066,
+            "cos": {
+              "este": 4.608731815037251e-06,
+              "norte": 1.8450911892431653e-05,
+              "arriba": 1.2053165739850958e-05
+            },
+            "sin": {
+              "este": 5.745183085491528e-06,
+              "norte": 3.082919814583684e-05,
+              "arriba": 2.2126354503786885e-05
+            }
+          },
+          {
+            "nombre": "armónico 6 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.20321768,
+            "cos": {
+              "este": 1.1649080771620643e-06,
+              "norte": 2.755000393502375e-06,
+              "arriba": 1.059300064052061e-06
+            },
+            "sin": {
+              "este": 5.749205832485396e-06,
+              "norte": 2.938693349434338e-05,
+              "arriba": 2.0449546220377526e-05
+            }
+          },
+          {
+            "nombre": "armónico 7 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.237087293,
+            "cos": {
+              "este": -8.536422959922883e-07,
+              "norte": -6.0645974830447104e-06,
+              "arriba": -4.9001610570651646e-06
+            },
+            "sin": {
+              "este": 3.734899191146557e-06,
+              "norte": 1.831971512422798e-05,
+              "arriba": 1.234201377102137e-05
+            }
+          },
+          {
+            "nombre": "armónico 8 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.270956906,
+            "cos": {
+              "este": -6.402989923443543e-07,
+              "norte": -3.922470893088797e-06,
+              "arriba": -3.0510321404778424e-06
+            },
+            "sin": {
+              "este": 1.421847147376624e-06,
+              "norte": 6.750897793329001e-06,
+              "arriba": 4.169468530340954e-06
+            }
+          }
+        ]
+      },
+      "tierra": {
+        "constante": {
+          "este": -0.06554947039120937,
+          "norte": -0.43527152023853954,
+          "arriba": 0.8905545012790507
+        },
+        "terminos": [
+          {
+            "nombre": "evección: 2·sinódico − anomalístico",
+            "frecuencia_ciclos_dia": 0.031434737,
+            "cos": {
+              "este": 0.021772798833994945,
+              "norte": 0.0013348912438458664,
+              "arriba": 0.002546409240644176
+            },
+            "sin": {
+              "este": -0.0060664236561889726,
+              "norte": -0.00210739410646371,
+              "arriba": -0.0007905255995332696
+            }
+          },
+          {
+            "nombre": "mes anomalístico (libración en longitud)",
+            "frecuencia_ciclos_dia": 0.036291647,
+            "cos": {
+              "este": 0.08735822159716924,
+              "norte": -0.0022895239494656826,
+              "arriba": 0.007167298719951191
+            },
+            "sin": {
+              "este": 0.07661240193851607,
+              "norte": -0.003190005135301892,
+              "arriba": 0.0036416612087482405
+            }
+          },
+          {
+            "nombre": "mes dracónico (libración en latitud)",
+            "frecuencia_ciclos_dia": 0.036748195,
+            "cos": {
+              "este": -0.001597699709135247,
+              "norte": 0.007915334501452051,
+              "arriba": 0.001408681697013002
+            },
+            "sin": {
+              "este": -0.006447388515487831,
+              "norte": 0.10526742199616959,
+              "arriba": 0.051517742267671196
+            }
+          },
+          {
+            "nombre": "variación lunar: 2·sinódico",
+            "frecuencia_ciclos_dia": 0.067726384,
+            "cos": {
+              "este": 0.004785398789842715,
+              "norte": 0.0014318177655065773,
+              "arriba": 0.000332028821918767
+            },
+            "sin": {
+              "este": -0.010973706182897171,
+              "norte": 0.0001852823872307633,
+              "arriba": -0.0015319422856222187
+            }
+          },
+          {
+            "nombre": "2.º armónico del mes anomalístico",
+            "frecuencia_ciclos_dia": 0.072583294,
+            "cos": {
+              "este": 0.00173424235749669,
+              "norte": 0.004306259110314861,
+              "arriba": 0.0045947548937401925
+            },
+            "sin": {
+              "este": -0.0029107598240998046,
+              "norte": 0.00449032192524647,
+              "arriba": -0.0037013163399990104
+            }
+          },
+          {
+            "nombre": "evección: 2·sinódico + anomalístico",
+            "frecuencia_ciclos_dia": 0.104018031,
+            "cos": {
+              "este": -0.0003746478676131404,
+              "norte": 0.0003397688573929155,
+              "arriba": -0.0005913191277783982
+            },
+            "sin": {
+              "este": -0.0008739313718658606,
+              "norte": -0.0006974354892826131,
+              "arriba": -0.0001171593965775319
+            }
+          }
+        ]
+      },
+      "sol_el_directo": null
+    },
+    "apollo17": {
+      "t0_utc": "2026-12-01T00:00Z",
+      "n_filas_entrenamiento": 4369,
+      "periodo_sinodico_dias": 29.52499166293005,
+      "picos_fft_dias": [
+        29.570036662930047
+      ],
+      "sol": {
+        "constante": {
+          "este": -0.0008503758095473173,
+          "norte": -0.004005135235380135,
+          "arriba": -0.00020123366378790484
+        },
+        "terminos": [
+          {
+            "nombre": "banda lateral 1·sinódico − anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.002422035,
+            "cos": {
+              "este": -2.1906721364816046e-05,
+              "norte": -0.023510462703071063,
+              "arriba": -0.008624792659877764
+            },
+            "sin": {
+              "este": 0.00024092647981747504,
+              "norte": 0.0173614781433601,
+              "arriba": 0.006287949829220714
+            }
+          },
+          {
+            "nombre": "banda lateral 2·sinódico − anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.031447576,
+            "cos": {
+              "este": -0.015321424050163034,
+              "norte": 0.00431169129165349,
+              "arriba": -0.013392991888871216
+            },
+            "sin": {
+              "este": 0.013990309251865401,
+              "norte": 0.004854051466931344,
+              "arriba": -0.01456593434852853
+            }
+          },
+          {
+            "nombre": "armónico 1 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.033869612,
+            "cos": {
+              "este": -0.9392944401442453,
+              "norte": 0.11764952179747665,
+              "arriba": -0.32062540814682533
+            },
+            "sin": {
+              "este": 0.34152657033297523,
+              "norte": 0.3251715226872445,
+              "arriba": -0.8810420262301525
+            }
+          },
+          {
+            "nombre": "mes anomalístico (libración en longitud)",
+            "frecuencia_ciclos_dia": 0.036291647,
+            "cos": {
+              "este": 0.02034118457350729,
+              "norte": 0.0013336267968267676,
+              "arriba": -0.0006841255085224538
+            },
+            "sin": {
+              "este": 0.0012875604068237022,
+              "norte": -0.006558668409706813,
+              "arriba": 0.019218492273745384
+            }
+          },
+          {
+            "nombre": "armónico 2 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.067739223,
+            "cos": {
+              "este": -0.00010686746407487326,
+              "norte": -0.0008626409280368715,
+              "arriba": 0.0009744921035740688
+            },
+            "sin": {
+              "este": -0.0012719550288471382,
+              "norte": 0.00028267418443227003,
+              "arriba": 6.156014676758074e-05
+            }
+          },
+          {
+            "nombre": "banda lateral 1·sinódico + anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.070161259,
+            "cos": {
+              "este": 1.448767046142318e-05,
+              "norte": 0.00046865035445963155,
+              "arriba": 0.0003694149876469683
+            },
+            "sin": {
+              "este": -6.409814362940589e-05,
+              "norte": 0.000558797585185763,
+              "arriba": 0.0002930582082049233
+            }
+          },
+          {
+            "nombre": "2.º armónico del mes anomalístico",
+            "frecuencia_ciclos_dia": 0.072583294,
+            "cos": {
+              "este": -3.332864239595966e-05,
+              "norte": 0.0002695183413090319,
+              "arriba": 0.00014072861079342976
+            },
+            "sin": {
+              "este": -1.162282323792768e-05,
+              "norte": -0.00025204818077506744,
+              "arriba": -0.00020690200498440318
+            }
+          },
+          {
+            "nombre": "armónico 3 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.101608835,
+            "cos": {
+              "este": -7.765843749033443e-06,
+              "norte": -2.317819965964344e-05,
+              "arriba": -6.304201290908686e-06
+            },
+            "sin": {
+              "este": -2.975575014036998e-06,
+              "norte": 2.4081492419075386e-05,
+              "arriba": 4.833918029909952e-06
+            }
+          },
+          {
+            "nombre": "banda lateral 2·sinódico + anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.10403087,
+            "cos": {
+              "este": -2.489476788067543e-05,
+              "norte": 2.8239846574476728e-05,
+              "arriba": 3.0554179927932016e-05
+            },
+            "sin": {
+              "este": -9.180975223263738e-06,
+              "norte": 8.191013364807894e-05,
+              "arriba": 1.5020682353902867e-05
+            }
+          },
+          {
+            "nombre": "armónico 4 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.135478446,
+            "cos": {
+              "este": 3.163550309273781e-06,
+              "norte": 3.384994073520449e-05,
+              "arriba": 1.8653914826567018e-05
+            },
+            "sin": {
+              "este": 3.246430953654206e-06,
+              "norte": 2.2723077291897216e-05,
+              "arriba": 1.3730309176228368e-05
+            }
+          },
+          {
+            "nombre": "armónico 5 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.169348058,
+            "cos": {
+              "este": 2.8721859806911943e-06,
+              "norte": 1.897584559345065e-05,
+              "arriba": 1.1774556922568781e-05
+            },
+            "sin": {
+              "este": 2.243712431632746e-06,
+              "norte": 3.2287251284073374e-05,
+              "arriba": 2.0627474165728024e-05
+            }
+          },
+          {
+            "nombre": "armónico 6 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.20321767,
+            "cos": {
+              "este": 1.1566034473529328e-06,
+              "norte": 2.6565689517435317e-06,
+              "arriba": 1.294751330938693e-06
+            },
+            "sin": {
+              "este": 2.644580043356535e-06,
+              "norte": 3.0645684463236085e-05,
+              "arriba": 1.9200785465759453e-05
+            }
+          },
+          {
+            "nombre": "armónico 7 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.237087281,
+            "cos": {
+              "este": 2.8811706374840083e-08,
+              "norte": -6.470227367381919e-06,
+              "arriba": -4.432894910791539e-06
+            },
+            "sin": {
+              "este": 1.9494130407420057e-06,
+              "norte": 1.9024976743415284e-05,
+              "arriba": 1.1667873408085817e-05
+            }
+          },
+          {
+            "nombre": "armónico 8 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.270956893,
+            "cos": {
+              "este": -1.0843949841866071e-07,
+              "norte": -4.154792039213284e-06,
+              "arriba": -2.7983638816473775e-06
+            },
+            "sin": {
+              "este": 9.137200204852268e-07,
+              "norte": 6.951824671241655e-06,
+              "arriba": 3.977960251179606e-06
+            }
+          }
+        ]
+      },
+      "tierra": {
+        "constante": {
+          "este": -0.51212494425613,
+          "norte": -0.2920146636993776,
+          "arriba": 0.7995705146241662
+        },
+        "terminos": [
+          {
+            "nombre": "evección: 2·sinódico − anomalístico",
+            "frecuencia_ciclos_dia": 0.031434737,
+            "cos": {
+              "este": 0.018577473067658636,
+              "norte": -0.0017862064638558858,
+              "arriba": 0.01157017001851997
+            },
+            "sin": {
+              "este": -0.005474940888828021,
+              "norte": -0.0012189438298585745,
+              "arriba": -0.003188633947035205
+            }
+          },
+          {
+            "nombre": "mes anomalístico (libración en longitud)",
+            "frecuencia_ciclos_dia": 0.036291647,
+            "cos": {
+              "este": 0.07416967582798921,
+              "norte": -0.015024229295819551,
+              "arriba": 0.044084924105720624
+            },
+            "sin": {
+              "este": 0.06602010905122636,
+              "norte": -0.014749189457316434,
+              "arriba": 0.036407260433057864
+            }
+          },
+          {
+            "nombre": "mes dracónico (libración en latitud)",
+            "frecuencia_ciclos_dia": 0.036748195,
+            "cos": {
+              "este": -0.0004008488733829765,
+              "norte": 0.008185676926398294,
+              "arriba": 0.00012344453875486004
+            },
+            "sin": {
+              "este": -0.005659560243051929,
+              "norte": 0.11101895458111846,
+              "arriba": 0.037526182793668365
+            }
+          },
+          {
+            "nombre": "variación lunar: 2·sinódico",
+            "frecuencia_ciclos_dia": 0.067726384,
+            "cos": {
+              "este": 0.004419565543166258,
+              "norte": 0.0006839044804586335,
+              "arriba": 0.0022796671531748183
+            },
+            "sin": {
+              "este": -0.009078499302444384,
+              "norte": 0.0017034127893590218,
+              "arriba": -0.006101501558595252
+            }
+          },
+          {
+            "nombre": "2.º armónico del mes anomalístico",
+            "frecuencia_ciclos_dia": 0.072583294,
+            "cos": {
+              "este": 0.0005268103225628605,
+              "norte": 0.004563143797349588,
+              "arriba": 0.004638276705674966
+            },
+            "sin": {
+              "este": -0.000155994861024199,
+              "norte": 0.004344578153459909,
+              "arriba": -0.004838104476439948
+            }
+          },
+          {
+            "nombre": "evección: 2·sinódico + anomalístico",
+            "frecuencia_ciclos_dia": 0.104018031,
+            "cos": {
+              "este": -1.9046743984210305e-05,
+              "norte": 0.0003105821112672511,
+              "arriba": -0.0007119086368947285
+            },
+            "sin": {
+              "este": -0.0008694524595447406,
+              "norte": -0.0005588693337613106,
+              "arriba": -0.0004420511196078321
+            }
+          }
+        ]
+      },
+      "sol_el_directo": null
+    },
+    "shackleton": {
+      "t0_utc": "2026-12-01T00:00Z",
+      "n_filas_entrenamiento": 4369,
+      "periodo_sinodico_dias": 29.524990771056896,
+      "picos_fft_dias": [
+        29.5693907710569
+      ],
+      "sol": {
+        "constante": {
+          "este": -0.0010613924596646076,
+          "norte": -0.0010395427484120757,
+          "arriba": 0.0038067886299790587
+        },
+        "terminos": [
+          {
+            "nombre": "banda lateral 1·sinódico − anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.002422034,
+            "cos": {
+              "este": -1.6593640280619257e-05,
+              "norte": -0.00017319761412503277,
+              "arriba": 0.025041667575547946
+            },
+            "sin": {
+              "este": 5.450603631554667e-05,
+              "norte": 0.0003611760550960776,
+              "arriba": -0.018463198981729514
+            }
+          },
+          {
+            "nombre": "banda lateral 2·sinódico − anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.031447578,
+            "cos": {
+              "este": 0.01615203498887436,
+              "norte": -0.013098980184253085,
+              "arriba": 0.0004981192414253135
+            },
+            "sin": {
+              "este": 0.013130237251658879,
+              "norte": 0.016085515128140083,
+              "arriba": 0.000567336294561934
+            }
+          },
+          {
+            "nombre": "armónico 1 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.033869613,
+            "cos": {
+              "este": 0.4755047032567298,
+              "norte": -0.8790828938977172,
+              "arriba": -0.004971546638753509
+            },
+            "sin": {
+              "este": 0.8789373731065875,
+              "norte": 0.47547681184270507,
+              "arriba": 0.0017267006911327533
+            }
+          },
+          {
+            "nombre": "mes anomalístico (libración en longitud)",
+            "frecuencia_ciclos_dia": 0.036291647,
+            "cos": {
+              "este": -0.001890340886841217,
+              "norte": 0.02028884479382936,
+              "arriba": -0.0008950192862081904
+            },
+            "sin": {
+              "este": -0.020270749463653634,
+              "norte": -0.0016984649077361566,
+              "arriba": -0.0004876818113571795
+            }
+          },
+          {
+            "nombre": "armónico 2 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.067739225,
+            "cos": {
+              "este": -0.0011877452920444512,
+              "norte": -0.0002901669840308599,
+              "arriba": 0.000471566033166055
+            },
+            "sin": {
+              "este": 0.00022974338412332427,
+              "norte": -0.0012548022975354817,
+              "arriba": -0.00029400280809629905
+            }
+          },
+          {
+            "nombre": "banda lateral 1·sinódico + anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.07016126,
+            "cos": {
+              "este": -0.00018490552214880357,
+              "norte": -9.795884946954954e-06,
+              "arriba": -0.0005674223625805001
+            },
+            "sin": {
+              "este": -7.148827671240787e-05,
+              "norte": -7.155113003536265e-05,
+              "arriba": -0.0006260442186844105
+            }
+          },
+          {
+            "nombre": "2.º armónico del mes anomalístico",
+            "frecuencia_ciclos_dia": 0.072583294,
+            "cos": {
+              "este": -3.353812342067106e-05,
+              "norte": -3.6850150568101696e-05,
+              "arriba": -0.00030175159252866687
+            },
+            "sin": {
+              "este": 0.00010769265237257873,
+              "norte": 2.5817920692270005e-06,
+              "arriba": 0.0003079922839732216
+            }
+          },
+          {
+            "nombre": "armónico 3 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.101608838,
+            "cos": {
+              "este": -9.270032421156448e-07,
+              "norte": -8.119136214413741e-06,
+              "arriba": 2.388185585742612e-05
+            },
+            "sin": {
+              "este": 4.167592541144705e-06,
+              "norte": -2.2455709548861155e-06,
+              "arriba": -2.428333904963122e-05
+            }
+          },
+          {
+            "nombre": "banda lateral 2·sinódico + anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.104030872,
+            "cos": {
+              "este": -1.5067715769654081e-05,
+              "norte": -2.7173005146583757e-05,
+              "arriba": -3.7211788417438906e-05
+            },
+            "sin": {
+              "este": 1.536433464421095e-05,
+              "norte": -6.515067526253222e-06,
+              "arriba": -8.210109251891887e-05
+            }
+          },
+          {
+            "nombre": "armónico 4 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.13547845,
+            "cos": {
+              "este": -6.223588599845088e-06,
+              "norte": 2.499200323665215e-06,
+              "arriba": -3.8193843351947825e-05
+            },
+            "sin": {
+              "este": -5.459723310360311e-06,
+              "norte": 2.628642898053533e-06,
+              "arriba": -2.6050260445292828e-05
+            }
+          },
+          {
+            "nombre": "armónico 5 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.169348063,
+            "cos": {
+              "este": -4.873507763102651e-06,
+              "norte": 2.3096969057955848e-06,
+              "arriba": -2.1860203942173974e-05
+            },
+            "sin": {
+              "este": -8.453162419729006e-06,
+              "norte": 1.2377956857328406e-06,
+              "arriba": -3.741609221083444e-05
+            }
+          },
+          {
+            "nombre": "armónico 6 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.203217676,
+            "cos": {
+              "este": -4.6421818998517593e-07,
+              "norte": 1.1176131646171145e-06,
+              "arriba": -2.9331379313301273e-06
+            },
+            "sin": {
+              "este": -7.74900988583907e-06,
+              "norte": 1.735242935651777e-06,
+              "arriba": -3.537985845106661e-05
+            }
+          },
+          {
+            "nombre": "armónico 7 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.237087288,
+            "cos": {
+              "este": 1.9030446519657695e-06,
+              "norte": 2.6640347785521477e-07,
+              "arriba": 7.604487938306543e-06
+            },
+            "sin": {
+              "este": -4.621330372777719e-06,
+              "norte": 1.4161019839098025e-06,
+              "arriba": -2.1874675791478303e-05
+            }
+          },
+          {
+            "nombre": "armónico 8 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.270956901,
+            "cos": {
+              "este": 1.1963069385376345e-06,
+              "norte": 3.892530247201016e-08,
+              "arriba": 4.865761678282646e-06
+            },
+            "sin": {
+              "este": -1.452053713579951e-06,
+              "norte": 7.561676693299663e-07,
+              "arriba": -7.892873392461574e-06
+            }
+          }
+        ]
+      },
+      "tierra": {
+        "constante": {
+          "este": -0.7683408047392672,
+          "norte": -0.6296733128183692,
+          "arriba": -0.011666197431682719
+        },
+        "terminos": [
+          {
+            "nombre": "evección: 2·sinódico − anomalístico",
+            "frecuencia_ciclos_dia": 0.031434737,
+            "cos": {
+              "este": -0.013975612442174821,
+              "norte": 0.016683389520962034,
+              "arriba": -0.0021956577175102467
+            },
+            "sin": {
+              "este": 0.0033282303305818125,
+              "norte": -0.005060734547970186,
+              "arriba": 0.002265661174751898
+            }
+          },
+          {
+            "nombre": "mes anomalístico (libración en longitud)",
+            "frecuencia_ciclos_dia": 0.036291647,
+            "cos": {
+              "este": -0.056611203022580624,
+              "norte": 0.06650434758356928,
+              "arriba": -0.0009553257539709801
+            },
+            "sin": {
+              "este": -0.048151594433229125,
+              "norte": 0.059345730919800825,
+              "arriba": 0.0018890305780641125
+            }
+          },
+          {
+            "nombre": "mes dracónico (libración en latitud)",
+            "frecuencia_ciclos_dia": 0.036748195,
+            "cos": {
+              "este": 0.0027556089589371546,
+              "norte": 5.369296043905868e-05,
+              "arriba": -0.0076646903129947465
+            },
+            "sin": {
+              "este": 0.004403218557276504,
+              "norte": -0.003985459380941025,
+              "arriba": -0.11675065602286536
+            }
+          },
+          {
+            "nombre": "variación lunar: 2·sinódico",
+            "frecuencia_ciclos_dia": 0.067726384,
+            "cos": {
+              "este": -0.0024889624882043016,
+              "norte": 0.004080090484671912,
+              "arriba": -0.0013545518519922231
+            },
+            "sin": {
+              "este": 0.007532934488467273,
+              "norte": -0.00806032172300086,
+              "arriba": 0.00048367492336489536
+            }
+          },
+          {
+            "nombre": "2.º armónico del mes anomalístico",
+            "frecuencia_ciclos_dia": 0.072583294,
+            "cos": {
+              "este": -0.002760646607170334,
+              "norte": 0.0001936635075577546,
+              "arriba": -0.005882840285141286
+            },
+            "sin": {
+              "este": 0.006005211948673641,
+              "norte": 0.0006978385285161465,
+              "arriba": -0.0023346210643413255
+            }
+          },
+          {
+            "nombre": "evección: 2·sinódico + anomalístico",
+            "frecuencia_ciclos_dia": 0.104018031,
+            "cos": {
+              "este": 0.0007689823416761127,
+              "norte": 8.577374643571447e-05,
+              "arriba": -3.70319153608158e-05
+            },
+            "sin": {
+              "este": 0.00033438392361336065,
+              "norte": -0.0008310053624091611,
+              "arriba": 0.0006655826288177709
+            }
+          }
+        ]
+      },
+      "sol_el_directo": {
+        "constante": 0.005385155050880411,
+        "terminos": [
+          {
+            "nombre": "banda lateral 1·sinódico − anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.002914531,
+            "cos": 1.4957432339577925,
+            "sin": -0.4242932435558478
+          },
+          {
+            "nombre": "banda lateral 2·sinódico − anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.030462586,
+            "cos": -0.024671361484681086,
+            "sin": -0.013812188234733425
+          },
+          {
+            "nombre": "armónico 1 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.033377116,
+            "cos": -0.255856332014108,
+            "sin": 0.24499663495250318
+          },
+          {
+            "nombre": "mes anomalístico (libración en longitud)",
+            "frecuencia_ciclos_dia": 0.036291647,
+            "cos": -0.027643411212313156,
+            "sin": -0.046703702943299695
+          },
+          {
+            "nombre": "armónico 2 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.066754233,
+            "cos": 0.0013109626828274944,
+            "sin": -0.0019330118050567696
+          },
+          {
+            "nombre": "banda lateral 1·sinódico + anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.069668763,
+            "cos": -0.00347551224687688,
+            "sin": -0.001452617186366549
+          },
+          {
+            "nombre": "2.º armónico del mes anomalístico",
+            "frecuencia_ciclos_dia": 0.072583294,
+            "cos": -0.0018725390598266793,
+            "sin": -0.0008670177960536209
+          },
+          {
+            "nombre": "armónico 3 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.100131349,
+            "cos": 0.00033831920397828176,
+            "sin": -0.00043097946890904615
+          },
+          {
+            "nombre": "banda lateral 2·sinódico + anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.10304588,
+            "cos": -0.00029770515010547275,
+            "sin": -0.0004781833191190884
+          },
+          {
+            "nombre": "armónico 4 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.133508465,
+            "cos": 3.286776940718132e-06,
+            "sin": -0.00017258064904943993
+          },
+          {
+            "nombre": "armónico 5 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.166885581,
+            "cos": -1.0611296203690378e-06,
+            "sin": -0.00012058342075154275
+          },
+          {
+            "nombre": "armónico 6 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.200262698,
+            "cos": -1.424904475731589e-05,
+            "sin": -9.406512920732869e-05
+          },
+          {
+            "nombre": "armónico 7 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.233639814,
+            "cos": -2.674680972919921e-05,
+            "sin": -8.246942974880292e-05
+          },
+          {
+            "nombre": "armónico 8 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.26701693,
+            "cos": -3.495365197885297e-05,
+            "sin": -7.979329237786567e-05
+          }
+        ]
+      }
+    },
+    "im1_odysseus": {
+      "t0_utc": "2026-12-01T00:00Z",
+      "n_filas_entrenamiento": 4369,
+      "periodo_sinodico_dias": 29.524991195948587,
+      "picos_fft_dias": [
+        29.56915494594859
+      ],
+      "sol": {
+        "constante": {
+          "este": -0.0001540111895070491,
+          "norte": 0.0007855942113914784,
+          "arriba": 0.004007021070403046
+        },
+        "terminos": [
+          {
+            "nombre": "banda lateral 1·sinódico − anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.002422035,
+            "cos": {
+              "este": -9.28264318940168e-06,
+              "norte": -0.0042648240565985925,
+              "arriba": 0.02467644581804364
+            },
+            "sin": {
+              "este": 0.00016556126947398614,
+              "norte": 0.00297089527220274,
+              "arriba": -0.01822549290384317
+            }
+          },
+          {
+            "nombre": "banda lateral 2·sinódico − anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.031447577,
+            "cos": {
+              "este": -0.020243997430616903,
+              "norte": -0.004778429504553992,
+              "arriba": -0.00024687624586604084
+            },
+            "sin": {
+              "este": 0.0046787768761234584,
+              "norte": -0.020013802877046023,
+              "arriba": -0.003003230098232422
+            }
+          },
+          {
+            "nombre": "armónico 1 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.033869612,
+            "cos": {
+              "este": -0.9861767330899893,
+              "norte": 0.1599477275222558,
+              "arriba": 0.02807783026121181
+            },
+            "sin": {
+              "este": -0.16231615527134385,
+              "norte": -0.9712529022283973,
+              "arriba": -0.17009808095045664
+            }
+          },
+          {
+            "nombre": "mes anomalístico (libración en longitud)",
+            "frecuencia_ciclos_dia": 0.036291647,
+            "cos": {
+              "este": 0.017193077991738977,
+              "norte": -0.010590020533597531,
+              "arriba": -0.0028732065199213418
+            },
+            "sin": {
+              "este": 0.011067612728103002,
+              "norte": 0.016896770557880067,
+              "arriba": 0.0024550443634972978
+            }
+          },
+          {
+            "nombre": "armónico 2 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.067739224,
+            "cos": {
+              "este": 0.0004997006833321948,
+              "norte": 0.0010163811206322527,
+              "arriba": 0.0006572268251676039
+            },
+            "sin": {
+              "este": -0.0011330977835730747,
+              "norte": 0.0006277997901332855,
+              "arriba": -0.00018162583909501665
+            }
+          },
+          {
+            "nombre": "banda lateral 1·sinódico + anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.070161259,
+            "cos": {
+              "este": 0.00010287593353518063,
+              "norte": 0.00024917050499991054,
+              "arriba": -0.0005325238140093804
+            },
+            "sin": {
+              "este": -1.5676824774796125e-05,
+              "norte": 0.00020839625675242505,
+              "arriba": -0.000598746632238982
+            }
+          },
+          {
+            "nombre": "2.º armónico del mes anomalístico",
+            "frecuencia_ciclos_dia": 0.072583294,
+            "cos": {
+              "este": -9.979346242583482e-06,
+              "norte": 0.00010114757061238437,
+              "arriba": -0.00028845821475772686
+            },
+            "sin": {
+              "este": -6.247784079436968e-05,
+              "norte": -0.000139305268010874,
+              "arriba": 0.0002883596398272426
+            }
+          },
+          {
+            "nombre": "armónico 3 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.101608836,
+            "cos": {
+              "este": -5.739920737350596e-06,
+              "norte": 1.432654135963265e-06,
+              "arriba": 2.4538409828532152e-05
+            },
+            "sin": {
+              "este": -4.4384123022109515e-06,
+              "norte": 2.357068236847988e-06,
+              "arriba": -2.4224255679191253e-05
+            }
+          },
+          {
+            "nombre": "banda lateral 2·sinódico + anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.104030871,
+            "cos": {
+              "este": -1.2426012843768608e-05,
+              "norte": 3.461652828697025e-05,
+              "arriba": -3.1583930017450766e-05
+            },
+            "sin": {
+              "este": -1.49462575443737e-05,
+              "norte": 6.326389398550644e-06,
+              "arriba": -8.219310480294583e-05
+            }
+          },
+          {
+            "nombre": "armónico 4 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.135478449,
+            "cos": {
+              "este": 5.607610570782578e-06,
+              "norte": 1.0025895394176551e-05,
+              "arriba": -3.703751853814797e-05
+            },
+            "sin": {
+              "este": 5.300307531766539e-06,
+              "norte": 7.229059809846832e-06,
+              "arriba": -2.519933736568679e-05
+            }
+          },
+          {
+            "nombre": "armónico 5 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.169348061,
+            "cos": {
+              "este": 4.707697672423208e-06,
+              "norte": 6.2303338778366266e-06,
+              "arriba": -2.1118139861414835e-05
+            },
+            "sin": {
+              "este": 5.9795215388984725e-06,
+              "norte": 1.2386861702670222e-05,
+              "arriba": -3.5829740401924604e-05
+            }
+          },
+          {
+            "nombre": "armónico 6 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.203217673,
+            "cos": {
+              "este": 1.1543900823273324e-06,
+              "norte": 2.0187335674829672e-07,
+              "arriba": -2.9490538119511715e-06
+            },
+            "sin": {
+              "este": 5.950741226212179e-06,
+              "norte": 1.1182394386372627e-05,
+              "arriba": -3.3975365594915296e-05
+            }
+          },
+          {
+            "nombre": "armónico 7 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.237087285,
+            "cos": {
+              "este": -9.187433050403851e-07,
+              "norte": -2.973292015573046e-06,
+              "arriba": 7.199624323209628e-06
+            },
+            "sin": {
+              "este": 3.84697508118685e-06,
+              "norte": 6.575297320058963e-06,
+              "arriba": -2.1067460234835736e-05
+            }
+          },
+          {
+            "nombre": "armónico 8 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.270956897,
+            "cos": {
+              "este": -6.784796269367849e-07,
+              "norte": -1.806791647834185e-06,
+              "arriba": 4.624069679969839e-06
+            },
+            "sin": {
+              "este": 1.4504717269878459e-06,
+              "norte": 2.0571329754215306e-06,
+              "arriba": -7.657892120480533e-06
+            }
+          }
+        ]
+      },
+      "tierra": {
+        "constante": {
+          "este": -0.027357254377667558,
+          "norte": 0.9796972060534377,
+          "arriba": 0.1624697817432762
+        },
+        "terminos": [
+          {
+            "nombre": "evección: 2·sinódico − anomalístico",
+            "frecuencia_ciclos_dia": 0.031434737,
+            "cos": {
+              "este": 0.021754057945780822,
+              "norte": 0.0012230409385767913,
+              "arriba": -0.0021180758637565113
+            },
+            "sin": {
+              "este": -0.006033071983025936,
+              "norte": 5.9767009450348455e-05,
+              "arriba": 0.0023414342858296467
+            }
+          },
+          {
+            "nombre": "mes anomalístico (libración en longitud)",
+            "frecuencia_ciclos_dia": 0.036291647,
+            "cos": {
+              "este": 0.08730728602188459,
+              "norte": 0.004211247612395699,
+              "arriba": -0.0006372699094355357
+            },
+            "sin": {
+              "este": 0.0764710769381429,
+              "norte": 0.001433574574382563,
+              "arriba": 0.0018076135305820774
+            }
+          },
+          {
+            "nombre": "mes dracónico (libración en latitud)",
+            "frecuencia_ciclos_dia": 0.036748195,
+            "cos": {
+              "este": -0.0016831318293547962,
+              "norte": -0.0008388786458676254,
+              "arriba": -0.007931196127908331
+            },
+            "sin": {
+              "este": -0.0063999660672924156,
+              "norte": 0.019423568890511056,
+              "arriba": -0.11519165691503724
+            }
+          },
+          {
+            "nombre": "variación lunar: 2·sinódico",
+            "frecuencia_ciclos_dia": 0.067726384,
+            "cos": {
+              "este": 0.004747448291056321,
+              "norte": -0.00028201218703851493,
+              "arriba": -0.0014505772247256667
+            },
+            "sin": {
+              "este": -0.010992134713320103,
+              "norte": -0.0010988913469402335,
+              "arriba": 0.00034863638786761003
+            }
+          },
+          {
+            "nombre": "2.º armónico del mes anomalístico",
+            "frecuencia_ciclos_dia": 0.072583294,
+            "cos": {
+              "este": 0.0018194804886899547,
+              "norte": 0.0030679712065146804,
+              "arriba": -0.005445249800334299
+            },
+            "sin": {
+              "este": -0.003139028334563029,
+              "norte": -0.00469624462862087,
+              "arriba": -0.0031941017168087738
+            }
+          },
+          {
+            "nombre": "evección: 2·sinódico + anomalístico",
+            "frecuencia_ciclos_dia": 0.104018031,
+            "cos": {
+              "este": -0.0004038329960537049,
+              "norte": -0.0006451900005876058,
+              "arriba": -0.00015046683320456942
+            },
+            "sin": {
+              "este": -0.0008599306553562219,
+              "norte": 0.00012371325617363503,
+              "arriba": 0.0007031573477567556
+            }
+          }
+        ]
+      },
+      "sol_el_directo": {
+        "constante": 0.17531755055760664,
+        "terminos": [
+          {
+            "nombre": "banda lateral 1·sinódico − anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.002512612,
+            "cos": 1.453634222339642,
+            "sin": -0.9164532469292893
+          },
+          {
+            "nombre": "banda lateral 2·sinódico − anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.031266423,
+            "cos": 0.16865103518868774,
+            "sin": -0.10685286526402869
+          },
+          {
+            "nombre": "armónico 1 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.033779035,
+            "cos": 1.1180141440007354,
+            "sin": -9.83232895607423
+          },
+          {
+            "nombre": "mes anomalístico (libración en longitud)",
+            "frecuencia_ciclos_dia": 0.036291647,
+            "cos": 0.06775179984985163,
+            "sin": 0.13573729906705842
+          },
+          {
+            "nombre": "armónico 2 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.06755807,
+            "cos": 0.025139908534250854,
+            "sin": -0.00822367146424658
+          },
+          {
+            "nombre": "banda lateral 1·sinódico + anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.070070682,
+            "cos": -0.025110469978849168,
+            "sin": -0.013820059285321899
+          },
+          {
+            "nombre": "2.º armónico del mes anomalístico",
+            "frecuencia_ciclos_dia": 0.072583294,
+            "cos": -0.008303765708744212,
+            "sin": 0.009514096293230603
+          },
+          {
+            "nombre": "armónico 3 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.101337105,
+            "cos": -0.004837935030270357,
+            "sin": 0.011489999644293997
+          },
+          {
+            "nombre": "banda lateral 2·sinódico + anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.103849717,
+            "cos": -8.160816608725783e-05,
+            "sin": -0.0016691904476854975
+          },
+          {
+            "nombre": "armónico 4 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.13511614,
+            "cos": -0.0010754025378252746,
+            "sin": -0.00036043157806012096
+          },
+          {
+            "nombre": "armónico 5 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.168895175,
+            "cos": -0.0006563078054508571,
+            "sin": -0.0006808736023537357
+          },
+          {
+            "nombre": "armónico 6 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.202674211,
+            "cos": -0.0002561832686814536,
+            "sin": -0.0007592828356073815
+          },
+          {
+            "nombre": "armónico 7 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.236453246,
+            "cos": 9.391403053855948e-05,
+            "sin": -0.0005893002515246172
+          },
+          {
+            "nombre": "armónico 8 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.270232281,
+            "cos": 0.00021204207830708633,
+            "sin": -0.00027443532037035764
+          }
+        ]
+      }
+    },
+    "blue_ghost_m1": {
+      "t0_utc": "2026-12-01T00:00Z",
+      "n_filas_entrenamiento": 4369,
+      "periodo_sinodico_dias": 29.524989792195594,
+      "picos_fft_dias": [
+        29.57074729219559
+      ],
+      "sol": {
+        "constante": {
+          "este": -0.001346808673821588,
+          "norte": -0.0038147564063631505,
+          "arriba": -0.0006654646390735029
+        },
+        "terminos": [
+          {
+            "nombre": "banda lateral 1·sinódico − anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.002422033,
+            "cos": {
+              "este": -2.907468874694704e-05,
+              "norte": -0.023741910257923958,
+              "arriba": -0.007965518499965414
+            },
+            "sin": {
+              "este": 0.0002532342293469839,
+              "norte": 0.01748980632173454,
+              "arriba": 0.005921287253740094
+            }
+          },
+          {
+            "nombre": "banda lateral 2·sinódico − anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.031447581,
+            "cos": {
+              "este": -0.0058791748924003,
+              "norte": 0.005802767054445992,
+              "arriba": -0.019091497185120387
+            },
+            "sin": {
+              "este": 0.019900234367655655,
+              "norte": 0.001442041643892798,
+              "arriba": -0.005776835968688708
+            }
+          },
+          {
+            "nombre": "armónico 1 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.033869614,
+            "cos": {
+              "este": -0.6287218187463204,
+              "norte": 0.24706356808944246,
+              "arriba": -0.7366033630858498
+            },
+            "sin": {
+              "este": 0.7768476050055187,
+              "norte": 0.2011148258120828,
+              "arriba": -0.5955438864942129
+            }
+          },
+          {
+            "nombre": "mes anomalístico (libración en longitud)",
+            "frecuencia_ciclos_dia": 0.036291647,
+            "cos": {
+              "este": 0.01799774443400646,
+              "norte": -0.0020748141822319473,
+              "arriba": 0.00937010060581042
+            },
+            "sin": {
+              "este": -0.009363894787670822,
+              "norte": -0.005295351374298046,
+              "arriba": 0.017271737316979
+            }
+          },
+          {
+            "nombre": "armónico 2 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.067739227,
+            "cos": {
+              "este": -0.0007162102572140013,
+              "norte": -0.0007627373076761874,
+              "arriba": 0.000784751108923963
+            },
+            "sin": {
+              "este": -0.0010723617518112597,
+              "norte": 0.0004910981523127959,
+              "arriba": -0.0005623868393678835
+            }
+          },
+          {
+            "nombre": "banda lateral 1·sinódico + anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.070161261,
+            "cos": {
+              "este": -8.312810534192e-05,
+              "norte": 0.00048499264442667533,
+              "arriba": 0.0003380056041877991
+            },
+            "sin": {
+              "este": -9.737413315226406e-05,
+              "norte": 0.0005812446952715987,
+              "arriba": 0.00023435737563607715
+            }
+          },
+          {
+            "nombre": "2.º armónico del mes anomalístico",
+            "frecuencia_ciclos_dia": 0.072583294,
+            "cos": {
+              "este": -4.875364264053471e-05,
+              "norte": 0.0002806944554167784,
+              "arriba": 0.00011132151916826078
+            },
+            "sin": {
+              "este": 4.538012349172899e-05,
+              "norte": -0.0002607903610810944,
+              "arriba": -0.00019084712132112815
+            }
+          },
+          {
+            "nombre": "armónico 3 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.101608841,
+            "cos": {
+              "este": -7.726543471525363e-06,
+              "norte": -2.197714226130981e-05,
+              "arriba": -9.723950018650826e-06
+            },
+            "sin": {
+              "este": -6.002820459663043e-07,
+              "norte": 2.4527149601813333e-05,
+              "arriba": 3.1975713478554372e-06
+            }
+          },
+          {
+            "nombre": "banda lateral 2·sinódico + anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.104030874,
+            "cos": {
+              "este": -3.108962932934125e-05,
+              "norte": 3.404939554036334e-05,
+              "arriba": 1.4988859136487561e-05
+            },
+            "sin": {
+              "este": -5.510451963974488e-07,
+              "norte": 8.31645076372266e-05,
+              "arriba": 1.012158378773746e-05
+            }
+          },
+          {
+            "nombre": "armónico 4 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.135478455,
+            "cos": {
+              "este": -2.923602773218074e-07,
+              "norte": 3.411271567286102e-05,
+              "arriba": 1.8440385144447316e-05
+            },
+            "sin": {
+              "este": 1.806349009347648e-07,
+              "norte": 2.2802988754053692e-05,
+              "arriba": 1.3977354760248098e-05
+            }
+          },
+          {
+            "nombre": "armónico 5 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.169348069,
+            "cos": {
+              "este": 1.404159153889517e-07,
+              "norte": 1.903671940454365e-05,
+              "arriba": 1.2023397181040788e-05
+            },
+            "sin": {
+              "este": -2.313040107043301e-06,
+              "norte": 3.2867723177730816e-05,
+              "arriba": 1.9681135813814706e-05
+            }
+          },
+          {
+            "nombre": "armónico 6 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.203217682,
+            "cos": {
+              "este": 8.371863018328396e-07,
+              "norte": 2.5159751533162814e-06,
+              "arriba": 1.742761244475859e-06
+            },
+            "sin": {
+              "este": -1.570756841310737e-06,
+              "norte": 3.108514954814225e-05,
+              "arriba": 1.860302515397666e-05
+            }
+          },
+          {
+            "nombre": "armónico 7 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.237087296,
+            "cos": {
+              "este": 1.017888838407815e-06,
+              "norte": -6.686113485026107e-06,
+              "arriba": -3.972672867283438e-06
+            },
+            "sin": {
+              "este": -5.896714202282678e-07,
+              "norte": 1.9229185549468085e-05,
+              "arriba": 1.1478457530002382e-05
+            }
+          },
+          {
+            "nombre": "armónico 8 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.27095691,
+            "cos": {
+              "este": 5.212876931463464e-07,
+              "norte": -4.26887793809241e-06,
+              "arriba": -2.571132476093941e-06
+            },
+            "sin": {
+              "este": 9.520982703296746e-08,
+              "norte": 6.973215082612828e-06,
+              "arriba": 4.042121385899884e-06
+            }
+          }
+        ]
+      },
+      "tierra": {
+        "constante": {
+          "este": -0.8784594966474838,
+          "norte": -0.1457313491823726,
+          "arriba": 0.44042232955789745
+        },
+        "terminos": [
+          {
+            "nombre": "evección: 2·sinódico − anomalístico",
+            "frecuencia_ciclos_dia": 0.031434737,
+            "cos": {
+              "este": 0.009956951088041219,
+              "norte": -0.003982553691060438,
+              "arriba": 0.01912686162129882
+            },
+            "sin": {
+              "este": -0.0033433178789336244,
+              "norte": -0.0005321740895779191,
+              "arriba": -0.005463860604472845
+            }
+          },
+          {
+            "nombre": "mes anomalístico (libración en longitud)",
+            "frecuencia_ciclos_dia": 0.036291647,
+            "cos": {
+              "este": 0.03932871808546603,
+              "norte": -0.023778867133022383,
+              "arriba": 0.07432004664512827
+            },
+            "sin": {
+              "este": 0.03619481788838673,
+              "norte": -0.022759162269708772,
+              "arriba": 0.0637653659041706
+            }
+          },
+          {
+            "nombre": "mes dracónico (libración en latitud)",
+            "frecuencia_ciclos_dia": 0.036748195,
+            "cos": {
+              "este": 0.0010573275217146392,
+              "norte": 0.008118546594469667,
+              "arriba": 6.662965825356811e-05
+            },
+            "sin": {
+              "este": -0.0032282775564073177,
+              "norte": 0.1126530106554602,
+              "arriba": 0.03193556149796387
+            }
+          },
+          {
+            "nombre": "variación lunar: 2·sinódico",
+            "frecuencia_ciclos_dia": 0.067726384,
+            "cos": {
+              "este": 0.002799965417706576,
+              "norte": 0.00010307799409873981,
+              "arriba": 0.004170490790528378
+            },
+            "sin": {
+              "este": -0.004495722294138494,
+              "norte": 0.0027289304308461353,
+              "arriba": -0.00971223163207233
+            }
+          },
+          {
+            "nombre": "2.º armónico del mes anomalístico",
+            "frecuencia_ciclos_dia": 0.072583294,
+            "cos": {
+              "este": -0.0009830815999464378,
+              "norte": 0.004718342163863249,
+              "arriba": 0.0043770908890917275
+            },
+            "sin": {
+              "este": 0.002981179971513778,
+              "norte": 0.003950940774805916,
+              "arriba": -0.00419431091547386
+            }
+          },
+          {
+            "nombre": "evección: 2·sinódico + anomalístico",
+            "frecuencia_ciclos_dia": 0.104018031,
+            "cos": {
+              "este": 0.00038476664152768046,
+              "norte": 0.00025763667196727544,
+              "arriba": -0.0006199357675347863
+            },
+            "sin": {
+              "este": -0.0006269761418063295,
+              "norte": -0.0004364231913218111,
+              "arriba": -0.0008206985403735048
+            }
+          }
+        ]
+      },
+      "sol_el_directo": null
+    },
+    "chandrayaan3": {
+      "t0_utc": "2026-12-01T00:00Z",
+      "n_filas_entrenamiento": 4369,
+      "periodo_sinodico_dias": 29.524988623357725,
+      "picos_fft_dias": [
+        29.570086123357722
+      ],
+      "sol": {
+        "constante": {
+          "este": -0.0008824130740776561,
+          "norte": -0.00024508074472920404,
+          "arriba": 0.003982604779918938
+        },
+        "terminos": [
+          {
+            "nombre": "banda lateral 1·sinódico − anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.002422032,
+            "cos": {
+              "este": -2.242865261226644e-05,
+              "norte": -0.00880337726267341,
+              "arriba": 0.023443881360681935
+            },
+            "sin": {
+              "este": 0.00024324592908576864,
+              "norte": 0.006425682659169397,
+              "arriba": -0.017311161312494452
+            }
+          },
+          {
+            "nombre": "banda lateral 2·sinódico − anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.031447583,
+            "cos": {
+              "este": -0.014936328666588509,
+              "norte": -0.013742958796863235,
+              "arriba": -0.004557426827263501
+            },
+            "sin": {
+              "este": 0.014400343937832313,
+              "norte": -0.014170011243036984,
+              "arriba": -0.0048293387400953165
+            }
+          },
+          {
+            "nombre": "armónico 1 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.033869615,
+            "cos": {
+              "este": -0.9297279526029402,
+              "norte": -0.3433487610007847,
+              "arriba": -0.12897160463680896
+            },
+            "sin": {
+              "este": 0.36676569454962926,
+              "norte": -0.8695959027021584,
+              "arriba": -0.32847817403918256
+            }
+          },
+          {
+            "nombre": "mes anomalístico (libración en longitud)",
+            "frecuencia_ciclos_dia": 0.036291647,
+            "cos": {
+              "este": 0.02036385371321009,
+              "norte": -0.00016020866308721261,
+              "arriba": -0.001145306476696827
+            },
+            "sin": {
+              "este": 0.0007395570152986792,
+              "norte": 0.019194033157939147,
+              "arriba": 0.006714122968229972
+            }
+          },
+          {
+            "nombre": "armónico 2 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.06773923,
+            "cos": {
+              "este": -0.0001417235426941805,
+              "norte": 0.0009675223900871981,
+              "arriba": 0.0008698649159499196
+            },
+            "sin": {
+              "este": -0.001273289768842575,
+              "norte": 2.956518748503334e-05,
+              "arriba": -0.0002950490699308445
+            }
+          },
+          {
+            "nombre": "banda lateral 1·sinódico + anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.070161262,
+            "cos": {
+              "este": 9.258584466288626e-06,
+              "norte": 0.0003731686118642135,
+              "arriba": -0.00046575786343191187
+            },
+            "sin": {
+              "este": -6.617312048182069e-05,
+              "norte": 0.00029537264476264135,
+              "arriba": -0.0005572850160263757
+            }
+          },
+          {
+            "nombre": "2.º armónico del mes anomalístico",
+            "frecuencia_ciclos_dia": 0.072583294,
+            "cos": {
+              "este": -3.434461739116837e-05,
+              "norte": 0.0001417758869856224,
+              "arriba": -0.00026881795448869167
+            },
+            "sin": {
+              "este": -8.615890416384774e-06,
+              "norte": -0.0002090485964850696,
+              "arriba": 0.00025038257242243216
+            }
+          },
+          {
+            "nombre": "armónico 3 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.101608845,
+            "cos": {
+              "este": -7.817420963785215e-06,
+              "norte": -6.672524776488464e-06,
+              "arriba": 2.3056655324369396e-05
+            },
+            "sin": {
+              "este": -2.877473489788221e-06,
+              "norte": 4.9352542797649705e-06,
+              "arriba": -2.4074058305228033e-05
+            }
+          },
+          {
+            "nombre": "banda lateral 2·sinódico + anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.104030877,
+            "cos": {
+              "este": -2.539649984105647e-05,
+              "norte": 3.011753754041656e-05,
+              "arriba": -2.825113296348309e-05
+            },
+            "sin": {
+              "este": -8.784578198454773e-06,
+              "norte": 1.5412791691476673e-05,
+              "arriba": -8.187988430468039e-05
+            }
+          },
+          {
+            "nombre": "armónico 4 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.13547846,
+            "cos": {
+              "este": 3.005363235704349e-06,
+              "norte": 1.8986944379542775e-05,
+              "arriba": -3.367815727461438e-05
+            },
+            "sin": {
+              "este": 3.110391351239078e-06,
+              "norte": 1.3978143948875098e-05,
+              "arriba": -2.2589834315513937e-05
+            }
+          },
+          {
+            "nombre": "armónico 5 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.169348075,
+            "cos": {
+              "este": 2.7499824618110448e-06,
+              "norte": 1.1988331673036545e-05,
+              "arriba": -1.8858960645371598e-05
+            },
+            "sin": {
+              "este": 2.0231323645370916e-06,
+              "norte": 2.092331149962175e-05,
+              "arriba": -3.211093985536331e-05
+            }
+          },
+          {
+            "nombre": "armónico 6 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.20321769,
+            "cos": {
+              "este": 1.1476652234187373e-06,
+              "norte": 1.3430372507711855e-06,
+              "arriba": -2.635489103136603e-06
+            },
+            "sin": {
+              "este": 2.444672994661399e-06,
+              "norte": 1.949483207255524e-05,
+              "arriba": -3.0475648391964396e-05
+            }
+          },
+          {
+            "nombre": "armónico 7 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.237087306,
+            "cos": {
+              "este": 7.995668096776545e-08,
+              "norte": -4.481603324632316e-06,
+              "arriba": 6.436553693615766e-06
+            },
+            "sin": {
+              "este": 1.8312939551489024e-06,
+              "norte": 1.1857509976266596e-05,
+              "arriba": -1.8918402831644253e-05
+            }
+          },
+          {
+            "nombre": "armónico 8 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.270956921,
+            "cos": {
+              "este": -7.699221552530725e-08,
+              "norte": -2.8329437561943237e-06,
+              "arriba": 4.132183815030818e-06
+            },
+            "sin": {
+              "este": 8.775924860195633e-07,
+              "norte": 4.050691262179692e-06,
+              "arriba": -6.913296871300854e-06
+            }
+          }
+        ]
+      },
+      "tierra": {
+        "constante": {
+          "este": -0.533847043385101,
+          "norte": 0.7867802761372532,
+          "arriba": 0.2879584494631948
+        },
+        "terminos": [
+          {
+            "nombre": "evección: 2·sinódico − anomalístico",
+            "frecuencia_ciclos_dia": 0.031434737,
+            "cos": {
+              "este": 0.01824040824686266,
+              "norte": 0.01195705090290804,
+              "arriba": 0.0020453774285015994
+            },
+            "sin": {
+              "este": -0.005408085903668884,
+              "norte": -0.003338641936234118,
+              "arriba": 0.001196541221773376
+            }
+          },
+          {
+            "nombre": "mes anomalístico (libración en longitud)",
+            "frecuencia_ciclos_dia": 0.036291647,
+            "cos": {
+              "este": 0.07283421819511895,
+              "norte": 0.04572446334284006,
+              "arriba": 0.015776450746776274
+            },
+            "sin": {
+              "este": 0.06478249599404806,
+              "norte": 0.03766839438898741,
+              "arriba": 0.015807844344844453
+            }
+          },
+          {
+            "nombre": "mes dracónico (libración en latitud)",
+            "frecuencia_ciclos_dia": 0.036748195,
+            "cos": {
+              "este": -0.0003204902012774166,
+              "norte": 0.00013747817023460526,
+              "arriba": -0.008150196687406882
+            },
+            "sin": {
+              "este": -0.005196962810383461,
+              "norte": 0.03762197508479558,
+              "arriba": -0.11072601599911643
+            }
+          },
+          {
+            "nombre": "variación lunar: 2·sinódico",
+            "frecuencia_ciclos_dia": 0.067726384,
+            "cos": {
+              "este": 0.004351970176161531,
+              "norte": 0.0023537548046668557,
+              "arriba": -0.0005926519266144054
+            },
+            "sin": {
+              "este": -0.008905474528069309,
+              "norte": -0.006298447591670418,
+              "arriba": -0.001804023503138346
+            }
+          },
+          {
+            "nombre": "2.º armónico del mes anomalístico",
+            "frecuencia_ciclos_dia": 0.072583294,
+            "cos": {
+              "este": 0.00048790811080294983,
+              "norte": 0.004636096618795481,
+              "arriba": -0.004551245086749484
+            },
+            "sin": {
+              "este": -2.844057765338292e-05,
+              "norte": -0.004839192688965894,
+              "arriba": -0.004332539165850639
+            }
+          },
+          {
+            "nombre": "evección: 2·sinódico + anomalístico",
+            "frecuencia_ciclos_dia": 0.104018031,
+            "cos": {
+              "este": -5.113058834374166e-06,
+              "norte": -0.0007121051611685498,
+              "arriba": -0.0003092829872104353
+            },
+            "sin": {
+              "este": -0.0008632450799887148,
+              "norte": -0.0004571727866475295,
+              "arriba": 0.0005463436601005682
+            }
+          }
+        ]
+      },
+      "sol_el_directo": null
+    },
+    "change4": {
+      "t0_utc": "2026-12-01T00:00Z",
+      "n_filas_entrenamiento": 4369,
+      "periodo_sinodico_dias": 29.52498947472093,
+      "picos_fft_dias": [
+        29.569074474720928
+      ],
+      "sol": {
+        "constante": {
+          "este": 5.546191950799748e-05,
+          "norte": -0.0037266571508301873,
+          "arriba": 0.0016867387607202929
+        },
+        "terminos": [
+          {
+            "nombre": "banda lateral 1·sinódico − anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.002422033,
+            "cos": {
+              "este": 7.363590663742432e-06,
+              "norte": -0.017586312763649345,
+              "arriba": 0.017828056930736375
+            },
+            "sin": {
+              "este": -0.00015190797819105304,
+              "norte": 0.013100274102447443,
+              "arriba": -0.013014700134891989
+            }
+          },
+          {
+            "nombre": "banda lateral 2·sinódico − anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.031447581,
+            "cos": {
+              "este": 0.02051750614449354,
+              "norte": 0.0020052432270024328,
+              "arriba": 0.0027813108126524613
+            },
+            "sin": {
+              "este": -0.003309823000202636,
+              "norte": 0.014280615174062882,
+              "arriba": 0.01471679350990976
+            }
+          },
+          {
+            "nombre": "armónico 1 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.033869614,
+            "cos": {
+              "este": 0.9730430648105373,
+              "norte": -0.16285926769593875,
+              "arriba": -0.15993790889367007
+            },
+            "sin": {
+              "este": 0.2281748193558411,
+              "norte": 0.6941819760236178,
+              "arriba": 0.6816594751180719
+            }
+          },
+          {
+            "nombre": "mes anomalístico (libración en longitud)",
+            "frecuencia_ciclos_dia": 0.036291647,
+            "cos": {
+              "este": -0.016420504475835672,
+              "norte": 0.009305048368870727,
+              "arriba": 0.007733175379217965
+            },
+            "sin": {
+              "este": -0.012189385626868393,
+              "norte": -0.011272292691061843,
+              "arriba": -0.011763830246230839
+            }
+          },
+          {
+            "nombre": "armónico 2 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.067739228,
+            "cos": {
+              "este": -0.0005760415026315114,
+              "norte": -0.001103543292183759,
+              "arriba": -0.0004220298662181324
+            },
+            "sin": {
+              "este": 0.0010957078951780094,
+              "norte": -0.0002728101478771332,
+              "arriba": -0.0006705470242313667
+            }
+          },
+          {
+            "nombre": "banda lateral 1·sinódico + anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.070161261,
+            "cos": {
+              "este": -0.0001127437132589237,
+              "norte": 0.0002930358842107589,
+              "arriba": -0.0005076418277252069
+            },
+            "sin": {
+              "este": 9.050242045540078e-06,
+              "norte": 0.00036527034528010686,
+              "arriba": -0.00051828710017937
+            }
+          },
+          {
+            "nombre": "2.º armónico del mes anomalístico",
+            "frecuencia_ciclos_dia": 0.072583294,
+            "cos": {
+              "este": 6.756455647827278e-06,
+              "norte": 0.00017540361573662892,
+              "arriba": -0.00025043685673256405
+            },
+            "sin": {
+              "este": 6.814751587214208e-05,
+              "norte": -0.0001564593077189006,
+              "arriba": 0.0002781257520113232
+            }
+          },
+          {
+            "nombre": "armónico 3 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.101608842,
+            "cos": {
+              "este": 5.3437514381750874e-06,
+              "norte": -2.105062130951838e-05,
+              "arriba": 1.2857326182809623e-05
+            },
+            "sin": {
+              "este": 4.552868960860096e-06,
+              "norte": 1.811305120962409e-05,
+              "arriba": -1.6223386973618456e-05
+            }
+          },
+          {
+            "nombre": "banda lateral 2·sinódico + anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.104030875,
+            "cos": {
+              "este": 1.0480721511871448e-05,
+              "norte": 4.998311918955797e-06,
+              "arriba": -4.706271677497909e-05
+            },
+            "sin": {
+              "este": 1.5435909050399806e-05,
+              "norte": 6.243648145607802e-05,
+              "arriba": -5.368985855857433e-05
+            }
+          },
+          {
+            "nombre": "armónico 4 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.135478456,
+            "cos": {
+              "este": -5.830574622660183e-06,
+              "norte": 2.4558650565986124e-05,
+              "arriba": -2.9438584377243985e-05
+            },
+            "sin": {
+              "este": -5.47223945573955e-06,
+              "norte": 1.654714945913434e-05,
+              "arriba": -2.0286726972183805e-05
+            }
+          },
+          {
+            "nombre": "armónico 5 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.169348071,
+            "cos": {
+              "este": -4.865891889611265e-06,
+              "norte": 1.3777072319898885e-05,
+              "arriba": -1.7130787663276146e-05
+            },
+            "sin": {
+              "este": -6.371152552438394e-06,
+              "norte": 2.2227139726422763e-05,
+              "arriba": -3.063159195498441e-05
+            }
+          },
+          {
+            "nombre": "armónico 6 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.203217685,
+            "cos": {
+              "este": -1.1304404983196513e-06,
+              "norte": 2.335379054988344e-06,
+              "arriba": -1.8262105462468552e-06
+            },
+            "sin": {
+              "este": -6.285265122683369e-06,
+              "norte": 2.141675983569984e-05,
+              "arriba": -2.8576123842550505e-05
+            }
+          },
+          {
+            "nombre": "armónico 7 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.237087299,
+            "cos": {
+              "este": 1.0316315101194689e-06,
+              "norte": -4.1712671710907695e-06,
+              "arriba": 6.562410830713507e-06
+            },
+            "sin": {
+              "este": -4.029897849926141e-06,
+              "norte": 1.3496051476562058e-05,
+              "arriba": -1.7420092965692947e-05
+            }
+          },
+          {
+            "nombre": "armónico 8 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.270956913,
+            "cos": {
+              "este": 7.442436492766703e-07,
+              "norte": -2.7429270537421675e-06,
+              "arriba": 4.1268783354724175e-06
+            },
+            "sin": {
+              "este": -1.493785040692171e-06,
+              "norte": 5.102260878016481e-06,
+              "arriba": -6.058582456243562e-06
+            }
+          }
+        ]
+      },
+      "tierra": {
+        "constante": {
+          "este": -0.03930543120735669,
+          "norte": -0.7028768616507624,
+          "arriba": -0.7010479446280651
+        },
+        "terminos": [
+          {
+            "nombre": "evección: 2·sinódico − anomalístico",
+            "frecuencia_ciclos_dia": 0.031434737,
+            "cos": {
+              "este": -0.0216770646092451,
+              "norte": 0.0020458559696425044,
+              "arriba": -0.0012020378238796177
+            },
+            "sin": {
+              "este": 0.005965116673457833,
+              "norte": -0.0022068484924577165,
+              "arriba": 0.001023098727908221
+            }
+          },
+          {
+            "nombre": "mes anomalístico (libración en longitud)",
+            "frecuencia_ciclos_dia": 0.036291647,
+            "cos": {
+              "este": -0.08703218484296948,
+              "norte": 0.002198151082405795,
+              "arriba": 0.00035459060912825663
+            },
+            "sin": {
+              "este": -0.0761261219499178,
+              "norte": 0.0013866461035730606,
+              "arriba": 0.0034363003867160543
+            }
+          },
+          {
+            "nombre": "mes dracónico (libración en latitud)",
+            "frecuencia_ciclos_dia": 0.036748195,
+            "cos": {
+              "este": 0.0018110329683152652,
+              "norte": 0.00682801098813609,
+              "arriba": -0.004018317258199614
+            },
+            "sin": {
+              "este": 0.006398016215238096,
+              "norte": 0.08164988294284115,
+              "arriba": -0.0829105957936748
+            }
+          },
+          {
+            "nombre": "variación lunar: 2·sinódico",
+            "frecuencia_ciclos_dia": 0.067726384,
+            "cos": {
+              "este": -0.004683284039815072,
+              "norte": 0.001564576740418266,
+              "arriba": -0.00039837526610934606
+            },
+            "sin": {
+              "este": 0.0109869700749123,
+              "norte": -0.00016715619321978277,
+              "arriba": 0.0005705390973793531
+            }
+          },
+          {
+            "nombre": "2.º armónico del mes anomalístico",
+            "frecuencia_ciclos_dia": 0.072583294,
+            "cos": {
+              "este": -0.001934348053640815,
+              "norte": 0.0027079256142624546,
+              "arriba": -0.005543599520705353
+            },
+            "sin": {
+              "este": 0.0034546910311367353,
+              "norte": 0.005139337680102512,
+              "arriba": 0.0017773333701321867
+            }
+          },
+          {
+            "nombre": "evección: 2·sinódico + anomalístico",
+            "frecuencia_ciclos_dia": 0.104018031,
+            "cos": {
+              "este": 0.00044258168368691253,
+              "norte": 0.0004745345207761032,
+              "arriba": 0.0004126211993949945
+            },
+            "sin": {
+              "este": 0.0008354991724216542,
+              "norte": -0.0006783033733838388,
+              "arriba": 0.00026809279493350617
+            }
+          }
+        ]
+      },
+      "sol_el_directo": null
+    },
+    "change6": {
+      "t0_utc": "2026-12-01T00:00Z",
+      "n_filas_entrenamiento": 4369,
+      "periodo_sinodico_dias": 29.524990224276245,
+      "picos_fft_dias": [
+        29.569881474276244
+      ],
+      "sol": {
+        "constante": {
+          "este": 0.0007479884571738008,
+          "norte": -0.003696086514102204,
+          "arriba": 0.0015870697655566057
+        },
+        "terminos": [
+          {
+            "nombre": "banda lateral 1·sinódico − anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.002422034,
+            "cos": {
+              "este": 2.0156093285708837e-05,
+              "norte": -0.018729940010106173,
+              "arriba": 0.016622506645291153
+            },
+            "sin": {
+              "este": -0.00023253062264911594,
+              "norte": 0.013873192799624064,
+              "arriba": -0.012186141973902734
+            }
+          },
+          {
+            "nombre": "banda lateral 2·sinódico − anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.03144758,
+            "cos": {
+              "este": 0.016434791301814314,
+              "norte": 0.008033904384086975,
+              "arriba": 0.009903158291966405
+            },
+            "sin": {
+              "este": -0.012669499381986582,
+              "norte": 0.010579663673179049,
+              "arriba": 0.012610437251299463
+            }
+          },
+          {
+            "nombre": "armónico 1 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.033869613,
+            "cos": {
+              "este": 0.9643843058316462,
+              "norte": 0.1741947216961488,
+              "arriba": 0.19630379779840873
+            },
+            "sin": {
+              "este": -0.2624589839691645,
+              "norte": 0.6414755291540722,
+              "arriba": 0.7198864087543105
+            }
+          },
+          {
+            "nombre": "mes anomalístico (libración en longitud)",
+            "frecuencia_ciclos_dia": 0.036291647,
+            "cos": {
+              "este": -0.02017970213709434,
+              "norte": 0.0026098958903647963,
+              "arriba": 0.001407546845793359
+            },
+            "sin": {
+              "este": -0.00296720064650728,
+              "norte": -0.01301442330943391,
+              "arriba": -0.015357356001254404
+            }
+          },
+          {
+            "nombre": "armónico 2 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.067739226,
+            "cos": {
+              "este": 1.0892242163562122e-05,
+              "norte": -0.001168332443640005,
+              "arriba": -0.0006018303543509002
+            },
+            "sin": {
+              "este": 0.001279875641376718,
+              "norte": 0.00017370088687064335,
+              "arriba": -0.0002359006499795882
+            }
+          },
+          {
+            "nombre": "banda lateral 1·sinódico + anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.07016126,
+            "cos": {
+              "este": -2.9012620301711407e-05,
+              "norte": 0.0003024271987249866,
+              "arriba": -0.0005137322693501222
+            },
+            "sin": {
+              "este": 5.694575283622724e-05,
+              "norte": 0.0004101296311260552,
+              "arriba": -0.00048026441302885666
+            }
+          },
+          {
+            "nombre": "2.º armónico del mes anomalístico",
+            "frecuencia_ciclos_dia": 0.072583294,
+            "cos": {
+              "este": 2.9985698350307583e-05,
+              "norte": 0.00019790648007855677,
+              "arriba": -0.0002312099822095005
+            },
+            "sin": {
+              "este": 2.010407092525914e-05,
+              "norte": -0.00015982031950749682,
+              "arriba": 0.0002837513022214631
+            }
+          },
+          {
+            "nombre": "armónico 3 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.10160884,
+            "cos": {
+              "este": 7.544798626581182e-06,
+              "norte": -1.9693254090263955e-05,
+              "arriba": 1.3865043030474246e-05
+            },
+            "sin": {
+              "este": 3.2746976410879347e-06,
+              "norte": 2.0467088114865077e-05,
+              "arriba": -1.3503498225861708e-05
+            }
+          },
+          {
+            "nombre": "banda lateral 2·sinódico + anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.104030873,
+            "cos": {
+              "este": 2.323081762645561e-05,
+              "norte": 1.3792684056852096e-05,
+              "arriba": -4.024654466043054e-05
+            },
+            "sin": {
+              "este": 1.0323375469364372e-05,
+              "norte": 7.020688861980404e-05,
+              "arriba": -4.4539274034202104e-05
+            }
+          },
+          {
+            "nombre": "armónico 4 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.135478453,
+            "cos": {
+              "este": -3.6284476916610785e-06,
+              "norte": 2.487330511616532e-05,
+              "arriba": -2.9527749689321893e-05
+            },
+            "sin": {
+              "este": -3.6541802943181583e-06,
+              "norte": 1.6325818619850354e-05,
+              "arriba": -2.08671512134478e-05
+            }
+          },
+          {
+            "nombre": "armónico 5 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.169348066,
+            "cos": {
+              "este": -3.232347884810985e-06,
+              "norte": 1.3524405506233809e-05,
+              "arriba": -1.7708161840735472e-05
+            },
+            "sin": {
+              "este": -2.9158685420383845e-06,
+              "norte": 2.2654737944204943e-05,
+              "arriba": -3.0841064225802755e-05
+            }
+          },
+          {
+            "nombre": "armónico 6 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.203217679,
+            "cos": {
+              "este": -1.1768356330471034e-06,
+              "norte": 2.0634712171422472e-06,
+              "arriba": -2.103657709276308e-06
+            },
+            "sin": {
+              "este": -3.2512548888083552e-06,
+              "norte": 2.1667366616655827e-05,
+              "arriba": -2.8891907695062825e-05
+            }
+          },
+          {
+            "nombre": "armónico 7 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.237087293,
+            "cos": {
+              "este": 1.302612263042104e-07,
+              "norte": -4.403483818298836e-06,
+              "arriba": 6.489804645328996e-06
+            },
+            "sin": {
+              "este": -2.306114363467692e-06,
+              "norte": 1.3559982121117226e-05,
+              "arriba": -1.7682464046270046e-05
+            }
+          },
+          {
+            "nombre": "armónico 8 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.270956906,
+            "cos": {
+              "este": 2.0632911492771997e-07,
+              "norte": -2.8516059143363115e-06,
+              "arriba": 4.115118715247957e-06
+            },
+            "sin": {
+              "este": -1.0223521476681556e-06,
+              "norte": 5.070885514018794e-06,
+              "arriba": -6.182176641832022e-06
+            }
+          }
+        ]
+      },
+      "tierra": {
+        "constante": {
+          "este": 0.43654269184234,
+          "norte": -0.5881736550459951,
+          "arriba": -0.6712132007089008
+        },
+        "terminos": [
+          {
+            "nombre": "evección: 2·sinódico − anomalístico",
+            "frecuencia_ciclos_dia": 0.031434737,
+            "cos": {
+              "este": -0.019369667880910907,
+              "norte": -0.0047620728294923715,
+              "arriba": -0.008807904804152712
+            },
+            "sin": {
+              "este": 0.005671164556068376,
+              "norte": -0.00031391968304226426,
+              "arriba": 0.0030700966822623157
+            }
+          },
+          {
+            "nombre": "mes anomalístico (libración en longitud)",
+            "frecuencia_ciclos_dia": 0.036291647,
+            "cos": {
+              "este": -0.07752630734186919,
+              "norte": -0.025444104796675845,
+              "arriba": -0.03054959844229424
+            },
+            "sin": {
+              "este": -0.0685612394853159,
+              "norte": -0.023098625151615405,
+              "arriba": -0.023770314002947646
+            }
+          },
+          {
+            "nombre": "mes dracónico (libración en latitud)",
+            "frecuencia_ciclos_dia": 0.036748195,
+            "cos": {
+              "este": 0.0006234844178277717,
+              "norte": 0.0074861981407352025,
+              "arriba": -0.0030970135168024424
+            },
+            "sin": {
+              "este": 0.005619139586772883,
+              "norte": 0.08900091180143418,
+              "arriba": -0.07505272088763772
+            }
+          },
+          {
+            "nombre": "variación lunar: 2·sinódico",
+            "frecuencia_ciclos_dia": 0.067726384,
+            "cos": {
+              "este": -0.004506496742281012,
+              "norte": 4.928216363554094e-05,
+              "arriba": -0.0020251868640009663
+            },
+            "sin": {
+              "este": 0.00954432953841407,
+              "norte": 0.003237936898176947,
+              "arriba": 0.004432493732513535
+            }
+          },
+          {
+            "nombre": "2.º armónico del mes anomalístico",
+            "frecuencia_ciclos_dia": 0.072583294,
+            "cos": {
+              "este": -0.0007687905003273433,
+              "norte": 0.002622906075966934,
+              "arriba": -0.005861000709036493
+            },
+            "sin": {
+              "este": 0.0007157328230462082,
+              "norte": 0.005704203953165579,
+              "arriba": 0.0029078530418257505
+            }
+          },
+          {
+            "nombre": "evección: 2·sinódico + anomalístico",
+            "frecuencia_ciclos_dia": 0.104018031,
+            "cos": {
+              "este": 9.385358209753154e-05,
+              "norte": 0.0005350965690258906,
+              "arriba": 0.0005452293723074241
+            },
+            "sin": {
+              "este": 0.0008751873165029068,
+              "norte": -0.00040875892087727375,
+              "arriba": 0.0005442060883875009
+            }
+          }
+        ]
+      },
+      "sol_el_directo": null
+    },
+    "slim": {
+      "t0_utc": "2026-12-01T00:00Z",
+      "n_filas_entrenamiento": 4369,
+      "periodo_sinodico_dias": 29.52499144965829,
+      "picos_fft_dias": [
+        29.56985644965829
+      ],
+      "sol": {
+        "constante": {
+          "este": -0.000731071470968047,
+          "norte": -0.003426637236886252,
+          "arriba": 0.002115686597906605
+        },
+        "terminos": [
+          {
+            "nombre": "banda lateral 1·sinódico − anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.002422035,
+            "cos": {
+              "este": -1.9878936546607317e-05,
+              "norte": -0.02436408906660806,
+              "arriba": 0.005789152310348872
+            },
+            "sin": {
+              "este": 0.000231076811290756,
+              "norte": 0.017942319992348684,
+              "arriba": -0.004363403623438604
+            }
+          },
+          {
+            "nombre": "banda lateral 2·sinódico − anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.031447577,
+            "cos": {
+              "este": -0.016603070979936733,
+              "norte": -0.003443759864183939,
+              "arriba": -0.012049488876387198
+            },
+            "sin": {
+              "este": 0.012448807087183844,
+              "norte": -0.004287248408911279,
+              "arriba": -0.01606568507880534
+            }
+          },
+          {
+            "nombre": "armónico 1 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.033869612,
+            "cos": {
+              "este": -0.9677970740003269,
+              "norte": -0.05771969353448621,
+              "arriba": -0.2428032347212076
+            },
+            "sin": {
+              "este": 0.24958268263626449,
+              "norte": -0.22180191078749772,
+              "arriba": -0.9418728215116958
+            }
+          },
+          {
+            "nombre": "mes anomalístico (libración en longitud)",
+            "frecuencia_ciclos_dia": 0.036291647,
+            "cos": {
+              "este": 0.02014068425281311,
+              "norte": 0.00028471768049526314,
+              "arriba": -0.0032062694209346303
+            },
+            "sin": {
+              "este": 0.0032349568412231534,
+              "norte": 0.005090423996866653,
+              "arriba": 0.019433087743320542
+            }
+          },
+          {
+            "nombre": "armónico 2 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.067739224,
+            "cos": {
+              "este": 9.87322094103234e-06,
+              "norte": -0.00018035469944469373,
+              "arriba": 0.0012928604213686271
+            },
+            "sin": {
+              "este": -0.001269435782804516,
+              "norte": 0.00029781931328735987,
+              "arriba": 1.4166137945296717e-05
+            }
+          },
+          {
+            "nombre": "banda lateral 1·sinódico + anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.070161259,
+            "cos": {
+              "este": 3.223951612143074e-05,
+              "norte": 0.0005941723528239512,
+              "arriba": 4.7081804564871905e-05
+            },
+            "sin": {
+              "este": -5.584990538222217e-05,
+              "norte": 0.0006290514350264328,
+              "arriba": -5.8470762051022194e-05
+            }
+          },
+          {
+            "nombre": "2.º armónico del mes anomalístico",
+            "frecuencia_ciclos_dia": 0.072583294,
+            "cos": {
+              "este": -2.939347499393484e-05,
+              "norte": 0.00030311474424164406,
+              "arriba": -2.849319399176137e-05
+            },
+            "sin": {
+              "este": -2.1889629388821483e-05,
+              "norte": -0.0003240030258321444,
+              "arriba": -3.1786669909599856e-05
+            }
+          },
+          {
+            "nombre": "armónico 3 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.101608836,
+            "cos": {
+              "este": -7.530331584451342e-06,
+              "norte": -2.2636217238865526e-05,
+              "arriba": 8.257259008822007e-06
+            },
+            "sin": {
+              "este": -3.3251253596694744e-06,
+              "norte": 2.2818035140338963e-05,
+              "arriba": -8.968434346430053e-06
+            }
+          },
+          {
+            "nombre": "banda lateral 2·sinódico + anomalístico (incluye el batido de ~411 días)",
+            "frecuencia_ciclos_dia": 0.104030871,
+            "cos": {
+              "este": -2.2956717439143093e-05,
+              "norte": 4.094575993849313e-05,
+              "arriba": 1.2132592152397632e-05
+            },
+            "sin": {
+              "este": -1.0501755173238697e-05,
+              "norte": 7.680844936843535e-05,
+              "arriba": -3.176881919293046e-05
+            }
+          },
+          {
+            "nombre": "armónico 4 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.135478447,
+            "cos": {
+              "este": 3.7095418432352643e-06,
+              "norte": 3.844580943758115e-05,
+              "arriba": -3.4552398918329895e-06
+            },
+            "sin": {
+              "este": 3.7171615698926596e-06,
+              "norte": 2.64492356054012e-05,
+              "arriba": -1.4219748867846927e-06
+            }
+          },
+          {
+            "nombre": "armónico 5 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.169348059,
+            "cos": {
+              "este": 3.292192385163264e-06,
+              "norte": 2.2253882476068493e-05,
+              "arriba": -9.468466133546619e-07
+            },
+            "sin": {
+              "este": 3.0243474551231246e-06,
+              "norte": 3.825030188536194e-05,
+              "arriba": -8.715239232430661e-07
+            }
+          },
+          {
+            "nombre": "armónico 6 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.203217671,
+            "cos": {
+              "este": 1.1800033662027446e-06,
+              "norte": 2.903882264014912e-06,
+              "arriba": -4.966141257819338e-07
+            },
+            "sin": {
+              "este": 3.3488528344469713e-06,
+              "norte": 3.608581831341274e-05,
+              "arriba": -1.1888057652083286e-06
+            }
+          },
+          {
+            "nombre": "armónico 7 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.237087283,
+            "cos": {
+              "este": -1.5691517185871553e-07,
+              "norte": -7.84089833749069e-06,
+              "arriba": -1.1845004846972046e-07
+            },
+            "sin": {
+              "este": 2.3622494815756464e-06,
+              "norte": 2.2256487379620252e-05,
+              "arriba": -9.76025363892886e-07
+            }
+          },
+          {
+            "nombre": "armónico 8 del mes sinódico",
+            "frecuencia_ciclos_dia": 0.270956895,
+            "cos": {
+              "este": -2.2255285857761756e-07,
+              "norte": -5.005416984164572e-06,
+              "arriba": -2.413174201352385e-08
+            },
+            "sin": {
+              "este": 1.0380131963860101e-06,
+              "norte": 7.970555312530061e-06,
+              "arriba": -6.12271318930474e-07
+            }
+          }
+        ]
+      },
+      "tierra": {
+        "constante": {
+          "este": -0.4275936426477094,
+          "norte": 0.21089563076982243,
+          "arriba": 0.8715180333195467
+        },
+        "terminos": [
+          {
+            "nombre": "evección: 2·sinódico − anomalístico",
+            "frecuencia_ciclos_dia": 0.031434737,
+            "cos": {
+              "este": 0.019607272265287634,
+              "norte": 0.00446643689339166,
+              "arriba": 0.008836844236858677
+            },
+            "sin": {
+              "este": -0.005703048904371248,
+              "norte": -0.0026766000930864256,
+              "arriba": -0.0014508780734640353
+            }
+          },
+          {
+            "nombre": "mes anomalístico (libración en longitud)",
+            "frecuencia_ciclos_dia": 0.036291647,
+            "cos": {
+              "este": 0.07835822528599282,
+              "norte": 0.010216427538402661,
+              "arriba": 0.03786367004472593
+            },
+            "sin": {
+              "este": 0.06950811154528834,
+              "norte": 0.006181948717779571,
+              "arriba": 0.032153411258543346
+            }
+          },
+          {
+            "nombre": "mes dracónico (libración en latitud)",
+            "frecuencia_ciclos_dia": 0.036748195,
+            "cos": {
+              "este": -0.0006585183504220855,
+              "norte": 0.006888484483861946,
+              "arriba": -0.004380015091226894
+            },
+            "sin": {
+              "este": -0.005801240798456463,
+              "norte": 0.11339007944056884,
+              "arriba": -0.029724594086712235
+            }
+          },
+          {
+            "nombre": "variación lunar: 2·sinódico",
+            "frecuencia_ciclos_dia": 0.067726384,
+            "cos": {
+              "este": 0.004583277013941424,
+              "norte": 0.001710220564197984,
+              "arriba": 0.0010974973057956622
+            },
+            "sin": {
+              "este": -0.009654027157657086,
+              "norte": -0.0017506184223443676,
+              "arriba": -0.005146191244800886
+            }
+          },
+          {
+            "nombre": "2.º armónico del mes anomalístico",
+            "frecuencia_ciclos_dia": 0.072583294,
+            "cos": {
+              "este": 0.0008080996678238966,
+              "norte": 0.006361794315333788,
+              "arriba": 0.0012660022194216254
+            },
+            "sin": {
+              "este": -0.0007488235973120204,
+              "norte": 0.0009384996257780627,
+              "arriba": -0.006404087508405141
+            }
+          },
+          {
+            "nombre": "evección: 2·sinódico + anomalístico",
+            "frecuencia_ciclos_dia": 0.104018031,
+            "cos": {
+              "este": -9.62201890814643e-05,
+              "norte": -0.00013598668342894988,
+              "arriba": -0.0007607706243858065
+            },
+            "sin": {
+              "este": -0.0008887453609475466,
+              "norte": -0.0006893864020676222,
+              "arriba": 2.5747407996285868e-05
+            }
+          }
+        ]
+      },
+      "sol_el_directo": null
+    }
+  }
+}

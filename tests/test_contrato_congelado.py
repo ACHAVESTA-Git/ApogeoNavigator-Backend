@@ -132,6 +132,9 @@ ESCENARIOS = {
     "puestas_tierra_nunca_visible_con_nulos": lambda c: c.client.get("/api/puestas/change4", params={"desde": "2026-12-01T00:00Z"}),
     "sites_con_notas_nulas_y_altitud_por_defecto": lambda c: (c.datos.joinpath("sites.csv").write_bytes(fixture_bytes("sites_valido.csv")),
                                                               c.client.get("/api/sites"))[1],
+    "ventanas_un_sitio": lambda c: c.client.get("/api/ventanas-alunizaje", params={"site_id": ["shackleton"], "estancia_h": "72", "desde": "2026-12-01T00:00Z", "hasta": "2026-12-20T00:00Z"}),
+    "ventanas_dos_sitios_mejor_global": lambda c: c.client.get("/api/ventanas-alunizaje", params={"site_id": ["shackleton", "apollo11"], "estancia_h": "156", "desde": "2026-12-01T00:00Z", "hasta": "2026-12-31T00:00Z"}),
+    "ventanas_estancia_invalida_422": lambda c: c.client.get("/api/ventanas-alunizaje", params={"site_id": ["apollo11"], "estancia_h": "100"}),
     "puestas_ok": lambda c: c.client.get("/api/puestas/shackleton", params={"desde": "2026-12-01T00:00Z"}),
     "puestas_sin_desde": lambda c: c.client.get("/api/puestas/apollo11"),
     "puestas_sitio_inexistente_404": lambda c: c.client.get("/api/puestas/no_existe"),
@@ -261,10 +264,27 @@ CAMPOS_FRONTEND = {
     ("efemerides_ok", ("forma", "filas", 0)): {"utc", "sol_az_deg", "sol_el_deg", "tierra_az_deg", "tierra_el_deg"},
     ("metricas_un_sitio", ("forma", "resultados", 0)): {"site_id", "inicio_utc", "fin_utc", "horas_sol", "pct_sol", "sol_el_max_deg",
                                                       "sol_el_media_deg", "horas_tierra_visible", "pct_tierra", "semaforo", "avisos",
-                                                      "origen", "referencia"},
+                                                      "origen", "referencia", "indicadores_astronauta"},
+    ("metricas_un_sitio", ("forma", "resultados", 0, "indicadores_astronauta")): {
+        "noche_mas_larga", "apagon_tierra_mas_largo", "ventana_sol_y_tierra", "proxima_puesta_sol_utc", "proxima_puesta_tierra_utc",
+        "sol_el_media_horas_sol_deg"},
+    ("metricas_un_sitio", ("forma", "resultados", 0, "indicadores_astronauta", "noche_mas_larga")): {
+        "horas", "inicio_utc", "fin_utc", "trunca_inicio", "trunca_fin"},
+    ("metricas_un_sitio", ("forma", "resultados", 0, "indicadores_astronauta", "apagon_tierra_mas_largo")): {
+        "horas", "inicio_utc", "fin_utc", "trunca_inicio", "trunca_fin"},
+    ("metricas_un_sitio", ("forma", "resultados", 0, "indicadores_astronauta", "ventana_sol_y_tierra")): {
+        "horas", "inicio_utc", "fin_utc", "trunca_inicio", "trunca_fin"},
     ("metricas_un_sitio", ("forma", "resultados", 0, "semaforo")): {"energia", "comunicacion", "global"},
     ("metricas_un_sitio", ("forma", "resultados", 0, "referencia")): {"horas_sol", "pct_sol", "sol_el_max_deg", "sol_el_media_deg",
                                                                     "horas_tierra_visible", "pct_tierra", "coincide"},
+    ("ventanas_un_sitio", ("forma",)): {"estancia_h", "resultados", "mejor_global"},
+    ("ventanas_un_sitio", ("forma", "resultados", 0)): {"site_id", "inicio_utc", "fin_utc", "paso_horas", "ventanas_evaluadas",
+                                                       "ventanas_descartadas", "trunca", "serie_diaria", "mejores"},
+    ("ventanas_un_sitio", ("forma", "resultados", 0, "serie_diaria", 0)): {"dia_utc", "llegada_utc", "horas_sol_y_tierra", "pct_sol_y_tierra"},
+    ("ventanas_un_sitio", ("forma", "resultados", 0, "mejores", 0)): {
+        "llegada_utc", "salida_utc", "horas_sol", "horas_tierra", "horas_sol_y_tierra", "pct_sol", "pct_tierra", "pct_sol_y_tierra",
+        "sol_al_llegar", "tierra_al_llegar", "racha_sin_tierra_h"},
+    ("ventanas_dos_sitios_mejor_global", ("forma", "mejor_global")): {"site_id", "ventana"},
     ("puestas_ok", ("forma",)): {"site_id", "desde_utc", "sol", "tierra"},
     ("puestas_ok", ("forma", "sol")): {"visible", "proxima_puesta_utc", "proxima_salida_utc", "horas_restantes"},
     ("datos_validar_ok", ("forma",)): {"archivo", "tipo", "valido", "total_filas", "total_errores", "errores", "advertencias"},

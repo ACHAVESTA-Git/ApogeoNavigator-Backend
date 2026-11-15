@@ -21,10 +21,10 @@ At Shackleton the Sun never rises above 1.74° (about 88° at Apollo 11), and on
 
 ## Architecture
 ```
- Frontend (React, Cloudflare Pages)
-        │  HTTPS, CORS
+ Frontend (React, Firebase Hosting)
+        │  HTTPS (/api/** rewritten to Cloud Run)
         ▼
- FastAPI (this repo) ──── data/ CSV: sites, hourly ephemerides, monthly metrics
+ FastAPI on Cloud Run (this repo) ──── data/ CSV: sites, hourly ephemerides, monthly metrics
         │                       ▲ signed manifest (ML-DSA-65)
         │                       └ production: Cloud Storage bucket is the source of truth
         └──── PostgreSQL: hash-chained audit log, upload records, user keys (optional)
@@ -32,7 +32,7 @@ At Shackleton the Sun never rises above 1.74° (about 88° at Apollo 11), and on
 - **Reads** use a local replica of `data/`; the metrics are recomputed from the ephemerides and compared with the reference `metricas.csv`.
 - **Uploads** (`/api/datos/**`, API key required) are validated against a declarative schema, saved atomically, signed into a manifest and audited.
 - **Errors** are JSON `{"detail": ..., "error": {...}}` everywhere, built in one place (`app/core/errors.py` and the catalogue in `app/core/mensajes.py`): domain errors keep their status, a database or bucket outage is a `503`, and anything unexpected is a generic `500` whose trace goes to the log, never to the client. See [Errors](#errors).
-- **Production** target: Cloud Run + Cloud SQL + Cloud Storage on Google Cloud (not deployed yet). The image runs as a non-root user and ships a seed copy of `data/`.
+- **Production:** the API runs on Google Cloud Run and the frontend on Firebase Hosting (https://apogeo-514716.web.app), which forwards `/api/**` to Cloud Run. Data can come from a Cloud Storage bucket and the audit log from PostgreSQL when configured. The image runs as a non-root user and ships a seed copy of `data/`.
 
 ```
 app/core/        config.py (all constants), security, CORS, upload guard
@@ -88,6 +88,8 @@ Main endpoints (all `GET`, no authentication). Times are UTC (`YYYY-MM-DDTHH:MMZ
 | `/api/efemerides/{site_id}?desde=&hasta=` | Hourly Sun and Earth azimuth and elevation (up to 35 days per request) |
 | `/api/metricas?site_id=&desde=&hasta=` | Sunlight and Earth-visibility metrics and the traffic light; repeat `site_id` to compare 1 to 3 sites |
 | `/api/puestas/{site_id}?desde=` | Next sunset/sunrise and Earth-set/Earth-rise from a given moment |
+| `/api/horizons?lat=&lon=&desde=&hasta=&paso_horas=` | **Live** query to NASA/JPL Horizons for any point of the Moon (latitude -90 to 90, east-positive longitude -180 to 180, up to 35 days, step 1 to 24 h). Same shape as the ephemerides plus `metricas` and `puestas`. Cached 24 h, rate limited (`429` with `Retry-After`); `502`/`504` if JPL fails or is slow |
+| `/api/ventanas-alunizaje?site_id=&estancia_h=72\|156\|336&desde=&hasta=` | Best landing windows: for every possible arrival hour, hours and percentages of Sun, Earth and both at once during the stay, whether both are up on arrival and the longest stretch without the Earth. Returns the best arrival of each day, the 3 best non-overlapping windows per site and, with several sites (1 to 5), the best of all. Arrivals whose stay runs past the data are dropped (`trunca`) |
 | `/api/seguridad/clave-publica`, `/api/seguridad/manifiesto` | Public signing key and signed manifest of the data (see [Integrity](#integrity-and-security)) |
 
 ```bash
@@ -104,6 +106,27 @@ curl "http://localhost:8080/api/metricas?site_id=shackleton&desde=2026-12-01T00:
 ```bash
 curl "http://localhost:8080/api/puestas/shackleton?desde=2026-12-01T00:00Z"   # next sunset: 2027-01-27T11:00Z
 ```
+### Astronaut indicators
+Each item of `/api/metricas` (and the `metricas` of `/api/horizons`) carries an additive block `indicadores_astronauta`, computed over the requested range with the ideal horizon:
+
+| Field | Meaning |
+|---|---|
+| `noche_mas_larga` | Longest continuous stretch with the Sun at or below the horizon |
+| `apagon_tierra_mas_largo` | Longest continuous stretch with the Earth at or below the horizon (no direct link) |
+| `ventana_sol_y_tierra` | Longest continuous stretch with the Sun and the Earth above the horizon at once |
+| `proxima_puesta_sol_utc`, `proxima_puesta_tierra_utc` | First Sun / Earth set inside the range; `null` if there is none |
+| `sol_el_media_horas_sol_deg` | Mean Sun elevation during the hours of sunlight (same value as `sol_el_media_deg`) |
+
+Each stretch is `{horas, inicio_utc, fin_utc, trunca_inicio, trunca_fin}`, with 0 hours and null dates when there is none. `trunca_inicio` / `trunca_fin` mean the stretch touches an edge of the range and may be longer outside it: ask for a wider range to see it whole.
+
+### Projection up to July 2028 (admin only)
+`GET /api/proyeccion?site_id=&desde=&hasta=&paso_horas=1|6|24` returns the projected Sun and Earth series, projected monthly metrics (with the same traffic light and `indicadores_astronauta` utilities) and the model with its measured error. These are modelled values, not JPL ephemerides, and the response always carries its limitations.
+
+- **Access:** only a session with the `admin` role. Without a session it answers 401, with the analyst or reviewer role 403; the `X-API-Key` does **not** give access (it is a shared script credential with no person behind it).
+- **Audit:** every successful query is recorded in the signed audit log (`VER_PROYECCION`, with the user, sites, range and step, never the series). Failed queries (404, 422) are not audited.
+- **Data:** `data/proyecciones/proyeccion_<site_id>.csv` and `modelo.json`, read by a dedicated reader (they exceed the upload limits) and synced from the bucket. They are **outside the signed manifest**: each site reports the `sha3_256` of its file, but it is not verified by the ML-DSA signature.
+- **Deployment:** the audit action needs migration `0006`, so run `alembic upgrade head` (step 05) **before** using this endpoint in production.
+
 Field names and some texts (site names, notes, warning messages) are currently in Spanish.
 
 ### Login and roles
@@ -215,8 +238,8 @@ Nobody should see a bare `500` or `404`. Every error response says **what failed
 - **Ideal horizon.** Horizons models a smooth Moon with no terrain. Shackleton's centre shows 100 % Sun in December although the real crater floor is permanently shadowed. Results are flagged as *relief sensitive* when the Sun never exceeds 3°.
 - Six months of ephemerides (not a full year) and ten locations. The Artemis III candidate regions are not included because NASA has not published their coordinates.
 - The traffic-light thresholds (energy: green from 45 %, yellow from 25 %; communications: green from 70 %, yellow from 40 %) are the project's own choice, not an official NASA criterion.
-- The API does not query Horizons live: all figures are computed from the precomputed ephemerides in `data/`.
-- Not deployed to production yet; the production architecture above is implemented and tested locally.
+- Sites and their metrics are computed from the precomputed ephemerides in `data/`; only `/api/horizons` queries JPL live, with a cache and rate limits.
+- The login rate limiter counts attempts per process, so several Cloud Run instances count separately.
 
 ## Configuration
 Everything is configured with environment variables; see [`.env.example`](.env.example) for the complete, commented list. The most relevant ones:
@@ -232,7 +255,7 @@ Everything is configured with environment variables; see [`.env.example`](.env.e
 
 ## Tests
 ```bash
-pytest                                  # about 1,500 tests; no database, bucket or network needed
+pytest                                  # 1,524 tests pass and 14 are skipped; no database, bucket or network needed
 TEST_DATABASE_URL=postgresql+psycopg://user:pass@localhost:5432/apogeo_test pytest tests/test_postgres.py
 ```
 `tests/test_contrato_congelado.py` freezes the HTTP contract the frontend depends on (status codes, error texts and the shape of every JSON response, plus the OpenAPI operations) against `tests/contrato/snapshots.json`. A refactor must keep it green; if a contract change is deliberate, regenerate with `UPDATE_CONTRATO=1 pytest tests/test_contrato_congelado.py` and review the snapshot diff in the pull request.
@@ -251,9 +274,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) (in Spanish): branch flow, commit convent
 [MIT](LICENSE) © 2026 Apogeo Team. The data come from NASA sources (see above). **NASA does not endorse or sponsor this project.**
 
 ## Resumen en español
-**Lunar Landing Site Navigator (backend)** es la API de la app de Apogeo Team para el NASA Space Apps Challenge 2026. Sirve efemérides del Sol y de la Tierra vistas desde diez sitios de alunizaje (datos de **JPL Horizons**; coordenadas de **NSSDC**, **LROC** y **nasa.gov/LRO**; Moon Trek, QuickMap y PGDA **no** se usaron como datos), calcula horas de sol, visibilidad de la Tierra y un semáforo de viabilidad, y permite cargar datos nuevos con validación estricta, un manifiesto firmado con **ML-DSA-65 (FIPS 204)** y una auditoría encadenada que detecta manipulaciones (no las impide).
+**Lunar Landing Site Navigator (backend)** es la API de la app de Apogeo Team para el NASA Space Apps Challenge 2026. Sirve efemérides del Sol y de la Tierra vistas desde diez sitios de alunizaje (datos de **JPL Horizons**; coordenadas de **NSSDC**, **LROC** y **nasa.gov/LRO**; Moon Trek, QuickMap y PGDA **no** se usaron como datos), consulta Horizons en vivo para coordenadas propias, calcula horas de sol, indicadores para astronautas, visibilidad de la Tierra y un semáforo de viabilidad, y permite cargar datos nuevos con validación estricta, un manifiesto firmado con **ML-DSA-65 (FIPS 204)** y una auditoría encadenada que detecta manipulaciones (no las impide).
 
 - **Arrancar:** `pip install -r requirements-dev.txt` y `DATA_DIR=data uvicorn app.main:app --port 8080`; documentación en `/docs`. Con Docker: `docker build -t apogeo-backend .` y `docker run --rm -p 8080:8080 apogeo-backend`.
-- **Limitaciones:** horizonte ideal (sin relieve), seis meses de datos, diez sitios, umbrales del semáforo propios del proyecto, aún sin desplegar en producción.
-- **Pruebas:** `pytest` (más de 650). **Licencia:** MIT. La NASA no respalda este proyecto.
+- **Limitaciones:** horizonte ideal (sin relieve), seis meses de datos, diez sitios, umbrales del semáforo propios del proyecto, el limitador de intentos de login cuenta por proceso.
+- **Pruebas:** `pytest` (1.524 pasan y 14 se omiten sin PostgreSQL). **Licencia:** MIT. La NASA no respalda este proyecto.
 - Más documentación: `docs/datos/informe-fuentes.md` (en inglés, con el original en español) y, solo en español, `docs/bd/modelo-datos.md` y `CONTRIBUTING.md`.
