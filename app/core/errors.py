@@ -17,6 +17,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.core import config
 from app.core.respuestas import request_id_de, respuesta_error
 from app.services.blobstore import StoreError
+from app.services.errores import ErrorServicio
 from app.services.lectura import LecturaError
 from app.utils.text import escapar_control
 
@@ -43,6 +44,10 @@ async def lectura_error(request: Request, exc: LecturaError) -> JSONResponse:
     return respuesta_error(request, exc.status, exc.detail)
 
 
+async def servicio_error(request: Request, exc: ErrorServicio) -> JSONResponse:
+    return respuesta_error(request, exc.status, exc.detail)
+
+
 async def store_error(request: Request, exc: StoreError) -> JSONResponse:
     log.error(config.MSG_STORE_ERROR_LOG, request_id_de(request), request.method, escapar_control(request.url.path, config.LOG_PATH_MAX), type(exc).__name__)
     return respuesta_error(request, config.HTTP_UNAVAILABLE, config.MSG_BUCKET_UNAVAILABLE)
@@ -65,6 +70,7 @@ def register_handlers(app: FastAPI) -> None:
     app.add_exception_handler(StarletteHTTPException, http_exception)
     app.add_exception_handler(RequestValidationError, validation_error)
     app.add_exception_handler(LecturaError, lectura_error)
+    app.add_exception_handler(ErrorServicio, servicio_error)
     app.add_exception_handler(StoreError, store_error)
     app.add_exception_handler(SQLAlchemyError, db_error)
     app.add_exception_handler(Exception, unhandled)
