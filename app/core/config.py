@@ -987,3 +987,15 @@ MSG_ROLE_FORBIDDEN = "Tu rol no permite esta operación"
 MSG_CSRF_FORBIDDEN = "Origen de la petición no permitido"
 MOTIVO_LOGIN_CREDENCIALES = "credenciales"
 MOTIVO_LOGIN_LIMITE = "limite_de_intentos"
+
+
+# ---------------------------------------------------------------- semilla de usuarios de prueba (app/cli/seed_usuarios.py)
+ENV_SEED_CREDENTIALS_FILE = "SEED_CREDENTIALS_FILE"
+SEED_CREDENTIALS_DEFAULT = ".seed_credenciales.local"
+SEED_CREDENTIALS_MODE = 0o600
+SEED_EMAIL_DOMAIN = "apogeo.test"            # dominio reservado (RFC 2606): nunca resuelve ni recibe correo
+SEED_PASSWORD_BYTES = 18                     # 144 bits de entropía
+SEED_USERS = (("analista", "Analista de prueba"), ("revisor", "Revisor de prueba"), ("admin", "Administrador de prueba"))
+FLAG_FORCE_PRODUCTION = "--forzar-produccion"
+MSG_SEED_PRODUCTION = "Estás en producción: la semilla de usuarios de prueba no se ejecuta sin " + FLAG_FORCE_PRODUCTION
+MSG_SEED_NO_DB = "La semilla necesita la base de datos (DATABASE_URL) con las migraciones aplicadas"
