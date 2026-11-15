@@ -195,7 +195,7 @@ def test_errores_de_rango(real, data_dir, params, codigo):
 def test_csv_invalido_resume_los_errores_y_mantiene_el_informe_en_detail(real):
     r = upload(real, "sites", fixture_bytes("rango.csv"), "sites.csv")
     e = _verificar_error(r, 422, "CSV_INVALIDO")
-    assert "6 error(es)" in e["mensaje"] and r.json()["detail"]["total_errores"] == 6 and r.json()["detail"]["archivo"] == "sites.csv"
+    assert "6 errores" in e["mensaje"] and r.json()["detail"]["total_errores"] == 6 and r.json()["detail"]["archivo"] == "sites.csv"
 
 
 def test_clave_invalida_en_el_guardia_y_en_la_dependencia(real):
@@ -465,7 +465,7 @@ def test_el_resumen_del_csv_no_refleja_el_nombre_del_archivo(real):
     r = upload(real, "sites", fixture_bytes("rango.csv"), "x<script>alert(1)</script>.csv")
     assert r.status_code == 422
     assert "script" not in json.dumps(r.json()["error"], ensure_ascii=False)
-    assert "6 error(es)" in r.json()["error"]["mensaje"] or r.json()["error"]["codigo"] in ("CSV_INVALIDO", "DATOS_INVALIDOS")
+    assert "6 errores" in r.json()["error"]["mensaje"] or r.json()["error"]["codigo"] in ("CSV_INVALIDO", "DATOS_INVALIDOS")
 
 
 def test_las_excepciones_sql_no_llevan_los_parametros():
@@ -494,3 +494,11 @@ def test_la_traza_de_un_error_sql_en_el_log_no_lleva_los_parametros(caplog):
     r = TestClient(app, raise_server_exceptions=False).get("/sql")
     assert r.status_code in (500, 503) and "hunter2" not in r.text          # SQLite da OperationalError (503); PostgreSQL, ProgrammingError (500)
     assert "hunter2" not in caplog.text and "hunter2" not in " ".join(str(rec.exc_info[1]) for rec in caplog.records if rec.exc_info)
+
+
+def test_el_catalogo_no_muestra_jerga_de_desarrollador():
+    from app.core import mensajes
+    prohibidas = ("detail", "/api", "/docs", "X-API-Key", "(es)", "_deg", "BD")
+    for entrada in mensajes.CODIGOS.values():
+        for texto in (entrada.titulo, entrada.mensaje, entrada.accion):
+            assert not any(p in texto for p in prohibidas), f"{entrada.codigo}: {texto}"
