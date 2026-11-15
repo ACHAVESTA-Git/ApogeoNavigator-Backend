@@ -3,3 +3,15 @@ __pycache__/
 *.pyc
 .env
 .pytest_cache/
+.idea/
+
+# Copias de versiones anteriores de los datos (las crea la API de carga)
+data/_historial/
+
+# El manifiesto firmado de data/ se genera y firma en el despliegue (no se versiona)
+data/manifest.json
+.pqc_dev/
+
+# Credenciales de usuarios de prueba (semilla): nunca al repositorio
+.seed_credenciales.local
+*.local

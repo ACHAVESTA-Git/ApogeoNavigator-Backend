@@ -1,24 +1,49 @@
-import csv
-import os
-from pathlib import Path
+from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI
 
-# En Docker: DATA_DIR=/data (volumen). En local sin Docker: ../data junto al proyecto.
-DATA_DIR = Path(os.getenv("DATA_DIR", Path(__file__).resolve().parents[2] / "data"))
+from app.core import config
+from app.core.cors import add_cors
+from app.core.errors import register_handlers
+from app.core.limits import UploadGuard
+from app.core.logging_config import configurar_logging
+from app.core.peticion import RequestContextMiddleware
+from app.core.seguridad_http import SecurityHeadersMiddleware
+from app.db.session import db_enabled
+from app.routers import admin_claves, analisis, auditoria, auth, datos, horizons, lectura, seguridad, simulacion, sites
+from app.schemas.seguridad import HealthOut
+from app.services import datastore
 
-app = FastAPI(title="Apogeo API", version="0.1.0")
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    """En producción, con base de datos, la sal del HMAC de la IP es obligatoria."""
+    if config.is_production() and db_enabled() and not config.get_ip_hash_salt():
+        raise RuntimeError(config.MSG_AUDIT_SALT_REQUIRED)
+    datastore.startup()          # producción exige DATA_BUCKET; descarga o siembra los datos
+    yield
 
 
-@app.get("/api/health")
-def health() -> dict:
-    return {"status": "ok"}
+configurar_logging()
+app = FastAPI(title=config.API_TITLE, version=config.API_VERSION, description=config.API_DESCRIPTION,
+              openapi_tags=config.OPENAPI_TAGS, contact=config.API_CONTACT, license_info=config.API_LICENSE, lifespan=lifespan)
+app.add_middleware(UploadGuard)
+app.add_middleware(RequestContextMiddleware)      # por dentro de CORS: hasta el 500 lleva sus cabeceras
+app.add_middleware(SecurityHeadersMiddleware)     # por fuera de RequestContext: también el 500 JSON lleva las cabeceras
+add_cors(app)      # el último en añadirse es el más externo
+register_handlers(app)
+app.include_router(datos.router)
+app.include_router(auth.router)
+app.include_router(lectura.router, dependencies=[Depends(datastore.refresh_if_stale)])
+app.include_router(sites.router, dependencies=[Depends(datastore.refresh_if_stale)])
+app.include_router(simulacion.router, dependencies=[Depends(datastore.refresh_if_stale)])
+app.include_router(analisis.router, dependencies=[Depends(datastore.refresh_if_stale)])
+app.include_router(horizons.router)
+app.include_router(auditoria.router)
+app.include_router(seguridad.router, dependencies=[Depends(datastore.refresh_if_stale)])
+app.include_router(admin_claves.router)
 
 
-@app.get("/api/sites")
-def sites() -> list[dict]:
-    path = DATA_DIR / "sites.csv"
-    if not path.is_file():
-        raise HTTPException(status_code=503, detail=f"No se encontró {path.name}")
-    with path.open(newline="", encoding="utf-8") as f:
-        return list(csv.DictReader(f))
+@app.get(config.ROUTE_HEALTH, response_model=HealthOut, tags=[config.TAG_SYSTEM], summary="Service health")
+def health() -> HealthOut:
+    """Returns `{"status": "ok"}` while the service is up."""
+    return HealthOut(**config.HEALTH_OK)
