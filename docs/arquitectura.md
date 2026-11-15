@@ -1,8 +1,8 @@
 # Backend architecture: layers and the pattern in use
 
-The API follows one layering pattern. It is applied today to the **key manager** (`/api/admin/claves`); the CSV upload
-domain follows in its own PR. The other domains (audit, read endpoints, simulation) keep their current shape and are
-listed under *Future work*.
+The API follows one layering pattern. It is applied today to the **key manager** (`/api/admin/claves`) and to the **CSV
+upload** (`/api/datos`). The other domains (audit, read endpoints, simulation) keep their current shape and are listed
+under *Future work*.
 
 ```
 router (app/routers)        HTTP only: parameters, status codes, response headers
@@ -41,9 +41,24 @@ app/api/deps.py             the only place that wires implementations together
 | Entity -> DTO | `app/mappers/claves.py` |
 | Wiring | `app/api/deps.py` |
 
+## Where things live (CSV upload)
+
+| Concern | File |
+|---|---|
+| Routes, the 422 report response | `app/routers/datos.py` |
+| Service contract / implementation | `app/services/carga/servicio.py`, `impl.py` |
+| Result -> DTO | `app/mappers/carga.py` |
+
+`CargaServiceImpl.guardar_carga()` is the atomic save: it writes the audit event first, saves the file (keeping the
+previous version in `_historial/`) and commits afterwards, so a signing or audit failure saves nothing. This domain has no
+repository: it does not query the database; persistence goes through the audit and datastore collaborators, which are
+injected (`auditoria`, `datos`, `almacen`). The `request` object is passed to the service only as an opaque `origen`
+for the IP hash of the audit event.
+
 ## Testing
 
-* Business rules: `tests/test_servicio_claves.py` (fake repository, auditor and crypto manager).
+* Business rules: `tests/test_servicio_claves.py` (fake repository, auditor and crypto manager) and
+  `tests/test_servicio_carga.py` (fake audit, datastore and store).
 * End to end over HTTP with a real SQLite database: `tests/test_gestor_claves.py`.
 * Contract: `tests/test_contrato_congelado.py`.
 
