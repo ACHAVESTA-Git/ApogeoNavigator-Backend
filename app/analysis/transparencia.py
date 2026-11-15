@@ -5,7 +5,6 @@ No recalcula nada que ya exista: reutiliza el pipeline de Polars, el espectro, e
 el archivo cambia, la caché se invalida y este análisis refleja los datos nuevos; la validación contra Horizons, en
 cambio, solo vale para los datos con los que se hizo, y el DTO lo dice (`vigente`).
 """
-import hashlib
 import json
 import math
 from datetime import datetime, timedelta
