@@ -18,14 +18,14 @@ El análisis se calcula una vez por archivo y se guarda en caché con el `mtime`
 |---|---|---|
 | `site_id`, `desde_utc`, `hasta_utc` | texto | Sitio y rango efectivo de la serie |
 | `pasos[]` | 7 pasos | El pipeline: `carga`, `validacion_csv`, `features`, `fft`, `ajuste`, `validacion_horizons`, `proyeccion` |
-| `pasos[].id/nombre/descripcion` | texto | Nombre y descripción breve en lenguaje claro, listos para pintar |
+| `pasos[].id/nombre/descripcion` | texto | Nombre y descripción breve en lenguaje claro, listos para pintar. La descripción de `validacion_horizons` y `proyeccion` **cambia** según la validación sea vigente, de otros datos o inexistente: pinta siempre la que llega |
 | `pasos[].estado` | `ok`, `advertencia` o `no_disponible` | `advertencia`: el paso es válido pero con reservas (p. ej. validación hecha con otros datos) |
 | `pasos[].resultado[]` | `{nombre, valor, unidad}` | Medidas con etiqueta y unidad (`valor` es número, texto, booleano o `null`) |
 | `entrada` | objeto | Archivo, `filas`, `bytes`, `inicio_utc`, `fin_utc`, `paso_horas`, `calidad` y `origen` |
 | `entrada.calidad` | objeto | `filas_validas`, `filas_con_error` (0: un archivo con errores no se carga), `huecos`, `paso_constante` |
 | `entrada.origen` | objeto | Ver abajo |
 | `espectro` | objeto | `ventana_dias`, `resolucion_dias`, `sinodico_teorico_dias`, `sinodico_afinado_dias`, `series[]` (dos variables con sus `picos[]`: `periodo_dias`, `amplitud_rel` 0–1, `candidatos[]`, `es_sinodico`) y una `nota` |
-| `modelo` | objeto | `terminos_por_cuerpo`, `periodos[]` (`cuerpo`, `periodo_dias`, `rol`), `ajuste_directo_elevacion_sol`, `r2{variable}` y `residuos{variable}` (`rmse_deg`, `mae_deg`, `sesgo_deg`, `max_abs_deg`, `p95_abs_deg`) |
+| `modelo` | objeto | `terminos_por_cuerpo`, `periodos[]` (`cuerpo`, `periodo_dias`, `rol`), `ajuste_directo_elevacion_sol`, `r2{variable}`, `residuos{variable}` (`rmse_deg`, `mae_deg`, `sesgo_deg`, `max_abs_deg`, `p95_abs_deg`) y `nota_ajuste`. **`r2` y `residuos` son del ajuste DENTRO de los datos** (el modelo ya los ha visto) y pueden dar ≈ 1: no miden el acierto fuera de ellos, que es `validacion.rmse_deg`. Pinta `nota_ajuste` junto a ellos |
 | `validacion` | objeto | Ver abajo |
 | `limitaciones[]` | `{codigo, mensaje, aplica}` | Limitaciones conocidas; `aplica` dice si afectan a ESTE sitio y estos datos |
 | `serie` | objeto | `variable`, `nombre`, `paso_horas`, `fin_datos_utc` y `puntos[]` (≤ 301): `{utc, observado, ajustado, proyectado}` |
@@ -38,7 +38,7 @@ El análisis se calcula una vez por archivo y se guarda en caché con el `mtime`
 | `modificado` | Hay semilla o registro, pero el archivo no coincide con ninguno | «Difiere de la semilla y no hay una carga registrada» |
 | `sin_registro` | No hay semilla ni registro con los que comparar | «Solo se puede dar la huella» |
 
-`sha3_256` es siempre el del archivo actual. `ultima_carga` (`cargado_utc`, `archivo`, `sha3_256`, `coincide`, `cargado_por`) es `null` sin registro; `cargado_por` es «clave de API», «usuario registrado» o «anónimo» y **nunca** una identidad. `manifiesto` (`sha3_256`, `generado_utc`, `firmado`, `coincide`) es `null` si el manifiesto no lista el archivo. `coincide_con_semilla` es `null` si no hay semilla.
+`sha3_256` es siempre el del archivo actual. `ultima_carga` (`cargado_utc`, `archivo`, `sha3_256`, `coincide`, `cargado_por`) es `null` sin registro; `cargado_por` es «clave de API», «usuario registrado» o «anónimo» y **nunca** una identidad. `manifiesto` (`sha3_256`, `generado_utc`, `firmado`, `firma_nota`, `coincide`) es `null` si el manifiesto no lista el archivo. **`firmado` significa firma VÁLIDA**, no que exista el campo: `true` si la firma ML-DSA-65 del manifiesto se verifica con la clave pública del servidor; `false` si no es válida (la huella de la clave no coincide, el contenido fue alterado o falta la firma); `null` si el servidor no puede verificarla (no tiene la clave). `firma_nota` explica el `false` y el `null`. `coincide` compara el hash del archivo con el del manifiesto y es independiente de la firma. `coincide_con_semilla` es `null` si no hay semilla.
 
 ### `validacion`: cuánto acierta el modelo fuera de los datos
 - `disponible: false` → no hay validación de este sitio (`motivo` lo explica); el resto va vacío.
@@ -47,7 +47,7 @@ El análisis se calcula una vez por archivo y se guarda en caché con el `mtime`
 - Las cifras son un **RMSE de validación, optimista y no un intervalo de confianza**.
 
 ### Limitaciones (`codigo`)
-`horizonte_ideal`, `no_sustituye_efemerides`, `ventana_corta`, `validacion_no_ciega` (siempre aplican), `sol_rasante_polo` (el Sol no pasa de 3°), `cenit_ecuador` (el Sol pasa de 85°) y `validacion_de_otros_datos`.
+`horizonte_ideal`, `no_sustituye_efemerides` y `validacion_no_ciega` (siempre aplican); `ventana_corta` (aplica si la ventana real de datos es menor que el año de eclipses, 346,6 días; su `mensaje` lleva la ventana real, p. ej. «182 días»); `sol_rasante_polo` (el Sol no pasa de 3°), `cenit_ecuador` (el Sol pasa de 85°) y `validacion_de_otros_datos`.
 
 ## Ejemplo real (recortado)
 ```json
@@ -226,7 +226,8 @@ El análisis se calcula una vez por archivo y se guarda en caché con el `mtime`
     "p95_abs_deg": 0.0112
    },
    "…": "…"
-  }
+  },
+  "nota_ajuste": "R² y residuos son del ajuste DENTRO de los datos, que el modelo ya ha visto: pueden acercarse a 1 y no miden cuánto acierta fuera de ellos. Eso lo mide la validación (validacion.rmse_deg)."
  },
  "validacion": {
   "disponible": true,

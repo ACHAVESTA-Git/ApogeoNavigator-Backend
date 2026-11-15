@@ -331,6 +331,7 @@
    ],
    "modelo": {
     "ajuste_directo_elevacion_sol": "bool",
+    "nota_ajuste": "str",
     "periodos": [
      {
       "cuerpo": "str",
@@ -528,6 +529,7 @@
    ],
    "modelo": {
     "ajuste_directo_elevacion_sol": "bool",
+    "nota_ajuste": "str",
     "periodos": [
      {
       "cuerpo": "str",
@@ -703,6 +705,7 @@
      "descripcion": "str",
      "manifiesto": {
       "coincide": "bool",
+      "firma_nota": "null",
       "firmado": "bool",
       "generado_utc": "str",
       "sha3_256": "str"
@@ -752,6 +755,7 @@
    ],
    "modelo": {
     "ajuste_directo_elevacion_sol": "bool",
+    "nota_ajuste": "str",
     "periodos": [
      {
       "cuerpo": "str",

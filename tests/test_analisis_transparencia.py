@@ -162,6 +162,7 @@ def test_unas_efemerides_subidas_por_un_usuario_cambian_el_analisis(stack):
     assert origin["ultima_carga"]["coincide"] is True and origin["ultima_carga"]["cargado_por"] == c.UPLOADER_API_KEY
     assert origin["ultima_carga"]["sha3_256"] == origin["sha3_256"] and origin["ultima_carga"]["archivo"] == "efemerides_slim.csv"
     assert origin["manifiesto"]["coincide"] is True and origin["manifiesto"]["sha3_256"] == origin["sha3_256"]
+    assert origin["manifiesto"]["firmado"] is True and origin["manifiesto"]["firma_nota"] is None      # firma VÁLIDA, no solo presente
     # la validación contra Horizons era de otros datos: se dice, no se disimula
     assert after["validacion"]["disponible"] is True and after["validacion"]["vigente"] is False
     assert next(x for x in after["limitaciones"] if x["codigo"] == "validacion_de_otros_datos")["aplica"] is True
@@ -254,3 +255,107 @@ def test_sitio_sin_archivo_de_efemerides_es_404_y_archivo_invalido_503(stack):
     assert get(stack, "slim").status_code == 404
     (stack.data / "efemerides_slim.csv").write_text("utc,sol_az_deg\n2026-12-01T00:00Z,1\n", encoding="utf-8")
     assert get(stack, "slim").status_code == 503
+
+
+# ------------------------------------------------------------------ «firmado» significa firma válida
+def _after_upload(stack):
+    assert upload(stack.client, "efemerides", _shorter("slim", 90), "efemerides_slim.csv", dry_run=False).status_code == 200
+    return json.loads((stack.data / c.MANIFEST_NAME).read_text(encoding="utf-8"))
+
+
+def _manifest(stack) -> dict:
+    return get(stack, "slim").json()["entrada"]["origen"]["manifiesto"]
+
+
+def test_un_manifiesto_con_la_firma_valida_se_marca_firmado(stack):
+    _after_upload(stack)
+    assert (_manifest(stack)["firmado"], _manifest(stack)["firma_nota"]) == (True, None)
+
+
+def test_un_manifiesto_manipulado_no_se_marca_firmado_aunque_tenga_el_campo_de_firma(stack):
+    manifest = _after_upload(stack)
+    assert manifest[pqc.MANIFEST_SIGNATURE_FIELD]                              # el campo existe...
+    manifest["generado_utc"] = "2030-01-01T00:00:00Z"                           # ...pero el contenido ya no es el firmado
+    (stack.data / c.MANIFEST_NAME).write_text(json.dumps(manifest), encoding="utf-8")
+    entry = _manifest(stack)
+    assert entry["firmado"] is False and "no es válida" in entry["firma_nota"]
+
+
+def test_un_manifiesto_con_la_firma_alterada_no_es_firmado(stack):
+    manifest = _after_upload(stack)
+    signature = manifest[pqc.MANIFEST_SIGNATURE_FIELD]
+    manifest[pqc.MANIFEST_SIGNATURE_FIELD] = ("A" if signature[0] != "A" else "B") + signature[1:]
+    (stack.data / c.MANIFEST_NAME).write_text(json.dumps(manifest), encoding="utf-8")
+    assert _manifest(stack)["firmado"] is False
+
+
+def test_un_manifiesto_sin_firma_no_es_firmado(stack):
+    manifest = _after_upload(stack)
+    del manifest[pqc.MANIFEST_SIGNATURE_FIELD]
+    (stack.data / c.MANIFEST_NAME).write_text(json.dumps(manifest), encoding="utf-8")
+    entry = _manifest(stack)
+    assert entry["firmado"] is False and pqc.MSG_MANIFEST_NO_SIGNATURE in entry["firma_nota"]
+
+
+def test_si_no_se_puede_verificar_la_firma_es_null_con_explicacion_nunca_true(stack, monkeypatch):
+    _after_upload(stack)
+
+    def no_key():
+        raise pqc.ErrorClavesPQC("sin clave")
+    monkeypatch.setattr(pqc, "clave_publica", no_key)
+    entry = _manifest(stack)
+    assert entry["firmado"] is None and entry["firma_nota"] == c.MSG_MANIFEST_UNVERIFIABLE
+
+
+def test_con_otra_clave_de_firma_el_manifiesto_ya_no_se_da_por_firmado(stack, monkeypatch):
+    from cryptography.hazmat.primitives.asymmetric.mldsa import MLDSA65PrivateKey
+    from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+    _after_upload(stack)
+    other = MLDSA65PrivateKey.generate().public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
+    monkeypatch.setattr(pqc, "clave_publica", lambda: other)
+    entry = _manifest(stack)
+    assert entry["firmado"] is False and entry["firma_nota"]
+
+
+# ------------------------------------------------------------------ textos que no pueden mentir
+def test_la_descripcion_de_la_validacion_depende_de_si_es_vigente(stack):
+    fresh = {p["id"]: p["descripcion"] for p in get(stack, "slim").json()["pasos"]}
+    assert fresh["validacion_horizons"] == c.DESC_VALIDATION_CURRENT and fresh["proyeccion"] == c.DESC_PROJECTION_CURRENT
+    assert "entrenado solo con estos datos" in fresh["validacion_horizons"]
+    _after_upload(stack)
+    stale = {p["id"]: p["descripcion"] for p in get(stack, "slim").json()["pasos"]}
+    assert stale["validacion_horizons"] == c.DESC_VALIDATION_STALE and stale["proyeccion"] == c.DESC_PROJECTION_STALE
+    assert "entrenado solo con estos datos" not in stale["validacion_horizons"] and "semilla" in stale["validacion_horizons"]
+
+
+def test_sin_validacion_las_descripciones_lo_dicen(stack, monkeypatch, tmp_path):
+    _with_table(monkeypatch, tmp_path, lambda t: t["sitios"].pop("slim"))
+    texts = {p["id"]: p["descripcion"] for p in get(stack, "slim").json()["pasos"]}
+    assert texts["validacion_horizons"] == c.DESC_VALIDATION_MISSING and texts["proyeccion"] == c.DESC_PROJECTION_MISSING
+
+
+def _long_series(site: str, days: int) -> bytes:
+    from tests.test_analisis_ajuste import synthetic_frame
+    rows = synthetic_frame(days).collect()
+    header = "utc,sol_az_deg,sol_el_deg,tierra_az_deg,tierra_el_deg"
+    lines = [f"{r['utc']:%Y-%m-%dT%H:%MZ},{r['sol_az_deg']:.6f},{r['sol_el_deg']:.6f},{r['tierra_az_deg']:.6f},{r['tierra_el_deg']:.6f}"
+             for r in rows.iter_rows(named=True)]
+    return ("\n".join([header, *lines]) + "\n").encode()
+
+
+def test_la_limitacion_de_ventana_corta_usa_la_ventana_real(stack):
+    short = next(x for x in get(stack, "slim").json()["limitaciones"] if x["codigo"] == "ventana_corta")
+    assert short["aplica"] is True and "182 días" in short["mensaje"] and "346.6" in short["mensaje"]
+    assert upload(stack.client, "efemerides", _long_series("slim", 360), "efemerides_slim.csv", dry_run=False).status_code == 200
+    body = get(stack, "slim").json()
+    long_ = next(x for x in body["limitaciones"] if x["codigo"] == "ventana_corta")
+    assert long_["aplica"] is False and "360 días" in long_["mensaje"]
+    assert body["entrada"]["filas"] == 360 * 24
+
+
+def test_r2_y_residuos_llevan_la_nota_de_que_son_del_ajuste_dentro_de_los_datos(stack):
+    model = get(stack).json()["modelo"]
+    assert model["nota_ajuste"] == c.NOTE_FIT_IN_SAMPLE and "no miden" in model["nota_ajuste"]
+    schema = app.openapi()["components"]["schemas"]["Modelo"]["properties"]
+    assert schema["r2"]["description"] == schema["residuos"]["description"] == c.NOTE_FIT_IN_SAMPLE
+    assert model["r2"]["tierra_el_deg"] > 0.99          # el R² da ~1: por eso no debe leerse como acierto fuera de los datos
