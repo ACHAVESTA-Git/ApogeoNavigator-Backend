@@ -2937,5 +2937,139 @@
    }
   ],
   "tipo_contenido": "application/json"
+ },
+ "ventanas_dos_sitios_mejor_global": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "estancia_h": "number",
+   "mejor_global": {
+    "site_id": "str",
+    "ventana": {
+     "horas_sol": "number",
+     "horas_sol_y_tierra": "number",
+     "horas_tierra": "number",
+     "llegada_utc": "str",
+     "pct_sol": "number",
+     "pct_sol_y_tierra": "number",
+     "pct_tierra": "number",
+     "racha_sin_tierra_h": "number",
+     "salida_utc": "str",
+     "sol_al_llegar": "bool",
+     "tierra_al_llegar": "bool"
+    }
+   },
+   "resultados": [
+    {
+     "fin_utc": "str",
+     "inicio_utc": "str",
+     "mejores": [
+      {
+       "horas_sol": "number",
+       "horas_sol_y_tierra": "number",
+       "horas_tierra": "number",
+       "llegada_utc": "str",
+       "pct_sol": "number",
+       "pct_sol_y_tierra": "number",
+       "pct_tierra": "number",
+       "racha_sin_tierra_h": "number",
+       "salida_utc": "str",
+       "sol_al_llegar": "bool",
+       "tierra_al_llegar": "bool"
+      }
+     ],
+     "paso_horas": "number",
+     "serie_diaria": [
+      {
+       "dia_utc": "str",
+       "horas_sol_y_tierra": "number",
+       "llegada_utc": "str",
+       "pct_sol_y_tierra": "number"
+      }
+     ],
+     "site_id": "str",
+     "trunca": "bool",
+     "ventanas_descartadas": "number",
+     "ventanas_evaluadas": "number"
+    }
+   ]
+  },
+  "tipo_contenido": "application/json"
+ },
+ "ventanas_estancia_invalida_422": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "'estancia_h' debe ser una de 72, 156, 336 horas",
+  "estado": 422,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "ventanas_un_sitio": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "estancia_h": "number",
+   "mejor_global": "null",
+   "resultados": [
+    {
+     "fin_utc": "str",
+     "inicio_utc": "str",
+     "mejores": [
+      {
+       "horas_sol": "number",
+       "horas_sol_y_tierra": "number",
+       "horas_tierra": "number",
+       "llegada_utc": "str",
+       "pct_sol": "number",
+       "pct_sol_y_tierra": "number",
+       "pct_tierra": "number",
+       "racha_sin_tierra_h": "number",
+       "salida_utc": "str",
+       "sol_al_llegar": "bool",
+       "tierra_al_llegar": "bool"
+      }
+     ],
+     "paso_horas": "number",
+     "serie_diaria": [
+      {
+       "dia_utc": "str",
+       "horas_sol_y_tierra": "number",
+       "llegada_utc": "str",
+       "pct_sol_y_tierra": "number"
+      }
+     ],
+     "site_id": "str",
+     "trunca": "bool",
+     "ventanas_descartadas": "number",
+     "ventanas_evaluadas": "number"
+    }
+   ]
+  },
+  "tipo_contenido": "application/json"
  }
 }
