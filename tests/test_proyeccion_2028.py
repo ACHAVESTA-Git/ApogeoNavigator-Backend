@@ -78,8 +78,12 @@ def test_modelo_json_claves_exactas():
     assert model["version"] == "armonico-v1" and model["proyectado_hasta"] == LAST
     assert model["entrenado_desde"] == "2026-12-01T00:00Z" and model["entrenado_hasta"] == "2027-06-01T00:00Z"
     assert set(model["error"]) == ERROR_KEYS
-    assert model["error"]["rmse_deg"] == {v: None for v in ("sol_el_deg", "tierra_el_deg", "sol_az_deg", "tierra_az_deg")}
-    assert all(model["error"][k] is None for k in ERROR_KEYS - {"rmse_deg"})
+    error = model["error"]                     # ya validado contra Horizons (validar_proyeccion_2028.py)
+    assert set(error["rmse_deg"]) == {"sol_el_deg", "tierra_el_deg", "sol_az_deg", "tierra_az_deg"}
+    assert all(isinstance(v, float) and v > 0 for v in error["rmse_deg"].values())
+    assert [h["meses"] for h in error["por_horizonte"]] == list(range(1, 15))
+    assert len(error["control_horizons"]) == 36
+    assert 0 < error["aciertos_semaforo_control"]["aciertos"] <= error["aciertos_semaforo_control"]["total"]
 
 
 def _predict(model: dict, t: float, axes: list[str] | None) -> np.ndarray:
