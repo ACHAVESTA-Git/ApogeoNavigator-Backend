@@ -12,6 +12,7 @@ from typing import Any, Callable
 
 from app.core import config as c
 from app.services import storage
+from app.services.errores import ErrorServicio
 from app.utils import dates
 from app.utils.errors import CellError
 from app.validation.coherence import Context
@@ -20,13 +21,8 @@ from app.validation.engine import validate_csv
 Row = dict[str, Any]
 
 
-class LecturaError(Exception):
-    """Error de lectura con su código HTTP; el router lo convierte en {"detail": ...}."""
-
-    def __init__(self, status: int, detail: str):
-        super().__init__(detail)
-        self.status = status
-        self.detail = detail
+class LecturaError(ErrorServicio):
+    """Error de lectura con su código HTTP; el manejador de `ErrorServicio` lo convierte en {"detail": ...}."""
 
 
 # ---------------------------------------------------------------- caché por mtime
