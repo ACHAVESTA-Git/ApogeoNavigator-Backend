@@ -1,0 +1,227 @@
+{
+  "version": "armonico-v1",
+  "nota": "Comprobación interna: se entrena con nuestras efemérides hasta 2027-05-01T00:00Z (exclusivo) y se compara con nuestras propias efemérides del último mes. NO es el error real a largo plazo; ese lo mide la validación contra Horizons. Azimut con diferencia circular (±180°); elevación en grados.",
+  "entrenado_hasta_exclusivo": "2027-05-01T00:00Z",
+  "prueba_desde": "2027-05-01T00:00Z",
+  "prueba_hasta": "2027-06-01T00:00Z",
+  "sitios": {
+    "apollo11": {
+      "sol_az_deg": {
+        "rmse_deg": 0.7433,
+        "mae_deg": 0.4681
+      },
+      "sol_el_deg": {
+        "rmse_deg": 0.0446,
+        "mae_deg": 0.0391
+      },
+      "tierra_az_deg": {
+        "rmse_deg": 0.2967,
+        "mae_deg": 0.2387
+      },
+      "tierra_el_deg": {
+        "rmse_deg": 0.1044,
+        "mae_deg": 0.0852
+      },
+      "n_filas_entrenamiento": 3624,
+      "n_filas_prueba": 745
+    },
+    "apollo15": {
+      "sol_az_deg": {
+        "rmse_deg": 0.1853,
+        "mae_deg": 0.1704
+      },
+      "sol_el_deg": {
+        "rmse_deg": 0.1197,
+        "mae_deg": 0.1091
+      },
+      "tierra_az_deg": {
+        "rmse_deg": 0.3003,
+        "mae_deg": 0.2504
+      },
+      "tierra_el_deg": {
+        "rmse_deg": 0.1126,
+        "mae_deg": 0.0921
+      },
+      "n_filas_entrenamiento": 3624,
+      "n_filas_prueba": 745
+    },
+    "apollo17": {
+      "sol_az_deg": {
+        "rmse_deg": 0.2293,
+        "mae_deg": 0.2093
+      },
+      "sol_el_deg": {
+        "rmse_deg": 0.1047,
+        "mae_deg": 0.0899
+      },
+      "tierra_az_deg": {
+        "rmse_deg": 0.2453,
+        "mae_deg": 0.2092
+      },
+      "tierra_el_deg": {
+        "rmse_deg": 0.0761,
+        "mae_deg": 0.0678
+      },
+      "n_filas_entrenamiento": 3624,
+      "n_filas_prueba": 745
+    },
+    "shackleton": {
+      "sol_az_deg": {
+        "rmse_deg": 0.0368,
+        "mae_deg": 0.0325
+      },
+      "sol_el_deg": {
+        "rmse_deg": 0.0352,
+        "mae_deg": 0.0285
+      },
+      "tierra_az_deg": {
+        "rmse_deg": 0.1152,
+        "mae_deg": 0.0945
+      },
+      "tierra_el_deg": {
+        "rmse_deg": 0.1341,
+        "mae_deg": 0.1043
+      },
+      "n_filas_entrenamiento": 3624,
+      "n_filas_prueba": 745
+    },
+    "im1_odysseus": {
+      "sol_az_deg": {
+        "rmse_deg": 0.0377,
+        "mae_deg": 0.033
+      },
+      "sol_el_deg": {
+        "rmse_deg": 0.1552,
+        "mae_deg": 0.1304
+      },
+      "tierra_az_deg": {
+        "rmse_deg": 0.1158,
+        "mae_deg": 0.095
+      },
+      "tierra_el_deg": {
+        "rmse_deg": 0.1352,
+        "mae_deg": 0.1046
+      },
+      "n_filas_entrenamiento": 3624,
+      "n_filas_prueba": 745
+    },
+    "blue_ghost_m1": {
+      "sol_az_deg": {
+        "rmse_deg": 0.2239,
+        "mae_deg": 0.213
+      },
+      "sol_el_deg": {
+        "rmse_deg": 0.1117,
+        "mae_deg": 0.0861
+      },
+      "tierra_az_deg": {
+        "rmse_deg": 0.1652,
+        "mae_deg": 0.1346
+      },
+      "tierra_el_deg": {
+        "rmse_deg": 0.0863,
+        "mae_deg": 0.0715
+      },
+      "n_filas_entrenamiento": 3624,
+      "n_filas_prueba": 745
+    },
+    "chandrayaan3": {
+      "sol_az_deg": {
+        "rmse_deg": 0.0489,
+        "mae_deg": 0.0375
+      },
+      "sol_el_deg": {
+        "rmse_deg": 0.1766,
+        "mae_deg": 0.1534
+      },
+      "tierra_az_deg": {
+        "rmse_deg": 0.1012,
+        "mae_deg": 0.083
+      },
+      "tierra_el_deg": {
+        "rmse_deg": 0.1478,
+        "mae_deg": 0.1163
+      },
+      "n_filas_entrenamiento": 3624,
+      "n_filas_prueba": 745
+    },
+    "change4": {
+      "sol_az_deg": {
+        "rmse_deg": 0.1214,
+        "mae_deg": 0.1049
+      },
+      "sol_el_deg": {
+        "rmse_deg": 0.1525,
+        "mae_deg": 0.1469
+      },
+      "tierra_az_deg": {
+        "rmse_deg": 0.1643,
+        "mae_deg": 0.135
+      },
+      "tierra_el_deg": {
+        "rmse_deg": 0.1311,
+        "mae_deg": 0.1056
+      },
+      "n_filas_entrenamiento": 3624,
+      "n_filas_prueba": 745
+    },
+    "change6": {
+      "sol_az_deg": {
+        "rmse_deg": 0.1358,
+        "mae_deg": 0.1217
+      },
+      "sol_el_deg": {
+        "rmse_deg": 0.1467,
+        "mae_deg": 0.1388
+      },
+      "tierra_az_deg": {
+        "rmse_deg": 0.1974,
+        "mae_deg": 0.1669
+      },
+      "tierra_el_deg": {
+        "rmse_deg": 0.0911,
+        "mae_deg": 0.0758
+      },
+      "n_filas_entrenamiento": 3624,
+      "n_filas_prueba": 745
+    },
+    "slim": {
+      "sol_az_deg": {
+        "rmse_deg": 0.2756,
+        "mae_deg": 0.2502
+      },
+      "sol_el_deg": {
+        "rmse_deg": 0.0963,
+        "mae_deg": 0.0822
+      },
+      "tierra_az_deg": {
+        "rmse_deg": 0.2182,
+        "mae_deg": 0.1833
+      },
+      "tierra_el_deg": {
+        "rmse_deg": 0.1357,
+        "mae_deg": 0.1127
+      },
+      "n_filas_entrenamiento": 3624,
+      "n_filas_prueba": 745
+    }
+  },
+  "promedio_sitios": {
+    "sol_az_deg": {
+      "rmse_deg": 0.2038,
+      "mae_deg": 0.1641
+    },
+    "sol_el_deg": {
+      "rmse_deg": 0.1143,
+      "mae_deg": 0.1004
+    },
+    "tierra_az_deg": {
+      "rmse_deg": 0.192,
+      "mae_deg": 0.1591
+    },
+    "tierra_el_deg": {
+      "rmse_deg": 0.1154,
+      "mae_deg": 0.0936
+    }
+  }
+}
