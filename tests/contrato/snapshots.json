@@ -1,0 +1,2794 @@
+{
+ "__openapi__": {
+  "/api/admin/claves": {
+   "GET": {
+    "cuerpo": null,
+    "parametros": [
+     "header:X-API-Key:opcional",
+     "query:estado:opcional",
+     "query:limite:opcional",
+     "query:offset:opcional",
+     "query:q:opcional",
+     "query:tipo:opcional",
+     "query:usuario_id:opcional"
+    ],
+    "respuestas": [
+     "200",
+     "422"
+    ]
+   },
+   "POST": {
+    "cuerpo": [
+     "application/json"
+    ],
+    "parametros": [
+     "header:X-API-Key:opcional"
+    ],
+    "respuestas": [
+     "201",
+     "422"
+    ]
+   }
+  },
+  "/api/admin/claves/{clave_id}/huella": {
+   "GET": {
+    "cuerpo": null,
+    "parametros": [
+     "header:X-API-Key:opcional",
+     "path:clave_id:obligatorio"
+    ],
+    "respuestas": [
+     "200",
+     "422"
+    ]
+   }
+  },
+  "/api/admin/claves/{clave_id}/publica": {
+   "GET": {
+    "cuerpo": null,
+    "parametros": [
+     "header:X-API-Key:opcional",
+     "path:clave_id:obligatorio",
+     "query:formato:opcional"
+    ],
+    "respuestas": [
+     "200",
+     "422"
+    ]
+   }
+  },
+  "/api/admin/claves/{clave_id}/revocar": {
+   "POST": {
+    "cuerpo": [
+     "application/json"
+    ],
+    "parametros": [
+     "header:X-API-Key:opcional",
+     "path:clave_id:obligatorio"
+    ],
+    "respuestas": [
+     "200",
+     "422"
+    ]
+   }
+  },
+  "/api/admin/claves/{clave_id}/rotar": {
+   "POST": {
+    "cuerpo": [
+     "application/json"
+    ],
+    "parametros": [
+     "header:X-API-Key:opcional",
+     "path:clave_id:obligatorio"
+    ],
+    "respuestas": [
+     "201",
+     "422"
+    ]
+   }
+  },
+  "/api/analisis/{site_id}": {
+   "GET": {
+    "cuerpo": null,
+    "parametros": [
+     "path:site_id:obligatorio",
+     "query:desde:opcional",
+     "query:hasta:opcional",
+     "query:variable:opcional"
+    ],
+    "respuestas": [
+     "200",
+     "404",
+     "422",
+     "503"
+    ]
+   }
+  },
+  "/api/auditoria": {
+   "GET": {
+    "cuerpo": null,
+    "parametros": [
+     "header:X-API-Key:opcional",
+     "query:accion:opcional",
+     "query:desde:opcional",
+     "query:hasta:opcional",
+     "query:incluir_firma:opcional",
+     "query:limite:opcional",
+     "query:offset:opcional",
+     "query:usuario:opcional"
+    ],
+    "respuestas": [
+     "200",
+     "422"
+    ]
+   }
+  },
+  "/api/auditoria/verificar": {
+   "GET": {
+    "cuerpo": null,
+    "parametros": [
+     "header:X-API-Key:opcional"
+    ],
+    "respuestas": [
+     "200",
+     "422"
+    ]
+   }
+  },
+  "/api/auth/login": {
+   "POST": {
+    "cuerpo": [
+     "application/json"
+    ],
+    "parametros": [],
+    "respuestas": [
+     "200",
+     "401",
+     "422",
+     "429",
+     "503"
+    ]
+   }
+  },
+  "/api/auth/logout": {
+   "POST": {
+    "cuerpo": null,
+    "parametros": [],
+    "respuestas": [
+     "204"
+    ]
+   }
+  },
+  "/api/auth/me": {
+   "GET": {
+    "cuerpo": null,
+    "parametros": [],
+    "respuestas": [
+     "200",
+     "401"
+    ]
+   }
+  },
+  "/api/datos/validar/{tipo}": {
+   "POST": {
+    "cuerpo": [
+     "multipart/form-data"
+    ],
+    "parametros": [
+     "header:X-API-Key:opcional",
+     "path:tipo:obligatorio"
+    ],
+    "respuestas": [
+     "200",
+     "401",
+     "413",
+     "415",
+     "422"
+    ]
+   }
+  },
+  "/api/datos/{tipo}": {
+   "POST": {
+    "cuerpo": [
+     "multipart/form-data"
+    ],
+    "parametros": [
+     "header:X-API-Key:opcional",
+     "path:tipo:obligatorio"
+    ],
+    "respuestas": [
+     "200",
+     "401",
+     "413",
+     "415",
+     "422"
+    ]
+   }
+  },
+  "/api/efemerides/{site_id}": {
+   "GET": {
+    "cuerpo": null,
+    "parametros": [
+     "path:site_id:obligatorio",
+     "query:desde:opcional",
+     "query:hasta:opcional"
+    ],
+    "respuestas": [
+     "200",
+     "404",
+     "422",
+     "503"
+    ]
+   }
+  },
+  "/api/health": {
+   "GET": {
+    "cuerpo": null,
+    "parametros": [],
+    "respuestas": [
+     "200"
+    ]
+   }
+  },
+  "/api/horizons": {
+   "GET": {
+    "cuerpo": null,
+    "parametros": [
+     "query:desde:obligatorio",
+     "query:hasta:obligatorio",
+     "query:lat:obligatorio",
+     "query:lon:obligatorio",
+     "query:paso_horas:opcional"
+    ],
+    "respuestas": [
+     "200",
+     "422",
+     "429",
+     "502",
+     "504"
+    ]
+   }
+  },
+  "/api/metricas": {
+   "GET": {
+    "cuerpo": null,
+    "parametros": [
+     "query:desde:opcional",
+     "query:hasta:opcional",
+     "query:site_id:opcional"
+    ],
+    "respuestas": [
+     "200",
+     "404",
+     "422",
+     "503"
+    ]
+   }
+  },
+  "/api/puestas/{site_id}": {
+   "GET": {
+    "cuerpo": null,
+    "parametros": [
+     "path:site_id:obligatorio",
+     "query:desde:opcional"
+    ],
+    "respuestas": [
+     "200",
+     "404",
+     "422",
+     "503"
+    ]
+   }
+  },
+  "/api/seguridad/clave-publica": {
+   "GET": {
+    "cuerpo": null,
+    "parametros": [],
+    "respuestas": [
+     "200"
+    ]
+   }
+  },
+  "/api/seguridad/manifiesto": {
+   "GET": {
+    "cuerpo": null,
+    "parametros": [],
+    "respuestas": [
+     "200"
+    ]
+   }
+  },
+  "/api/simulacion/{site_id}": {
+   "GET": {
+    "cuerpo": null,
+    "parametros": [
+     "path:site_id:obligatorio",
+     "query:desde:opcional",
+     "query:hasta:opcional",
+     "query:paso_horas:opcional"
+    ],
+    "respuestas": [
+     "200",
+     "404",
+     "422",
+     "503"
+    ]
+   }
+  },
+  "/api/sites": {
+   "GET": {
+    "cuerpo": null,
+    "parametros": [],
+    "respuestas": [
+     "200"
+    ]
+   }
+  }
+ },
+ "analisis_ok": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "desde_utc": "str",
+   "entrada": {
+    "archivo": "str",
+    "bytes": "number",
+    "calidad": {
+     "filas_con_error": "number",
+     "filas_validas": "number",
+     "huecos": "number",
+     "paso_constante": "bool"
+    },
+    "filas": "number",
+    "fin_utc": "str",
+    "inicio_utc": "str",
+    "origen": {
+     "coincide_con_semilla": "null",
+     "descripcion": "str",
+     "manifiesto": "null",
+     "sha3_256": "str",
+     "tipo": "str",
+     "ultima_carga": "null"
+    },
+    "paso_horas": "number"
+   },
+   "espectro": {
+    "nota": "str",
+    "resolucion_dias": "number",
+    "series": [
+     {
+      "nombre": "str",
+      "picos": [
+       {
+        "amplitud_rel": "number",
+        "candidatos": [
+         "str"
+        ],
+        "es_sinodico": "bool",
+        "periodo_dias": "number"
+       }
+      ],
+      "variable": "str"
+     }
+    ],
+    "sinodico_afinado_dias": "number",
+    "sinodico_teorico_dias": "number",
+    "ventana_dias": "number"
+   },
+   "hasta_utc": "str",
+   "limitaciones": [
+    {
+     "aplica": "bool",
+     "codigo": "str",
+     "mensaje": "str"
+    }
+   ],
+   "modelo": {
+    "ajuste_directo_elevacion_sol": "bool",
+    "nota_ajuste": "str",
+    "periodos": [
+     {
+      "cuerpo": "str",
+      "periodo_dias": "number",
+      "rol": "str"
+     }
+    ],
+    "r2": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "residuos": {
+     "sol_az_deg": {
+      "mae_deg": "number",
+      "max_abs_deg": "number",
+      "p95_abs_deg": "number",
+      "rmse_deg": "number",
+      "sesgo_deg": "number"
+     },
+     "sol_el_deg": {
+      "mae_deg": "number",
+      "max_abs_deg": "number",
+      "p95_abs_deg": "number",
+      "rmse_deg": "number",
+      "sesgo_deg": "number"
+     },
+     "tierra_az_deg": {
+      "mae_deg": "number",
+      "max_abs_deg": "number",
+      "p95_abs_deg": "number",
+      "rmse_deg": "number",
+      "sesgo_deg": "number"
+     },
+     "tierra_el_deg": {
+      "mae_deg": "number",
+      "max_abs_deg": "number",
+      "p95_abs_deg": "number",
+      "rmse_deg": "number",
+      "sesgo_deg": "number"
+     }
+    },
+    "terminos_por_cuerpo": {
+     "Sol": "number",
+     "Tierra": "number"
+    }
+   },
+   "pasos": [
+    {
+     "descripcion": "str",
+     "estado": "str",
+     "id": "str",
+     "nombre": "str",
+     "resultado": [
+      {
+       "nombre": "str",
+       "unidad": "str",
+       "valor": "bool|number|str"
+      }
+     ]
+    }
+   ],
+   "serie": {
+    "fin_datos_utc": "str",
+    "nombre": "str",
+    "paso_horas": "number",
+    "puntos": [
+     {
+      "ajustado": "null|number",
+      "observado": "null|number",
+      "proyectado": "null|number",
+      "utc": "str"
+     }
+    ],
+    "variable": "str"
+   },
+   "site_id": "str",
+   "validacion": {
+    "disponible": "bool",
+    "filas_entrenamiento_validadas": "number",
+    "mae_deg": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "mejora_frente_a_ingenua": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "motivo": "null",
+    "puestas_sol": {
+     "emparejados_pct": "number",
+     "eventos_reales": "number",
+     "mae_h": "number"
+    },
+    "rmse_deg": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "rmse_por_mes_deg": {
+     "sol_az_deg": [
+      "number"
+     ],
+     "sol_el_deg": [
+      "number"
+     ],
+     "tierra_az_deg": [
+      "number"
+     ],
+     "tierra_el_deg": [
+      "number"
+     ]
+    },
+    "rmse_referencia_ingenua_deg": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "semaforo_aciertos": {
+     "aciertos_comunicacion": "number",
+     "aciertos_energia": "number",
+     "aciertos_global": "number",
+     "meses": "number"
+    },
+    "validacion_desde_utc": "str",
+    "validacion_hasta_utc": "str",
+    "vigente": "bool"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "analisis_otra_variable_y_rango": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "desde_utc": "str",
+   "entrada": {
+    "archivo": "str",
+    "bytes": "number",
+    "calidad": {
+     "filas_con_error": "number",
+     "filas_validas": "number",
+     "huecos": "number",
+     "paso_constante": "bool"
+    },
+    "filas": "number",
+    "fin_utc": "str",
+    "inicio_utc": "str",
+    "origen": {
+     "coincide_con_semilla": "null",
+     "descripcion": "str",
+     "manifiesto": "null",
+     "sha3_256": "str",
+     "tipo": "str",
+     "ultima_carga": "null"
+    },
+    "paso_horas": "number"
+   },
+   "espectro": {
+    "nota": "str",
+    "resolucion_dias": "number",
+    "series": [
+     {
+      "nombre": "str",
+      "picos": [
+       {
+        "amplitud_rel": "number",
+        "candidatos": [
+         "str"
+        ],
+        "es_sinodico": "bool",
+        "periodo_dias": "number"
+       }
+      ],
+      "variable": "str"
+     }
+    ],
+    "sinodico_afinado_dias": "number",
+    "sinodico_teorico_dias": "number",
+    "ventana_dias": "number"
+   },
+   "hasta_utc": "str",
+   "limitaciones": [
+    {
+     "aplica": "bool",
+     "codigo": "str",
+     "mensaje": "str"
+    }
+   ],
+   "modelo": {
+    "ajuste_directo_elevacion_sol": "bool",
+    "nota_ajuste": "str",
+    "periodos": [
+     {
+      "cuerpo": "str",
+      "periodo_dias": "number",
+      "rol": "str"
+     }
+    ],
+    "r2": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "residuos": {
+     "sol_az_deg": {
+      "mae_deg": "number",
+      "max_abs_deg": "number",
+      "p95_abs_deg": "number",
+      "rmse_deg": "number",
+      "sesgo_deg": "number"
+     },
+     "sol_el_deg": {
+      "mae_deg": "number",
+      "max_abs_deg": "number",
+      "p95_abs_deg": "number",
+      "rmse_deg": "number",
+      "sesgo_deg": "number"
+     },
+     "tierra_az_deg": {
+      "mae_deg": "number",
+      "max_abs_deg": "number",
+      "p95_abs_deg": "number",
+      "rmse_deg": "number",
+      "sesgo_deg": "number"
+     },
+     "tierra_el_deg": {
+      "mae_deg": "number",
+      "max_abs_deg": "number",
+      "p95_abs_deg": "number",
+      "rmse_deg": "number",
+      "sesgo_deg": "number"
+     }
+    },
+    "terminos_por_cuerpo": {
+     "Sol": "number",
+     "Tierra": "number"
+    }
+   },
+   "pasos": [
+    {
+     "descripcion": "str",
+     "estado": "str",
+     "id": "str",
+     "nombre": "str",
+     "resultado": [
+      {
+       "nombre": "str",
+       "unidad": "str",
+       "valor": "bool|number|str"
+      }
+     ]
+    }
+   ],
+   "serie": {
+    "fin_datos_utc": "str",
+    "nombre": "str",
+    "paso_horas": "number",
+    "puntos": [
+     {
+      "ajustado": "null|number",
+      "observado": "null|number",
+      "proyectado": "null|number",
+      "utc": "str"
+     }
+    ],
+    "variable": "str"
+   },
+   "site_id": "str",
+   "validacion": {
+    "disponible": "bool",
+    "filas_entrenamiento_validadas": "number",
+    "mae_deg": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "mejora_frente_a_ingenua": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "motivo": "null",
+    "puestas_sol": {
+     "emparejados_pct": "number",
+     "eventos_reales": "number",
+     "mae_h": "number"
+    },
+    "rmse_deg": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "rmse_por_mes_deg": {
+     "sol_az_deg": [
+      "number"
+     ],
+     "sol_el_deg": [
+      "number"
+     ],
+     "tierra_az_deg": [
+      "number"
+     ],
+     "tierra_el_deg": [
+      "number"
+     ]
+    },
+    "rmse_referencia_ingenua_deg": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "semaforo_aciertos": {
+     "aciertos_comunicacion": "number",
+     "aciertos_energia": "number",
+     "aciertos_global": "number",
+     "meses": "number"
+    },
+    "validacion_desde_utc": "str",
+    "validacion_hasta_utc": "str",
+    "vigente": "bool"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "analisis_rango_invalido_422": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "'hasta' debe ser posterior a 'desde'",
+  "estado": 422,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "analisis_sitio_inexistente_404": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "El sitio no existe en sites.csv",
+  "estado": 404,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "analisis_tras_subir_efemerides": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "desde_utc": "str",
+   "entrada": {
+    "archivo": "str",
+    "bytes": "number",
+    "calidad": {
+     "filas_con_error": "number",
+     "filas_validas": "number",
+     "huecos": "number",
+     "paso_constante": "bool"
+    },
+    "filas": "number",
+    "fin_utc": "str",
+    "inicio_utc": "str",
+    "origen": {
+     "coincide_con_semilla": "null",
+     "descripcion": "str",
+     "manifiesto": {
+      "coincide": "bool",
+      "firma_nota": "null",
+      "firmado": "bool",
+      "generado_utc": "str",
+      "sha3_256": "str"
+     },
+     "sha3_256": "str",
+     "tipo": "str",
+     "ultima_carga": {
+      "archivo": "str",
+      "cargado_por": "str",
+      "cargado_utc": "str",
+      "coincide": "bool",
+      "sha3_256": "str"
+     }
+    },
+    "paso_horas": "number"
+   },
+   "espectro": {
+    "nota": "str",
+    "resolucion_dias": "number",
+    "series": [
+     {
+      "nombre": "str",
+      "picos": [
+       {
+        "amplitud_rel": "number",
+        "candidatos": [
+         "str"
+        ],
+        "es_sinodico": "bool",
+        "periodo_dias": "number"
+       }
+      ],
+      "variable": "str"
+     }
+    ],
+    "sinodico_afinado_dias": "number",
+    "sinodico_teorico_dias": "number",
+    "ventana_dias": "number"
+   },
+   "hasta_utc": "str",
+   "limitaciones": [
+    {
+     "aplica": "bool",
+     "codigo": "str",
+     "mensaje": "str"
+    }
+   ],
+   "modelo": {
+    "ajuste_directo_elevacion_sol": "bool",
+    "nota_ajuste": "str",
+    "periodos": [
+     {
+      "cuerpo": "str",
+      "periodo_dias": "number",
+      "rol": "str"
+     }
+    ],
+    "r2": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "residuos": {
+     "sol_az_deg": {
+      "mae_deg": "number",
+      "max_abs_deg": "number",
+      "p95_abs_deg": "number",
+      "rmse_deg": "number",
+      "sesgo_deg": "number"
+     },
+     "sol_el_deg": {
+      "mae_deg": "number",
+      "max_abs_deg": "number",
+      "p95_abs_deg": "number",
+      "rmse_deg": "number",
+      "sesgo_deg": "number"
+     },
+     "tierra_az_deg": {
+      "mae_deg": "number",
+      "max_abs_deg": "number",
+      "p95_abs_deg": "number",
+      "rmse_deg": "number",
+      "sesgo_deg": "number"
+     },
+     "tierra_el_deg": {
+      "mae_deg": "number",
+      "max_abs_deg": "number",
+      "p95_abs_deg": "number",
+      "rmse_deg": "number",
+      "sesgo_deg": "number"
+     }
+    },
+    "terminos_por_cuerpo": {
+     "Sol": "number",
+     "Tierra": "number"
+    }
+   },
+   "pasos": [
+    {
+     "descripcion": "str",
+     "estado": "str",
+     "id": "str",
+     "nombre": "str",
+     "resultado": [
+      {
+       "nombre": "str",
+       "unidad": "str",
+       "valor": "bool|number|str"
+      }
+     ]
+    }
+   ],
+   "serie": {
+    "fin_datos_utc": "str",
+    "nombre": "str",
+    "paso_horas": "number",
+    "puntos": [
+     {
+      "ajustado": "null|number",
+      "observado": "null|number",
+      "proyectado": "null|number",
+      "utc": "str"
+     }
+    ],
+    "variable": "str"
+   },
+   "site_id": "str",
+   "validacion": {
+    "disponible": "bool",
+    "filas_entrenamiento_validadas": "number",
+    "mae_deg": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "mejora_frente_a_ingenua": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "motivo": "null",
+    "puestas_sol": {
+     "emparejados_pct": "number",
+     "eventos_reales": "number",
+     "mae_h": "number"
+    },
+    "rmse_deg": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "rmse_por_mes_deg": {
+     "sol_az_deg": [
+      "number"
+     ],
+     "sol_el_deg": [
+      "number"
+     ],
+     "tierra_az_deg": [
+      "number"
+     ],
+     "tierra_el_deg": [
+      "number"
+     ]
+    },
+    "rmse_referencia_ingenua_deg": {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number"
+    },
+    "semaforo_aciertos": {
+     "aciertos_comunicacion": "number",
+     "aciertos_energia": "number",
+     "aciertos_global": "number",
+     "meses": "number"
+    },
+    "validacion_desde_utc": "str",
+    "validacion_hasta_utc": "str",
+    "vigente": "bool"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "analisis_variable_invalida_422": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "'variable' debe ser una de: sol_az_deg, sol_el_deg, tierra_az_deg, tierra_el_deg",
+  "estado": 422,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "auditoria_listar": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "items": [
+    {
+     "accion": "str",
+     "actor": "str",
+     "algoritmo_firma": "str",
+     "detalle": {
+      "filas": "number",
+      "sha3_256": "str",
+      "tamano_bytes": "number",
+      "tipo": "str",
+      "total_errores": "number",
+      "valido": "bool"
+     },
+     "firma_b64": "null",
+     "hash_actual": "str",
+     "hash_prev": "str",
+     "huella_clave": "str",
+     "id": "number",
+     "ip_hash": "str",
+     "recurso": "str",
+     "secuencia": "number",
+     "ts_utc": "str",
+     "user_agent": "str",
+     "usuario_id": "null"
+    }
+   ],
+   "limite": "number",
+   "offset": "number",
+   "total": "number"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "auditoria_listar_con_firma": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "items": [
+    {
+     "accion": "str",
+     "actor": "str",
+     "algoritmo_firma": "str",
+     "detalle": {
+      "filas": "number",
+      "sha3_256": "str",
+      "tamano_bytes": "number",
+      "tipo": "str",
+      "total_errores": "number",
+      "valido": "bool"
+     },
+     "firma_b64": "str",
+     "hash_actual": "str",
+     "hash_prev": "str",
+     "huella_clave": "str",
+     "id": "number",
+     "ip_hash": "str",
+     "recurso": "str",
+     "secuencia": "number",
+     "ts_utc": "str",
+     "user_agent": "str",
+     "usuario_id": "null"
+    }
+   ],
+   "limite": "number",
+   "offset": "number",
+   "total": "number"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "auditoria_parametro_invalido_422": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 422,
+  "forma": {
+   "detail": [
+    {
+     "ctx": {
+      "ge": "number"
+     },
+     "input": "str",
+     "loc": [
+      "str"
+     ],
+     "msg": "str",
+     "type": "str"
+    }
+   ],
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "auditoria_sin_base_de_datos_503": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "La base de datos no está configurada (DATABASE_URL)",
+  "estado": 503,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "auditoria_sin_clave_401": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "API key inválida o ausente",
+  "estado": 401,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "auditoria_verificar": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "error_secuencia": "null",
+   "hash_cabeza": "str",
+   "motivo": "null",
+   "n_eventos": "number",
+   "primer_hash_prev_es_genesis": "bool",
+   "ultima_secuencia": "number",
+   "valida": "bool"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "claves_generar_201": {
+  "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 201,
+  "forma": {
+   "aviso": "str",
+   "claves": [
+    {
+     "algoritmo": "str",
+     "backups": "number",
+     "clave_publica_pem": "str",
+     "creada_utc": "str",
+     "estado": "str",
+     "huella_sha3_256": "str",
+     "id": "str",
+     "motivo_revocacion": "null",
+     "nombre_archivo_privada": "str",
+     "privada_pem": "str",
+     "reemplazada_por": "null",
+     "revocada_utc": "null",
+     "tamano_privada": "number",
+     "tamano_privada_fips": "number",
+     "tamano_publica": "number",
+     "tipo": "str",
+     "usuario_email": "str",
+     "usuario_id": "str",
+     "usuario_nombre": "str"
+    }
+   ]
+  },
+  "tipo_contenido": "application/json"
+ },
+ "claves_generar_cuerpo_invalido_422": {
+  "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 422,
+  "forma": {
+   "detail": [
+    {
+     "input": {},
+     "loc": [
+      "str"
+     ],
+     "msg": "str",
+     "type": "str"
+    }
+   ],
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "claves_generar_usuario_inexistente": {
+  "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "El usuario no existe",
+  "estado": 404,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "claves_huella": {
+  "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "algoritmo": "str",
+   "estado": "str",
+   "huella_sha3_256": "str",
+   "id": "str"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "claves_inexistente_404": {
+  "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "La clave no existe",
+  "estado": 404,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "claves_listar_con_datos": {
+  "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "items": [
+    {
+     "algoritmo": "str",
+     "backups": "number",
+     "creada_utc": "str",
+     "estado": "str",
+     "huella_sha3_256": "str",
+     "id": "str",
+     "motivo_revocacion": "null",
+     "reemplazada_por": "null",
+     "revocada_utc": "null",
+     "tamano_privada": "number",
+     "tamano_privada_fips": "number",
+     "tamano_publica": "number",
+     "tipo": "str",
+     "usuario_email": "str",
+     "usuario_id": "str",
+     "usuario_nombre": "str"
+    }
+   ],
+   "limite": "number",
+   "offset": "number",
+   "total": "number"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "claves_listar_vacio": {
+  "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "items": [],
+   "limite": "number",
+   "offset": "number",
+   "total": "number"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "claves_publica": {
+  "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "algoritmo": "str",
+   "clave_publica_b64": "str",
+   "clave_publica_pem": "str",
+   "estado": "str",
+   "huella_sha3_256": "str",
+   "id": "str",
+   "tipo": "str"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "claves_revocar": {
+  "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "algoritmo": "str",
+   "backups": "number",
+   "creada_utc": "str",
+   "estado": "str",
+   "huella_sha3_256": "str",
+   "id": "str",
+   "motivo_revocacion": "str",
+   "reemplazada_por": "null",
+   "revocada_utc": "str",
+   "tamano_privada": "number",
+   "tamano_privada_fips": "number",
+   "tamano_publica": "number",
+   "tipo": "str",
+   "usuario_email": "str",
+   "usuario_id": "str",
+   "usuario_nombre": "str"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "claves_rotar_201": {
+  "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 201,
+  "forma": {
+   "aviso": "str",
+   "claves": [
+    {
+     "algoritmo": "str",
+     "backups": "number",
+     "clave_publica_pem": "str",
+     "creada_utc": "str",
+     "estado": "str",
+     "huella_sha3_256": "str",
+     "id": "str",
+     "motivo_revocacion": "null",
+     "nombre_archivo_privada": "str",
+     "privada_pem": "str",
+     "reemplazada_por": "null",
+     "revocada_utc": "null",
+     "tamano_privada": "number",
+     "tamano_privada_fips": "number",
+     "tamano_publica": "number",
+     "tipo": "str",
+     "usuario_email": "str",
+     "usuario_id": "str",
+     "usuario_nombre": "str"
+    }
+   ]
+  },
+  "tipo_contenido": "application/json"
+ },
+ "claves_sin_clave_401": {
+  "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "Clave de administración inválida o ausente",
+  "estado": 401,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "datos_clave_incorrecta_401": {
+  "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "API key inválida o ausente",
+  "estado": 401,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "datos_demasiado_grande_413": {
+  "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "Máximo 5 MB",
+  "estado": 413,
+  "forma": {
+   "codigo": "str",
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "datos_extension_415": {
+  "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 415,
+  "forma": {
+   "detail": {
+    "advertencias": [],
+    "archivo": "str",
+    "errores": [
+     {
+      "codigo": "str",
+      "columna": "null",
+      "fila": "number",
+      "mensaje": "str",
+      "valor": "null"
+     }
+    ],
+    "tipo": "str",
+    "total_errores": "number",
+    "total_filas": "number",
+    "valido": "bool"
+   },
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "datos_guardar_con_historial": {
+  "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "advertencias": [],
+   "archivo": "str",
+   "copia_historial": "str",
+   "errores": [],
+   "guardado": "bool",
+   "tipo": "str",
+   "total_errores": "number",
+   "total_filas": "number",
+   "valido": "bool"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "datos_guardar_invalido_422": {
+  "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 422,
+  "forma": {
+   "detail": {
+    "advertencias": [],
+    "archivo": "str",
+    "errores": [
+     {
+      "codigo": "str",
+      "columna": "str",
+      "fila": "number",
+      "mensaje": "str",
+      "valor": "str"
+     }
+    ],
+    "tipo": "str",
+    "total_errores": "number",
+    "total_filas": "number",
+    "valido": "bool"
+   },
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "datos_guardar_ok": {
+  "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "advertencias": [],
+   "archivo": "str",
+   "copia_historial": "str",
+   "errores": [],
+   "guardado": "bool",
+   "tipo": "str",
+   "total_errores": "number",
+   "total_filas": "number",
+   "valido": "bool"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "datos_sin_archivo_422": {
+  "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 422,
+  "forma": {
+   "detail": [
+    {
+     "input": "null",
+     "loc": [
+      "str"
+     ],
+     "msg": "str",
+     "type": "str"
+    }
+   ],
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "datos_sin_clave_401": {
+  "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "API key inválida o ausente",
+  "estado": 401,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "datos_tipo_desconocido_404": {
+  "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "Tipo desconocido; usa uno de ['sites', 'efemerides', 'metricas']",
+  "estado": 404,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "datos_validar_con_advertencias": {
+  "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "advertencias": [
+    {
+     "codigo": "str",
+     "columna": "str",
+     "fila": "number",
+     "mensaje": "str",
+     "valor": "str"
+    }
+   ],
+   "archivo": "str",
+   "errores": [],
+   "tipo": "str",
+   "total_errores": "number",
+   "total_filas": "number",
+   "valido": "bool"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "datos_validar_invalido_422": {
+  "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 422,
+  "forma": {
+   "detail": {
+    "advertencias": [],
+    "archivo": "str",
+    "errores": [
+     {
+      "codigo": "str",
+      "columna": "str",
+      "fila": "number",
+      "mensaje": "str",
+      "valor": "str"
+     }
+    ],
+    "tipo": "str",
+    "total_errores": "number",
+    "total_filas": "number",
+    "valido": "bool"
+   },
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "datos_validar_ok": {
+  "cabeceras": {
+   "cache-control": "no-store",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "advertencias": [],
+   "archivo": "str",
+   "errores": [],
+   "tipo": "str",
+   "total_errores": "number",
+   "total_filas": "number",
+   "valido": "bool"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "efemerides_fecha_invalida_422": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "'desde': Formato esperado: YYYY-MM-DDTHH:MMZ (UTC)",
+  "estado": 422,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "efemerides_ok": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "filas": [
+    {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number",
+     "utc": "str"
+    }
+   ],
+   "fin_utc": "str",
+   "inicio_utc": "str",
+   "paso_horas": "number",
+   "site_id": "str"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "efemerides_rango_invertido_422": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "'hasta' debe ser posterior a 'desde'",
+  "estado": 422,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "efemerides_rango_largo_422": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "El rango máximo es de 35 días (se pidieron 90.00 días)",
+  "estado": 422,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "efemerides_sin_rango": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "filas": [
+    {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number",
+     "utc": "str"
+    }
+   ],
+   "fin_utc": "str",
+   "inicio_utc": "str",
+   "paso_horas": "number",
+   "site_id": "str"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "efemerides_sitio_inexistente_404": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "El sitio no existe en sites.csv",
+  "estado": 404,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "health": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "status": "str"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "horizons_jpl_falla_502": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "JPL Horizons no está disponible ahora; reintenta en unos minutos",
+  "estado": 502,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "horizons_jpl_tarda_504": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "JPL Horizons tardó demasiado en responder; reduce el rango de fechas o reintenta en unos minutos",
+  "estado": 504,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "horizons_lat_fuera_de_rango_422": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 422,
+  "forma": {
+   "detail": [
+    {
+     "ctx": {
+      "le": "number"
+     },
+     "input": "str",
+     "loc": [
+      "str"
+     ],
+     "msg": "str",
+     "type": "str"
+    }
+   ],
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "horizons_ok": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "consultado_utc": "str",
+   "en_cache": "bool",
+   "filas": [
+    {
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number",
+     "utc": "str"
+    }
+   ],
+   "fin_utc": "str",
+   "fuente": "str",
+   "inicio_utc": "str",
+   "lat_deg": "number",
+   "lon_este_deg": "number",
+   "metricas": {
+    "avisos": [
+     {
+      "codigo": "str",
+      "mensaje": "str"
+     }
+    ],
+    "fin_utc": "str",
+    "horas_sol": "number",
+    "horas_tierra_visible": "number",
+    "inicio_utc": "str",
+    "origen": "str",
+    "pct_sol": "number",
+    "pct_tierra": "number",
+    "referencia": "null",
+    "semaforo": {
+     "comunicacion": "str",
+     "energia": "str",
+     "global": "str"
+    },
+    "site_id": "str",
+    "sol_el_max_deg": "number",
+    "sol_el_media_deg": "number"
+   },
+   "paso_horas": "number",
+   "puestas": {
+    "desde_utc": "str",
+    "site_id": "str",
+    "sol": {
+     "horas_restantes": "null",
+     "proxima_puesta_utc": "null",
+     "proxima_salida_utc": "null",
+     "visible": "bool"
+    },
+    "tierra": {
+     "horas_restantes": "null",
+     "proxima_puesta_utc": "null",
+     "proxima_salida_utc": "null",
+     "visible": "bool"
+    }
+   },
+   "site_id": "str"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "horizons_rango_largo_422": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "El rango máximo es de 35 días (se pidieron 90.00 días)",
+  "estado": 422,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "metodo_no_permitido_405": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "Method Not Allowed",
+  "estado": 405,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "metricas_cuatro_sitios_422": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "Se pueden consultar de 1 a 3 sitios",
+  "estado": 422,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "metricas_sin_referencia": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "resultados": [
+    {
+     "avisos": [
+      {
+       "codigo": "str",
+       "mensaje": "str"
+      }
+     ],
+     "fin_utc": "str",
+     "horas_sol": "number",
+     "horas_tierra_visible": "number",
+     "inicio_utc": "str",
+     "origen": "str",
+     "pct_sol": "number",
+     "pct_tierra": "number",
+     "referencia": "null",
+     "semaforo": {
+      "comunicacion": "str",
+      "energia": "str",
+      "global": "str"
+     },
+     "site_id": "str",
+     "sol_el_max_deg": "number",
+     "sol_el_media_deg": "number"
+    }
+   ]
+  },
+  "tipo_contenido": "application/json"
+ },
+ "metricas_sin_site_id_422": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "Indica al menos un site_id",
+  "estado": 422,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "metricas_sin_sol_media_nula": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "resultados": [
+    {
+     "avisos": [
+      {
+       "codigo": "str",
+       "mensaje": "str"
+      }
+     ],
+     "fin_utc": "str",
+     "horas_sol": "number",
+     "horas_tierra_visible": "number",
+     "inicio_utc": "str",
+     "origen": "str",
+     "pct_sol": "number",
+     "pct_tierra": "number",
+     "referencia": {
+      "coincide": "bool",
+      "horas_sol": "number",
+      "horas_tierra_visible": "number",
+      "pct_sol": "number",
+      "pct_tierra": "number",
+      "sol_el_max_deg": "number",
+      "sol_el_media_deg": "null"
+     },
+     "semaforo": {
+      "comunicacion": "str",
+      "energia": "str",
+      "global": "str"
+     },
+     "site_id": "str",
+     "sol_el_max_deg": "number",
+     "sol_el_media_deg": "null"
+    }
+   ]
+  },
+  "tipo_contenido": "application/json"
+ },
+ "metricas_sitio_inexistente_404": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "El sitio no existe en sites.csv",
+  "estado": 404,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "metricas_tres_sitios": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "resultados": [
+    {
+     "avisos": [
+      {
+       "codigo": "str",
+       "mensaje": "str"
+      }
+     ],
+     "fin_utc": "str",
+     "horas_sol": "number",
+     "horas_tierra_visible": "number",
+     "inicio_utc": "str",
+     "origen": "str",
+     "pct_sol": "number",
+     "pct_tierra": "number",
+     "referencia": {
+      "coincide": "bool",
+      "horas_sol": "number",
+      "horas_tierra_visible": "number",
+      "pct_sol": "number",
+      "pct_tierra": "number",
+      "sol_el_max_deg": "number",
+      "sol_el_media_deg": "number"
+     },
+     "semaforo": {
+      "comunicacion": "str",
+      "energia": "str",
+      "global": "str"
+     },
+     "site_id": "str",
+     "sol_el_max_deg": "number",
+     "sol_el_media_deg": "number"
+    }
+   ]
+  },
+  "tipo_contenido": "application/json"
+ },
+ "metricas_un_sitio": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "resultados": [
+    {
+     "avisos": [
+      {
+       "codigo": "str",
+       "mensaje": "str"
+      }
+     ],
+     "fin_utc": "str",
+     "horas_sol": "number",
+     "horas_tierra_visible": "number",
+     "inicio_utc": "str",
+     "origen": "str",
+     "pct_sol": "number",
+     "pct_tierra": "number",
+     "referencia": {
+      "coincide": "bool",
+      "horas_sol": "number",
+      "horas_tierra_visible": "number",
+      "pct_sol": "number",
+      "pct_tierra": "number",
+      "sol_el_max_deg": "number",
+      "sol_el_media_deg": "number"
+     },
+     "semaforo": {
+      "comunicacion": "str",
+      "energia": "str",
+      "global": "str"
+     },
+     "site_id": "str",
+     "sol_el_max_deg": "number",
+     "sol_el_media_deg": "number"
+    }
+   ]
+  },
+  "tipo_contenido": "application/json"
+ },
+ "puestas_ok": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "desde_utc": "str",
+   "site_id": "str",
+   "sol": {
+    "horas_restantes": "number",
+    "proxima_puesta_utc": "str",
+    "proxima_salida_utc": "str",
+    "visible": "bool"
+   },
+   "tierra": {
+    "horas_restantes": "number",
+    "proxima_puesta_utc": "str",
+    "proxima_salida_utc": "str",
+    "visible": "bool"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "puestas_sin_desde": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "desde_utc": "str",
+   "site_id": "str",
+   "sol": {
+    "horas_restantes": "number",
+    "proxima_puesta_utc": "str",
+    "proxima_salida_utc": "str",
+    "visible": "bool"
+   },
+   "tierra": {
+    "horas_restantes": "null",
+    "proxima_puesta_utc": "null",
+    "proxima_salida_utc": "null",
+    "visible": "bool"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "puestas_sitio_inexistente_404": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "El sitio no existe en sites.csv",
+  "estado": 404,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "puestas_tierra_nunca_visible_con_nulos": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "desde_utc": "str",
+   "site_id": "str",
+   "sol": {
+    "horas_restantes": "number",
+    "proxima_puesta_utc": "str",
+    "proxima_salida_utc": "str",
+    "visible": "bool"
+   },
+   "tierra": {
+    "horas_restantes": "null",
+    "proxima_puesta_utc": "null",
+    "proxima_salida_utc": "null",
+    "visible": "bool"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "ruta_inexistente_404": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "Not Found",
+  "estado": 404,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "seguridad_clave_publica": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "algoritmo": "str",
+   "clave_publica_b64": "str",
+   "estandar": "str",
+   "huella_sha3_256": "str"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "seguridad_manifiesto": {
+  "cabeceras": {
+   "cache-control": "no-cache",
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "algoritmo": "str",
+   "archivos": [
+    {
+     "bytes": "number",
+     "nombre": "str",
+     "sha3_256": "str"
+    }
+   ],
+   "firma_b64": "str",
+   "generado_utc": "str",
+   "huella_clave_publica": "str",
+   "version": "number"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "seguridad_manifiesto_sin_generar_404": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "Aún no hay manifiesto firmado de los datos",
+  "estado": 404,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "simulacion_con_proyeccion": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "avisos": [
+    {
+     "codigo": "str",
+     "mensaje": "str"
+    }
+   ],
+   "desde_utc": "str",
+   "fin_datos_utc": "str",
+   "hasta_utc": "str",
+   "paso_horas": "number",
+   "puntos": [
+    {
+     "azimut_solar_fiable": "bool",
+     "incertidumbre_deg": {
+      "__o__?": [
+       "null",
+       {
+        "sol_az_deg": "number",
+        "sol_el_deg": "number",
+        "tierra_az_deg": "number",
+        "tierra_el_deg": "number"
+       }
+      ],
+      "sol_az_deg?": "number",
+      "sol_el_deg?": "number",
+      "tierra_az_deg?": "number",
+      "tierra_el_deg?": "number"
+     },
+     "origen": "str",
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number",
+     "utc": "str"
+    }
+   ],
+   "site_id": "str"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "simulacion_datos": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": {
+   "avisos": [],
+   "desde_utc": "str",
+   "fin_datos_utc": "str",
+   "hasta_utc": "str",
+   "paso_horas": "number",
+   "puntos": [
+    {
+     "azimut_solar_fiable": "bool",
+     "incertidumbre_deg": "null",
+     "origen": "str",
+     "sol_az_deg": "number",
+     "sol_el_deg": "number",
+     "tierra_az_deg": "number",
+     "tierra_el_deg": "number",
+     "utc": "str"
+    }
+   ],
+   "site_id": "str"
+  },
+  "tipo_contenido": "application/json"
+ },
+ "simulacion_paso_invalido_422": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "'paso_horas' debe estar entre 0.25 y 24",
+  "estado": 422,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "simulacion_sitio_inexistente_404": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "detail": "El sitio no existe en sites.csv",
+  "estado": 404,
+  "forma": {
+   "detail": "str",
+   "error": {
+    "accion": "str",
+    "codigo": "str",
+    "estado": "number",
+    "mensaje": "str",
+    "request_id": "str",
+    "titulo": "str",
+    "ts_utc": "str"
+   }
+  },
+  "tipo_contenido": "application/json"
+ },
+ "sites": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": [
+   {
+    "agencia": "str",
+    "alt_km": "number",
+    "categoria": "str",
+    "fuente_url": "str",
+    "lat_deg": "number",
+    "lon_este_deg": "number",
+    "mision": "str",
+    "nombre": "str",
+    "notas": "str",
+    "site_id": "str"
+   }
+  ],
+  "tipo_contenido": "application/json"
+ },
+ "sites_con_notas_nulas_y_altitud_por_defecto": {
+  "cabeceras": {
+   "referrer-policy": "no-referrer",
+   "x-content-type-options": "nosniff",
+   "x-frame-options": "DENY",
+   "x-request-id": "presente"
+  },
+  "estado": 200,
+  "forma": [
+   {
+    "agencia": "str",
+    "alt_km": "number",
+    "categoria": "str",
+    "fuente_url": "str",
+    "lat_deg": "number",
+    "lon_este_deg": "number",
+    "mision": "str",
+    "nombre": "str",
+    "notas": "null|str",
+    "site_id": "str"
+   }
+  ],
+  "tipo_contenido": "application/json"
+ }
+}
