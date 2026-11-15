@@ -323,6 +323,23 @@
      "200"
     ]
    }
+  },
+  "/api/ventanas-alunizaje": {
+   "GET": {
+    "cuerpo": null,
+    "parametros": [
+     "query:desde:opcional",
+     "query:estancia_h:opcional",
+     "query:hasta:opcional",
+     "query:site_id:opcional"
+    ],
+    "respuestas": [
+     "200",
+     "404",
+     "422",
+     "503"
+    ]
+   }
   }
  },
  "analisis_ok": {
