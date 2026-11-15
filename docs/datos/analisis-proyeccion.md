@@ -149,6 +149,7 @@ Excluye el azimut solar de Apolo 11. El error **no crece de forma monótona**: o
 - Avisos: `proyeccion_estadistica` siempre que haya puntos proyectados; `azimut_solar_cenit` si el Sol supera los 85° (Apolo 11); y `sin_incertidumbre` si el sitio no está en la tabla de errores (nunca se devuelve `null` en silencio). Si la tabla falta o está corrupta, la API responde 503 con `{"detail"}`.
 - El modelo se ajusta una vez por archivo (menos de 0,1 s) y se guarda en la caché por `mtime` de `services/lectura.py`, así que se reajusta solo cuando se sube un CSV nuevo.
 - Si cambian los datos hay que regenerar la tabla de errores con `scripts/datos/analizar_proyeccion.py`; una prueba comprueba que está al día.
+- **Transparencia del análisis:** `GET /api/analisis/{site_id}` enseña al usuario cómo se analizan sus datos (los siete pasos, el origen y la calidad de la entrada, el espectro, el modelo, la validación y sus límites). Para saber si la validación vale para los datos actuales, la tabla guarda la huella SHA3-256 de los CSV de entrenamiento: si un usuario sube efemérides nuevas, la validación pasa a `vigente: false`. Contrato en `docs/api/analisis-transparencia.md`.
 
 ## 7. Hallazgos para el pitch
 1. **El cielo lunar es un reloj, y se puede animar con datos reales.** Un día lunar son 29,53 días: ≈14,8 días de Sol y otros tantos de noche en casi todos los sitios.
@@ -172,6 +173,6 @@ Excluye el azimut solar de Apolo 11. El error **no crece de forma monótona**: o
 ```bash
 pip install -r requirements.txt -r scripts/datos/requirements.txt
 python scripts/datos/descargar_validacion.py     # verdad de Horizons (Parquet, ~1 min)
-python scripts/datos/analizar_proyeccion.py      # tabla de errores, resultados.json y gráficos
+python scripts/datos/analizar_proyeccion.py      # tabla de errores, resultados.json y gráficos (--sin-graficos: solo las tablas)
 pytest tests/test_analisis_pipeline.py tests/test_analisis_ajuste.py tests/test_analisis_validacion.py tests/test_simulacion.py
 ```
