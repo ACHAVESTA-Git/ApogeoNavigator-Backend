@@ -6,13 +6,304 @@
   "proyectado_hasta": "2028-07-31T23:00Z",
   "error": {
     "rmse_deg": {
-      "sol_el_deg": null,
-      "tierra_el_deg": null,
-      "sol_az_deg": null,
-      "tierra_az_deg": null
+      "sol_el_deg": 1.1908,
+      "tierra_el_deg": 0.3819,
+      "sol_az_deg": 2.7999,
+      "tierra_az_deg": 0.6217
     },
-    "por_horizonte": null,
-    "control_horizons": null,
-    "aciertos_semaforo_control": null
+    "por_horizonte": [
+      {
+        "meses": 1,
+        "rmse_sol_el_deg": 0.1177,
+        "rmse_tierra_el_deg": 0.1397
+      },
+      {
+        "meses": 2,
+        "rmse_sol_el_deg": 0.2575,
+        "rmse_tierra_el_deg": 0.2269
+      },
+      {
+        "meses": 3,
+        "rmse_sol_el_deg": 0.4226,
+        "rmse_tierra_el_deg": 0.2774
+      },
+      {
+        "meses": 4,
+        "rmse_sol_el_deg": 0.6183,
+        "rmse_tierra_el_deg": 0.3167
+      },
+      {
+        "meses": 5,
+        "rmse_sol_el_deg": 0.8838,
+        "rmse_tierra_el_deg": 0.3549
+      },
+      {
+        "meses": 6,
+        "rmse_sol_el_deg": 1.2494,
+        "rmse_tierra_el_deg": 0.3342
+      },
+      {
+        "meses": 7,
+        "rmse_sol_el_deg": 1.616,
+        "rmse_tierra_el_deg": 0.3321
+      },
+      {
+        "meses": 8,
+        "rmse_sol_el_deg": 1.864,
+        "rmse_tierra_el_deg": 0.383
+      },
+      {
+        "meses": 9,
+        "rmse_sol_el_deg": 1.9005,
+        "rmse_tierra_el_deg": 0.4581
+      },
+      {
+        "meses": 10,
+        "rmse_sol_el_deg": 1.6147,
+        "rmse_tierra_el_deg": 0.5195
+      },
+      {
+        "meses": 11,
+        "rmse_sol_el_deg": 1.1121,
+        "rmse_tierra_el_deg": 0.5184
+      },
+      {
+        "meses": 12,
+        "rmse_sol_el_deg": 0.5231,
+        "rmse_tierra_el_deg": 0.4657
+      },
+      {
+        "meses": 13,
+        "rmse_sol_el_deg": 0.3869,
+        "rmse_tierra_el_deg": 0.4873
+      },
+      {
+        "meses": 14,
+        "rmse_sol_el_deg": 0.7137,
+        "rmse_tierra_el_deg": 0.6073
+      }
+    ],
+    "control_horizons": [
+      {
+        "site_id": "shackleton",
+        "utc": "2027-12-01T00:00Z",
+        "variable": "sol_el_deg",
+        "error_deg": -0.3427
+      },
+      {
+        "site_id": "shackleton",
+        "utc": "2027-12-01T00:00Z",
+        "variable": "tierra_el_deg",
+        "error_deg": -0.2509
+      },
+      {
+        "site_id": "shackleton",
+        "utc": "2027-12-01T00:00Z",
+        "variable": "sol_az_deg",
+        "error_deg": -2.0792
+      },
+      {
+        "site_id": "shackleton",
+        "utc": "2027-12-01T00:00Z",
+        "variable": "tierra_az_deg",
+        "error_deg": -0.0443
+      },
+      {
+        "site_id": "shackleton",
+        "utc": "2028-01-15T12:00Z",
+        "variable": "sol_el_deg",
+        "error_deg": 0.1162
+      },
+      {
+        "site_id": "shackleton",
+        "utc": "2028-01-15T12:00Z",
+        "variable": "tierra_el_deg",
+        "error_deg": -0.0303
+      },
+      {
+        "site_id": "shackleton",
+        "utc": "2028-01-15T12:00Z",
+        "variable": "sol_az_deg",
+        "error_deg": -2.5038
+      },
+      {
+        "site_id": "shackleton",
+        "utc": "2028-01-15T12:00Z",
+        "variable": "tierra_az_deg",
+        "error_deg": -0.2948
+      },
+      {
+        "site_id": "shackleton",
+        "utc": "2028-07-15T12:00Z",
+        "variable": "sol_el_deg",
+        "error_deg": 0.1301
+      },
+      {
+        "site_id": "shackleton",
+        "utc": "2028-07-15T12:00Z",
+        "variable": "tierra_el_deg",
+        "error_deg": -0.7827
+      },
+      {
+        "site_id": "shackleton",
+        "utc": "2028-07-15T12:00Z",
+        "variable": "sol_az_deg",
+        "error_deg": 0.4806
+      },
+      {
+        "site_id": "shackleton",
+        "utc": "2028-07-15T12:00Z",
+        "variable": "tierra_az_deg",
+        "error_deg": -0.342
+      },
+      {
+        "site_id": "apollo11",
+        "utc": "2027-12-01T00:00Z",
+        "variable": "sol_el_deg",
+        "error_deg": 2.0832
+      },
+      {
+        "site_id": "apollo11",
+        "utc": "2027-12-01T00:00Z",
+        "variable": "tierra_el_deg",
+        "error_deg": -0.0676
+      },
+      {
+        "site_id": "apollo11",
+        "utc": "2027-12-01T00:00Z",
+        "variable": "sol_az_deg",
+        "error_deg": 0.8074
+      },
+      {
+        "site_id": "apollo11",
+        "utc": "2027-12-01T00:00Z",
+        "variable": "tierra_az_deg",
+        "error_deg": 0.7164
+      },
+      {
+        "site_id": "apollo11",
+        "utc": "2028-01-15T12:00Z",
+        "variable": "sol_el_deg",
+        "error_deg": -2.5328
+      },
+      {
+        "site_id": "apollo11",
+        "utc": "2028-01-15T12:00Z",
+        "variable": "tierra_el_deg",
+        "error_deg": -0.2977
+      },
+      {
+        "site_id": "apollo11",
+        "utc": "2028-01-15T12:00Z",
+        "variable": "sol_az_deg",
+        "error_deg": -1.633
+      },
+      {
+        "site_id": "apollo11",
+        "utc": "2028-01-15T12:00Z",
+        "variable": "tierra_az_deg",
+        "error_deg": -0.0684
+      },
+      {
+        "site_id": "apollo11",
+        "utc": "2028-07-15T12:00Z",
+        "variable": "sol_el_deg",
+        "error_deg": 0.5222
+      },
+      {
+        "site_id": "apollo11",
+        "utc": "2028-07-15T12:00Z",
+        "variable": "tierra_el_deg",
+        "error_deg": -0.1637
+      },
+      {
+        "site_id": "apollo11",
+        "utc": "2028-07-15T12:00Z",
+        "variable": "sol_az_deg",
+        "error_deg": 1.8087
+      },
+      {
+        "site_id": "apollo11",
+        "utc": "2028-07-15T12:00Z",
+        "variable": "tierra_az_deg",
+        "error_deg": 1.6857
+      },
+      {
+        "site_id": "change4",
+        "utc": "2027-12-01T00:00Z",
+        "variable": "sol_el_deg",
+        "error_deg": -0.2983
+      },
+      {
+        "site_id": "change4",
+        "utc": "2027-12-01T00:00Z",
+        "variable": "tierra_el_deg",
+        "error_deg": -0.2537
+      },
+      {
+        "site_id": "change4",
+        "utc": "2027-12-01T00:00Z",
+        "variable": "sol_az_deg",
+        "error_deg": -2.806
+      },
+      {
+        "site_id": "change4",
+        "utc": "2027-12-01T00:00Z",
+        "variable": "tierra_az_deg",
+        "error_deg": -0.0274
+      },
+      {
+        "site_id": "change4",
+        "utc": "2028-01-15T12:00Z",
+        "variable": "sol_el_deg",
+        "error_deg": 2.6679
+      },
+      {
+        "site_id": "change4",
+        "utc": "2028-01-15T12:00Z",
+        "variable": "tierra_el_deg",
+        "error_deg": -0.0606
+      },
+      {
+        "site_id": "change4",
+        "utc": "2028-01-15T12:00Z",
+        "variable": "sol_az_deg",
+        "error_deg": -1.4612
+      },
+      {
+        "site_id": "change4",
+        "utc": "2028-01-15T12:00Z",
+        "variable": "tierra_az_deg",
+        "error_deg": -0.4376
+      },
+      {
+        "site_id": "change4",
+        "utc": "2028-07-15T12:00Z",
+        "variable": "sol_el_deg",
+        "error_deg": -1.4059
+      },
+      {
+        "site_id": "change4",
+        "utc": "2028-07-15T12:00Z",
+        "variable": "tierra_el_deg",
+        "error_deg": -0.7618
+      },
+      {
+        "site_id": "change4",
+        "utc": "2028-07-15T12:00Z",
+        "variable": "sol_az_deg",
+        "error_deg": -0.6873
+      },
+      {
+        "site_id": "change4",
+        "utc": "2028-07-15T12:00Z",
+        "variable": "tierra_az_deg",
+        "error_deg": -0.4827
+      }
+    ],
+    "aciertos_semaforo_control": {
+      "aciertos": 124,
+      "total": 126
+    }
   }
 }
