@@ -8,7 +8,6 @@ from app.db.enums import AccionAuditoria
 from app.schemas.report import Report, SaveResult
 from app.security.pqc import ErrorClavesPQC
 from app.services import datastore, storage
-from app.services.blobstore import StoreError
 from app.utils import auditoria_util
 from app.utils.csv_reader import read_limited
 from app.validation.engine import ValidationResult, validate_csv
@@ -87,7 +86,5 @@ def guardar(tipo: str, file: UploadFile, request: Request):
         raise HTTPException(status_code=config.HTTP_UNAVAILABLE, detail=config.MSG_SIGNING_UNAVAILABLE) from None
     except datastore.DataConflict:
         raise HTTPException(status_code=config.HTTP_CONFLICT, detail=config.MSG_DATA_CONFLICT) from None
-    except StoreError:
-        raise HTTPException(status_code=config.HTTP_UNAVAILABLE, detail=config.MSG_BUCKET_UNAVAILABLE) from None
     return SaveResult(**result.report.model_dump(), guardado=True,
                       copia_historial=backup.name if backup else None)

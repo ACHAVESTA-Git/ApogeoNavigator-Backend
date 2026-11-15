@@ -5,6 +5,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
 from app.db.enums import AccionAuditoria
+from app.schemas.common import Page
 
 
 class EventoOut(BaseModel):
@@ -34,11 +35,7 @@ def evento_out(evento, incluir_firma: bool = False) -> EventoOut:
     return out
 
 
-class PaginaAuditoria(BaseModel):
-    total: int
-    limite: int
-    offset: int
-    items: list[EventoOut]
+PaginaAuditoria = Page[EventoOut]
 
 
 class VerificacionOut(BaseModel):

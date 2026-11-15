@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.core import config as c
+from app.core.errors import register_handlers
 from app.routers import simulacion
 from app.services import lectura
 
@@ -28,6 +29,7 @@ def data_dir(tmp_path, monkeypatch) -> Path:
 def api(data_dir) -> TestClient:
     app = FastAPI()
     app.include_router(simulacion.router)
+    register_handlers(app)
     return TestClient(app)
 
 
