@@ -34,6 +34,12 @@ class Report(BaseModel):
     advertencias: list[Issue] = Field(default_factory=list, description="Warnings that do not block the upload.")
 
 
+class ErrorValidacionOut(BaseModel):
+    """Cuerpo de un 422 en la carga: el informe de un archivo rechazado, o la lista de errores nativa de FastAPI si la
+    petición está mal formada (por ejemplo, sin el campo `file`)."""
+    detail: Report | list
+
+
 class SaveResult(Report):
     guardado: bool = False
     copia_historial: str | None = None

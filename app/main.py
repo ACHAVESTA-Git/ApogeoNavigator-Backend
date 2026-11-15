@@ -10,6 +10,7 @@ from app.core.logging_config import configurar_logging
 from app.core.peticion import RequestContextMiddleware
 from app.db.session import db_enabled
 from app.routers import admin_claves, analisis, auditoria, datos, horizons, lectura, seguridad, simulacion
+from app.schemas.seguridad import HealthOut
 from app.schemas.sites import Site
 from app.services import datastore, storage
 
@@ -39,10 +40,10 @@ app.include_router(seguridad.router, dependencies=[Depends(datastore.refresh_if_
 app.include_router(admin_claves.router)
 
 
-@app.get(config.ROUTE_HEALTH, tags=[config.TAG_SYSTEM], summary="Service health")
-def health() -> dict:
+@app.get(config.ROUTE_HEALTH, response_model=HealthOut, tags=[config.TAG_SYSTEM], summary="Service health")
+def health() -> HealthOut:
     """Returns `{"status": "ok"}` while the service is up."""
-    return dict(config.HEALTH_OK)
+    return HealthOut(**config.HEALTH_OK)
 
 
 @app.get(config.ROUTE_SITES, response_model=list[Site], tags=[config.TAG_SITES], summary="List the landing sites",
