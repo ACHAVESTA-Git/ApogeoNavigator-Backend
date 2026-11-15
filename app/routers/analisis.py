@@ -3,7 +3,7 @@ from fastapi import APIRouter
 
 from app.analysis import transparencia
 from app.core import config as c
-from app.routers.comun import RESPONSES, run_service
+from app.routers.comun import RESPONSES
 from app.schemas.analisis import AnalisisOut
 
 router = APIRouter(prefix=c.API_PREFIX, tags=[c.ROUTER_TAG_ANALISIS])
@@ -18,4 +18,4 @@ def analisis(site_id: str, desde: str | None = None, hasta: str | None = None, v
     Refleja los datos actuales del sitio, incluidos los que haya subido un usuario. La validación contra Horizons solo
     es `vigente` si se hizo con esos mismos datos. No sustituye a las efemérides físicas.
     """
-    return run_service(transparencia.analyse, site_id, desde, hasta, variable)
+    return transparencia.analyse(site_id, desde, hasta, variable)
