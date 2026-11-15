@@ -759,6 +759,19 @@ LOG_ESCAPES = {"\r": "\\r", "\n": "\\n", "\t": "\\t", "\x7f": "\\x7f"}
 LOG_QUIET_STATUSES = (401, 404)                   # son normales: se registran en INFO y no en WARNING
 RETRY_AFTER_HEADER = "Retry-After"
 CORS_EXPOSE_HEADERS = (REQUEST_ID_HEADER, RETRY_AFTER_HEADER)    # el frontend de otro origen puede leerlos
+
+# ---------------------------------------------------------------- cabeceras de seguridad (app/core/seguridad_http.py)
+SECURITY_HEADERS = (                              # en TODAS las respuestas (nombre, valor); sin CSP, para no romper /docs
+    ("X-Content-Type-Options", "nosniff"),
+    ("Referrer-Policy", "no-referrer"),
+    ("X-Frame-Options", "DENY"),
+)
+HSTS_HEADER = "Strict-Transport-Security"         # solo en producción: en local no hay HTTPS
+HSTS_MAX_AGE_SECONDS = 31_536_000                 # un año
+HSTS_VALUE = f"max-age={HSTS_MAX_AGE_SECONDS}; includeSubDomains"
+CACHE_CONTROL_HEADER = "Cache-Control"
+CACHE_CONTROL_NO_STORE = "no-store"
+NO_STORE_PATH_PREFIXES = ("/api/auth", "/api/admin", "/api/datos")   # sesión, gestor de claves y cargas: nada se cachea
 VALIDATION_LOC_NOISE = ("query", "path", "body", "header", "cookie")
 MSG_VALIDATION_FIELDS = "Hay {n} campo(s) con valores no válidos: {campos}."
 MSG_VALIDATION_GENERIC = "La petición no tiene el formato esperado."
