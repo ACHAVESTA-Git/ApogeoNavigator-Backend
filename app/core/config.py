@@ -323,6 +323,7 @@ METRICS_FILENAME = "metricas.csv"
 QUERY_MAX_RANGE_DAYS = 35
 MAX_COMPARE_SITES = 3
 ORIGEN_CALCULADO = "calculado"
+ORIGENES = (ORIGEN_CALCULADO,)
 # Umbrales del semáforo, fijados por el usuario (% de tiempo con el astro sobre el horizonte).
 # Energía (Sol): verde >= 45, amarillo de 25 a < 45, rojo < 25. Comunicación (Tierra): verde >= 70, amarillo de 40 a < 70.
 SEMAFORO_ENERGIA_VERDE_MIN = 45.0
@@ -337,6 +338,7 @@ KEY_AVISOS = "avisos"
 KEY_CODIGO = "codigo"
 KEY_MENSAJE = "mensaje"
 SEMAFORO_VERDE, SEMAFORO_AMARILLO, SEMAFORO_ROJO = "verde", "amarillo", "rojo"
+SEMAFORO_NIVELES = (SEMAFORO_VERDE, SEMAFORO_AMARILLO, SEMAFORO_ROJO)
 METRICS_DEG_TOL = 0.001
 MSG_SITE_NOT_IN_CATALOG = "El sitio no existe en sites.csv"
 MSG_NO_EPHEMERIS = "El sitio no tiene efemérides cargadas"

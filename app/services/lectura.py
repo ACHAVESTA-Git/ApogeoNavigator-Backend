@@ -272,3 +272,14 @@ def sunsets(site_id: str, desde: str | None) -> dict:
         c.KEY_SOL: _events(rows, idx, c.COL_SOL_EL, moment),
         c.KEY_TIERRA: _events(rows, idx, c.COL_TIERRA_EL, moment),
     }
+
+
+# ---------------------------------------------------------------- catálogo de sitios
+def sites_list() -> list[Row]:
+    """Sitios del catálogo ya tipados. Sin sites.csv o si no cumple el estándar: LecturaError 503 (mismos textos de siempre)."""
+    result = storage.read_sites()
+    if result is None:
+        raise LecturaError(c.HTTP_UNAVAILABLE, c.MSG_NO_SITES)
+    if not result.report.valido:
+        raise LecturaError(c.HTTP_UNAVAILABLE, c.MSG_SITES_INVALID)
+    return [r.values for r in result.records]
