@@ -274,6 +274,17 @@ def sunsets_from_rows(site_id: str, rows: list[Row], moment: datetime, idx: int 
     }
 
 
+# ---------------------------------------------------------------- catálogo de sitios
+def sites_list() -> list[Row]:
+    """Sitios del catálogo ya tipados. Sin sites.csv o si no cumple el estándar: LecturaError 503 (mismos textos de siempre)."""
+    result = storage.read_sites()
+    if result is None:
+        raise LecturaError(c.HTTP_UNAVAILABLE, c.MSG_NO_SITES)
+    if not result.report.valido:
+        raise LecturaError(c.HTTP_UNAVAILABLE, c.MSG_SITES_INVALID)
+    return [r.values for r in result.records]
+
+
 def sunsets(site_id: str, desde: str | None) -> dict:
     rows = ephemeris(site_id)
     moment = parse_instant(c.PARAM_DESDE, desde) or rows[0][c.COL_UTC]
