@@ -673,3 +673,99 @@ AVISO_SIN_INCERTIDUMBRE = "sin_incertidumbre"
 MSG_SIM_NO_UNCERTAINTY = "No hay validación de este sitio: los puntos proyectados van sin incertidumbre_deg"
 MSG_SIM_ERRORS_MISSING = "Falta la tabla de errores de la proyección (app/analysis/proyeccion_errores.json)"
 MSG_SIM_ERRORS_INVALID = "La tabla de errores de la proyección no es válida; hay que regenerarla con analizar_proyeccion.py"
+
+
+# ---------------------------------------------------------------- transparencia del análisis (GET /api/analisis/{site_id})
+ROUTE_ANALISIS = "/analisis/{site_id}"
+ROUTER_TAG_ANALISIS = "analisis"
+PARAM_VARIABLE = "variable"
+CACHE_KIND_ANALYSIS = "analisis"
+CACHE_KIND_MANIFEST = "manifiesto"
+CACHE_KIND_SHA3 = "sha3"
+ANALISIS_DEFAULT_VARIABLE = "sol_el_deg"                 # variable de la serie «observado, ajustado y proyectado»
+ANALISIS_SERIES_POINTS = 300                              # puntos como mucho de la serie para graficar (submuestreada)
+ANALISIS_DEFAULT_PROJECTION_DAYS = 90                     # sin `hasta`: los datos y 90 días de proyección
+ANALISIS_SPECTRUM_PEAKS = 5
+RESIDUAL_ROUND = ROUND_DEG
+ORIGIN_NASA_SEED, ORIGIN_UPLOADED, ORIGIN_MODIFIED, ORIGIN_UNRECORDED = "semilla_nasa", "subido", "modificado", "sin_registro"
+UPLOADER_API_KEY, UPLOADER_USER, UPLOADER_ANONYMOUS = "clave de API", "usuario registrado", "anónimo"
+STEP_OK, STEP_UNAVAILABLE, STEP_WARNING = "ok", "no_disponible", "advertencia"
+KEY_SUMMARY = "resumen"                                   # bloque extra de cada sitio en proyeccion_errores.json
+KEY_DATA_SHA3 = "datos_sha3_256"
+KEY_TRAINING = "entrenamiento"
+KEY_VALIDATION_PERIOD = "validacion"
+KEY_ROWS = "filas"
+KEY_START, KEY_END = "inicio", "fin"
+SPECTRUM_SERIES = (("sol_el_deg", "Elevación del Sol"), ("tierra_az_deg", "Azimut de la Tierra"))
+ROLE_SUN_HARMONIC = "armónico {k} del mes sinódico"
+ROLE_ANOMALISTIC = "mes anomalístico (libración en longitud)"
+ROLE_ANOMALISTIC_2 = "2.º armónico del mes anomalístico"
+ROLE_SIDEBAND = "banda lateral {k}·sinódico {sign} anomalístico (incluye el batido de ~411 días)"
+ROLE_DRACONIC = "mes dracónico (libración en latitud)"
+ROLE_VARIATION = "variación lunar: 2·sinódico"
+ROLE_EVECTION = "evección: 2·sinódico {sign} anomalístico"
+ROLE_FALLBACK = "combinación de periodos lunares"
+ANALISIS_STEPS = (
+    ("carga", "Carga del archivo", "Se lee el CSV de efemérides del sitio, con la misma lectura segura que usa la carga de datos."),
+    ("validacion_csv", "Validación del archivo", "Se comprueba el estándar de CSV: cabecera, tipos, rangos, fechas en UTC, paso constante y saltos físicos."),
+    ("features", "Cálculo de características con Polars",
+     "Se miden las ventanas de luz solar y de Tierra visible, las horas de Sol por día lunar y la libración."),
+    ("fft", "Búsqueda de periodicidades (FFT)",
+     "Una transformada de Fourier busca los ritmos de la serie; el más fuerte es el mes sinódico, de unos 29,5 días."),
+    ("ajuste", "Ajuste del modelo armónico",
+     "Se ajusta una suma de senos y cosenos con los periodos lunares. Su R² mide cuánto explica de estos datos; "
+     "no mide cuánto acierta fuera de ellos (eso lo mide la validación)."),
+    ("validacion_horizons", "Validación contra Horizons",
+     "El modelo, entrenado solo con estos datos, predijo 12 meses que luego se compararon con los de JPL Horizons."),
+    ("proyeccion", "Proyección",
+     "El modelo se extiende más allá del último dato, con la incertidumbre medida en la validación."),
+)
+LIMIT_IDEAL_HORIZON = "horizonte_ideal"
+LIMIT_NOT_EPHEMERIS = "no_sustituye_efemerides"
+LIMIT_SHORT_WINDOW = "ventana_corta"
+LIMIT_POLAR_SUN = "sol_rasante_polo"
+LIMIT_ZENITH = "cenit_ecuador"
+LIMIT_NOT_BLIND = "validacion_no_ciega"
+LIMIT_STALE_VALIDATION = "validacion_de_otros_datos"
+LIMITS_TEXT = {
+    LIMIT_IDEAL_HORIZON: "Horizonte ideal: se supone una Luna lisa. El relieve real (montañas, cráteres) puede tapar un Sol bajo.",
+    LIMIT_NOT_EPHEMERIS: "La proyección es una estimación estadística y no sustituye a las efemérides físicas de Horizons.",
+    LIMIT_SHORT_WINDOW: "Con unos 6 meses de datos no se pueden identificar ciclos largos (anual, año de eclipses): no se ajustan.",
+    LIMIT_POLAR_SUN: "Sol rasante: si el Sol no supera 3° de elevación, un error de 1° cambia el resultado y las puestas casi no se predicen.",
+    LIMIT_ZENITH: "Sol cerca del cénit: el azimut solar gira de golpe y su proyección no es fiable.",
+    LIMIT_NOT_BLIND: "Se descartaron versiones del modelo mirando el error de validación: las cifras no son una prueba ciega estricta.",
+    LIMIT_STALE_VALIDATION: "Estos datos no son los de la validación: sus errores son de referencia y no se han medido con tus datos.",
+}
+MSG_ANALYSIS_VARIABLE = "'variable' debe ser una de: {values}"
+MSG_ANALYSIS_NO_VALIDATION = "Este sitio no tiene validación contra Horizons"
+MSG_ANALYSIS_ZERO_VARIANCE = "La serie es constante: el R² no está definido"
+DESC_ORIGIN = {
+    ORIGIN_NASA_SEED: "El archivo es idéntico a la semilla del proyecto, generada con JPL Horizons.",
+    ORIGIN_UPLOADED: "El archivo coincide con la última carga guardada por un usuario.",
+    ORIGIN_MODIFIED: "El archivo difiere de la semilla y no coincide con ninguna carga registrada: se subió sin registro o se editó a mano.",
+    ORIGIN_UNRECORDED: "No hay semilla ni registro de cargas con los que comparar: solo se puede dar la huella del archivo.",
+}
+UNIT_ROWS, UNIT_BYTES, UNIT_HOURS, UNIT_DAYS, UNIT_DEG, UNIT_PCT, UNIT_MONTHS, UNIT_TERMS, UNIT_NONE = (
+    "filas", "bytes", "h", "días", "°", "%", "meses", "términos", "")
+LBL_ROWS, LBL_BYTES = "Filas leídas", "Tamaño del archivo"
+LBL_VALID_ROWS, LBL_ERROR_ROWS, LBL_GAPS = "Filas válidas", "Filas con error", "Huecos de tiempo"
+LBL_STEP_H, LBL_RANGE_DAYS = "Paso entre filas", "Rango cubierto"
+LBL_SUN_WINDOWS, LBL_SUN_WINDOW_MEAN = "Ventanas de Sol completas", "Duración media de una ventana de Sol"
+LBL_LUNAR_DAYS, LBL_SUN_HOURS_DAY = "Días lunares completos", "Horas de Sol por día lunar (media)"
+LBL_LIB_AZ, LBL_LIB_EL = "Oscilación de la Tierra en azimut", "Oscilación de la Tierra en elevación"
+LBL_PEAK_PERIOD, LBL_PEAK_AMPLITUDE = "Periodo del pico más fuerte", "Amplitud relativa del pico más fuerte"
+LBL_SYNODIC_PEAK, LBL_RESOLUTION = "Pico del mes sinódico (elevación del Sol)", "Resolución de la FFT en el mes sinódico"
+LBL_SYNODIC_REFINED, LBL_TERMS = "Mes sinódico afinado", "Términos del modelo (cos y sen)"
+LBL_R2_MEAN, LBL_RMSE_FIT = "R² medio del ajuste", "RMSE medio del ajuste dentro de los datos"
+LBL_RMSE_SUN_EL, LBL_RMSE_EARTH_AZ = "RMSE de la elevación del Sol", "RMSE del azimut de la Tierra"
+LBL_TRAFFIC_HITS, LBL_EVENT_MAE = "Meses con el semáforo bien predicho", "Error medio de las puestas del Sol"
+LBL_UNC_FIRST, LBL_UNC_LAST = "Incertidumbre del mes 1 (elevación del Sol)", "Incertidumbre del mes 12 (elevación del Sol)"
+LBL_PROJECTABLE = "Meses proyectables"
+LBL_VALID_STALE = "Validación vigente"
+PROJECTION_BODY_NAMES = {KEY_SOL: "Sol", KEY_TIERRA: "Tierra"}
+ANALISIS_SPECTRUM_NOTE = ("Con la ventana de datos disponible, la FFT no separa el mes sinódico (29,53 d) del anomalístico "
+                          "(27,55 d) ni del dracónico (27,21 d): por eso el modelo toma esos periodos físicos y la FFT solo los confirma.")
+ANALISIS_VARIABLE_NAMES = {COL_SOL_AZ: "Azimut del Sol", COL_SOL_EL: "Elevación del Sol",
+                           COL_TIERRA_AZ: "Azimut de la Tierra", COL_TIERRA_EL: "Elevación de la Tierra"}
+MSG_ANALYSIS_BEFORE_DATA = "'desde' es anterior al primer dato disponible"
+KEY_MANIFEST_FILES, KEY_MANIFEST_NAME, KEY_MANIFEST_GENERATED = "archivos", "nombre", "generado_utc"   # forma de data/manifest.json
