@@ -97,9 +97,22 @@ def test_un_estado_fuera_del_catalogo_cae_en_la_entrada_de_su_familia(estado, es
     (401, c.MSG_API_KEY_INVALID, "CLAVE_INVALIDA"), (401, c.MSG_KEYS_ADMIN_KEY, "CLAVE_INVALIDA"),
     (422, c.MSG_RANGE_ORDER, "RANGO_FECHAS_INVALIDO"), (422, c.MSG_AUDIT_RANGE_ORDER, "RANGO_FECHAS_INVALIDO"),
     (422, "'desde': Formato esperado: YYYY-MM-DDTHH:MMZ (UTC)", "RANGO_FECHAS_INVALIDO"),
-    (422, c.MSG_OUT_OF_DATA.format(param="hasta"), "RANGO_FECHAS_INVALIDO"),
+    (422, c.MSG_OUT_OF_DATA.format(param="hasta"), "FECHA_FUERA_DE_DATOS"),
     (422, c.MSG_QUERY_RANGE.format(max=35, days=90.0), "RANGO_DEMASIADO_LARGO"),
-    (503, c.MSG_NO_SITES, "DATOS_NO_DISPONIBLES"), (503, c.MSG_SITES_INVALID, "DATOS_NO_DISPONIBLES"),
+    (503, c.MSG_NO_SITES, "CATALOGO_NO_DISPONIBLE"), (503, c.MSG_SITES_INVALID, "CATALOGO_INVALIDO"),
+    (503, c.MSG_EPHEM_INVALID, "EFEMERIDES_INVALIDAS"), (503, c.MSG_METRICS_INVALID, "METRICAS_INVALIDAS"),
+    (503, c.MSG_AUDIT_UNAVAILABLE, "AUDITORIA_NO_DISPONIBLE"), (409, c.MSG_DATA_CONFLICT, "CARGA_EN_CONFLICTO"),
+    (503, c.MSG_SIM_ERRORS_MISSING, "SIMULACION_NO_DISPONIBLE"), (503, c.MSG_SIM_ERRORS_INVALID, "SIMULACION_NO_DISPONIBLE"),
+    (422, c.MSG_SIM_STEP.format(min=1, max=24), "PASO_HORAS_INVALIDO"),
+    (422, c.MSG_SIM_TOO_MANY_POINTS.format(points=9000, max=5000), "DEMASIADOS_PUNTOS"),
+    (422, c.MSG_SIM_BEFORE_DATA, "FECHA_ANTES_DE_LOS_DATOS"), (422, c.MSG_ANALYSIS_BEFORE_DATA, "FECHA_ANTES_DE_LOS_DATOS"),
+    (422, c.MSG_SIM_BEYOND_PROJECTION.format(days=365), "FECHA_FUERA_DE_PROYECCION"),
+    (422, c.MSG_NO_ROWS_IN_RANGE, "RANGO_SIN_DATOS"), (422, c.MSG_SITE_ID_REQUIRED, "SITIO_REQUERIDO"),
+    (422, c.MSG_COMPARE_COUNT.format(max=3), "COMPARACION_SITIOS_INVALIDA"),
+    (422, c.MSG_HORIZONS_YEARS.format(min=2000, max=2100), "HORIZONS_FECHAS_FUERA_DE_RANGO"),
+    (429, c.MSG_HORIZONS_TOO_MANY.format(seconds=7), "HORIZONS_LIMITE"), (503, c.MSG_HORIZONS_BUSY.format(seconds=2), "HORIZONS_OCUPADO"),
+    (504, c.MSG_HORIZONS_TIMEOUT, "HORIZONS_TIEMPO_AGOTADO"), (502, c.MSG_HORIZONS_FAILED, "HORIZONS_NO_DISPONIBLE"),
+    (502, c.MSG_HORIZONS_UNEXPECTED, "HORIZONS_RESPUESTA_INVALIDA"), (502, c.MSG_HORIZONS_NOT_MOON, "HORIZONS_RESULTADO_NO_VALIDO"),
     (503, c.MSG_DB_UNAVAILABLE, "BD_NO_DISPONIBLE"), (503, c.MSG_DB_DISABLED, "BD_NO_DISPONIBLE"),
     (503, c.MSG_BUCKET_UNAVAILABLE, "ALMACEN_NO_DISPONIBLE"), (503, c.MSG_SIGNING_UNAVAILABLE, "FIRMA_NO_DISPONIBLE"),
     (409, c.MSG_KEYS_ALREADY_REVOKED, "CLAVE_YA_REVOCADA"), (409, c.MSG_KEYS_INACTIVE_USER, "USUARIO_INACTIVO"),
@@ -116,7 +129,7 @@ def test_un_codigo_de_dominio_no_se_usa_con_un_estado_que_no_es_el_suyo():
 
 def test_todos_los_codigos_de_dominio_tienen_algun_texto_que_los_produce():
     producidos = set(mensajes._POR_DETALLE.values()) | {cod for _, cod in mensajes._POR_PATRON} | {c.CODE_CSV_INVALID}
-    assert set(mensajes.DOMINIO) <= producidos
+    assert set(mensajes.DOMINIO) - {"DATOS_NO_DISPONIBLES"} <= producidos      # ese es el comodín 503 de datos: sin texto propio
 
 
 # ------------------------------------------------------------------ un estado a la vez
@@ -223,7 +236,7 @@ def test_servicios_caidos_dan_503_con_su_codigo(real, data_dir):
     _verificar_error(real.get("/api/sites"), 503, "ALMACEN_NO_DISPONIBLE")
     real_app.dependency_overrides.clear()
     (data_dir / "sites.csv").unlink()
-    _verificar_error(real.get("/api/sites"), 503, "DATOS_NO_DISPONIBLES")
+    _verificar_error(real.get("/api/sites"), 503, "CATALOGO_NO_DISPONIBLE")
     _verificar_error(real.get("/api/seguridad/manifiesto"), 404, "MANIFIESTO_NO_GENERADO")
 
 
@@ -502,3 +515,21 @@ def test_el_catalogo_no_muestra_jerga_de_desarrollador():
     for entrada in mensajes.CODIGOS.values():
         for texto in (entrada.titulo, entrada.mensaje, entrada.accion):
             assert not any(p in texto for p in prohibidas), f"{entrada.codigo}: {texto}"
+
+
+def test_los_codigos_nuevos_estan_en_el_catalogo_con_el_estado_del_error_que_los_produce():
+    esperados = {"PASO_HORAS_INVALIDO": 422, "DEMASIADOS_PUNTOS": 422, "FECHA_FUERA_DE_DATOS": 422, "FECHA_ANTES_DE_LOS_DATOS": 422,
+                 "FECHA_FUERA_DE_PROYECCION": 422, "RANGO_SIN_DATOS": 422, "SITIO_REQUERIDO": 422, "COMPARACION_SITIOS_INVALIDA": 422,
+                 "HORIZONS_FECHAS_FUERA_DE_RANGO": 422, "HORIZONS_LIMITE": 429, "HORIZONS_OCUPADO": 503, "HORIZONS_TIEMPO_AGOTADO": 504,
+                 "HORIZONS_NO_DISPONIBLE": 502, "HORIZONS_RESPUESTA_INVALIDA": 502, "HORIZONS_RESULTADO_NO_VALIDO": 502,
+                 "CARGA_EN_CONFLICTO": 409, "AUDITORIA_NO_DISPONIBLE": 503, "CATALOGO_NO_DISPONIBLE": 503, "CATALOGO_INVALIDO": 503,
+                 "EFEMERIDES_INVALIDAS": 503, "METRICAS_INVALIDAS": 503, "SIMULACION_NO_DISPONIBLE": 503}
+    assert {cod: mensajes.CODIGOS[cod].estado for cod in esperados} == esperados
+    for cod in esperados:
+        entrada = mensajes.CODIGOS[cod]
+        assert entrada.titulo and len(entrada.titulo) <= 40 and entrada.mensaje and entrada.accion and "{" not in entrada.mensaje
+
+
+def test_un_detalle_nuevo_con_otro_estado_no_toma_el_codigo_de_dominio():
+    assert mensajes.codigo_para(500, c.MSG_HORIZONS_TOO_MANY.format(seconds=3)) == "ERROR_INTERNO"
+    assert mensajes.codigo_para(422, c.MSG_DATA_CONFLICT) == "DATOS_INVALIDOS"
