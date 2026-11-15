@@ -6,7 +6,7 @@ from app.core import config
 from app.core.cors import add_cors
 from app.core.limits import upload_guard
 from app.db.session import db_enabled
-from app.routers import admin_claves, auditoria, datos, lectura, seguridad, simulacion
+from app.routers import admin_claves, analisis, auditoria, datos, lectura, seguridad, simulacion
 from app.schemas.sites import Site
 from app.services import datastore, storage
 
@@ -25,6 +25,7 @@ add_cors(app)      # el último en añadirse es el más externo
 app.include_router(datos.router)
 app.include_router(lectura.router, dependencies=[Depends(datastore.refresh_if_stale)])
 app.include_router(simulacion.router, dependencies=[Depends(datastore.refresh_if_stale)])
+app.include_router(analisis.router, dependencies=[Depends(datastore.refresh_if_stale)])
 app.include_router(auditoria.router)
 app.include_router(seguridad.router, dependencies=[Depends(datastore.refresh_if_stale)])
 app.include_router(admin_claves.router)
