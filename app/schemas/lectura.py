@@ -56,9 +56,13 @@ class Aviso(BaseModel):
 class Semaforo(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    energia: Nivel = Field(description="Por % de tiempo con Sol: verde desde 45 %, amarillo de 25 % a menos de 45 %, rojo por debajo.")
-    comunicacion: Nivel = Field(description="Por % de tiempo con la Tierra: verde desde 70 %, amarillo de 40 % a menos de 70 %, rojo por debajo.")
-    global_: Nivel = Field(alias="global", description="El peor de los dos niveles anteriores.")
+    energia: Nivel = Field(description=(
+        f"By % of time with the Sun: verde from {config.SEMAFORO_ENERGIA_VERDE_MIN:g} %, amarillo from "
+        f"{config.SEMAFORO_ENERGIA_AMARILLO_MIN:g} % up to {config.SEMAFORO_ENERGIA_VERDE_MIN:g} %, rojo below."))
+    comunicacion: Nivel = Field(description=(
+        f"By % of time with the Earth: verde from {config.SEMAFORO_COMUNICACION_VERDE_MIN:g} %, amarillo from "
+        f"{config.SEMAFORO_COMUNICACION_AMARILLO_MIN:g} % up to {config.SEMAFORO_COMUNICACION_VERDE_MIN:g} %, rojo below."))
+    global_: Nivel = Field(alias="global", description="The worse of the two levels above.")
 
 
 class MetricsItem(BaseModel):
