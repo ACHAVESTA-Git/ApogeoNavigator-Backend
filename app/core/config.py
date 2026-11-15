@@ -342,7 +342,7 @@ MSG_SITE_NOT_IN_CATALOG = "El sitio no existe en sites.csv"
 MSG_NO_EPHEMERIS = "El sitio no tiene efemérides cargadas"
 MSG_EPHEM_INVALID = "El archivo de efemérides no cumple el estándar de CSV"
 MSG_RANGE_ORDER = "'hasta' debe ser posterior a 'desde'"
-MSG_QUERY_RANGE = "El rango máximo es de {max} días (se pidieron {days:.1f})"
+MSG_QUERY_RANGE = "El rango máximo es de {max} días (se pidieron {days:.2f} días)"
 MSG_OUT_OF_DATA = "'{param}' está fuera del rango de datos disponible"
 MSG_COMPARE_COUNT = "Se pueden consultar de 1 a {max} sitios"
 MSG_SITE_ID_REQUIRED = "Indica al menos un site_id"
@@ -399,6 +399,7 @@ DB_KEY_FINGERPRINT_MAX = 64
 SIGNED_DOC_VERSION = 1
 AUDIT_ADVISORY_LOCK_KEY = 0x41504F47        # "APOG": serializa la cadena en PostgreSQL
 AUDIT_DETAIL_MAX_BYTES = 4096
+KEY_TRUNCADO = "truncado"             # detalle del evento: el archivo se cortó al pasar el límite de tamaño
 AUDIT_FIRST_SEQUENCE = 1
 CK_SIGNED_OR_NONE = "ck_{tabla}_firma_o_ninguno"
 HASH_HEX_LENGTH = 64                  # SHA3-256 / HMAC-SHA256 en hexadecimal
@@ -579,6 +580,7 @@ def get_cors_origin_regex() -> str | None:
     return os.getenv(ENV_CORS_ORIGIN_REGEX) or None
 
 # ---------------------------------------------------------------- documentación OpenAPI (/docs)
+ROUTER_TAG_SIMULACION = "simulacion"          # etiqueta de la simulación (declarada aquí porque OPENAPI_TAGS la usa)
 TAG_SYSTEM = "sistema"
 TAG_SITES = "sitios"
 API_DESCRIPTION = """
@@ -597,6 +599,7 @@ OPENAPI_TAGS = [
     {"name": TAG_SYSTEM, "description": "Service health."},
     {"name": TAG_SITES, "description": "Catalogue of the ten landing sites with their coordinates and NASA source."},
     {"name": ROUTER_TAG_LECTURA, "description": "Ephemerides, sunlight and Earth-visibility metrics with a traffic light, and next sunset/sunrise."},
+    {"name": ROUTER_TAG_SIMULACION, "description": "Sky simulation: real data inside the range and a statistical projection beyond it (with its uncertainty)."},
     {"name": ROUTER_TAG, "description": "Validate and upload CSV data (`X-API-Key`). Strict validation, atomic save, audited."},
     {"name": ROUTER_TAG_SECURITY, "description": "Public ML-DSA-65 key and the signed manifest of the data files, for independent verification."},
     {"name": ROUTER_TAG_AUDIT, "description": "Hash-chained, signed audit log of validations and uploads (`X-API-Key`)."},
@@ -604,3 +607,104 @@ OPENAPI_TAGS = [
 ]
 API_CONTACT = {"name": "Apogeo Team", "url": "https://github.com/ACHAVESTA-Git/ApogeoNavigator-Backend"}
 API_LICENSE = {"name": "MIT", "url": "https://opensource.org/license/mit"}
+
+# ---------------------------------------------------------------- análisis y proyección (Polars + numpy)
+# Periodos físicos de la Luna (días). La FFT de 6 meses no separa el anomalístico del dracónico (resolución
+# P²/T ≈ 4 d), así que el modelo los toma como constantes y la FFT solo los confirma y afina el sinódico.
+SYNODIC_MONTH_DAYS = 29.530589          # día lunar: de un amanecer al siguiente
+ANOMALISTIC_MONTH_DAYS = 27.554550      # libración en longitud (azimut de la Tierra)
+DRACONIC_MONTH_DAYS = 27.212221         # libración en latitud (elevación de la Tierra)
+ECLIPSE_YEAR_DAYS = 346.62              # inclinación del eje (~1,54°): estacionalidad del Sol en los polos
+KNOWN_PERIODS_DAYS = {"sinodico": SYNODIC_MONTH_DAYS, "anomalistico": ANOMALISTIC_MONTH_DAYS,
+                      "draconico": DRACONIC_MONTH_DAYS, "anio_de_eclipses": ECLIPSE_YEAR_DAYS}
+LUNAR_DAY_DAYS = SYNODIC_MONTH_DAYS
+FFT_PAD_FACTOR = 16                      # relleno de ceros para interpolar los picos
+FFT_TOP_PEAKS = 5
+FFT_MIN_PERIOD_DAYS = 2.0
+FFT_SYNODIC_BAND_DAYS = (24.0, 36.0)     # banda donde se busca el pico del mes sinódico
+FFT_MATCH_RESOLUTION_FRACTION = 0.5      # un pico "coincide" con un periodo conocido si dista < ½ P²/T
+HARMONIC_RIDGE = 1e-8                    # regularización relativa de los mínimos cuadrados
+SUN_SYNODIC_HARMONICS = 8                # k·f_sinódico, k = 1..8 (la elevación no es una senoide)
+SUN_SIDEBAND_HARMONICS = 2               # k·f_sinódico ± f_anomalístico para k = 1..2 (incluye el batido de ~411 d)
+SUN_ANOMALISTIC_HARMONICS = 2
+REFINE_STRIDE_SAMPLES = 6                # el afinado del periodo usa una de cada 6 muestras (velocidad)
+PROJECTION_MIN_WINDOW_DAYS = 2 * SYNODIC_MONTH_DAYS
+REFINE_GRID_POINTS = 41
+REFINE_ITERATIONS = 4
+REFINE_HALF_BAND_DAYS = 0.6
+CV_HOLDOUT_FRACTION = 1 / 3              # validación cruzada: se prueba en el último tercio de los datos
+MONTH_DAYS = 30.4375                     # mes medio, para agrupar el error por meses de horizonte
+PROJECTION_MAX_DAYS = 366                # hasta dónde se proyecta tras el último dato
+PROJECTION_MONTHS_AHEAD = 12
+EVENT_MATCH_MAX_HOURS = 24.0             # una puesta proyectada solo empareja con una real a menos de 24 h
+ERRORS_FILENAME = "proyeccion_errores.json"
+ERRORS_VERSION = 1
+ANALYSIS_DIR = Path(__file__).resolve().parents[1] / "analysis"
+ERRORS_PATH = ANALYSIS_DIR / ERRORS_FILENAME      # viaja con el código (no con los datos): llega a producción en la imagen
+CACHE_KIND_PROJECTION = "proyeccion"              # claves de la caché por mtime de services/lectura
+CACHE_KIND_ERRORS = "errores"
+KEY_SITES = "sitios"
+KEY_VERSION = "version"
+KEY_MAE_DEG = "mae_deg"
+KEY_RMSE_DEG = "rmse_deg"
+KEY_RMSE_MONTHS = "rmse_por_mes_deg"
+KEY_RMSE_NAIVE = "rmse_referencia_ingenua_deg"
+KEY_HASTA_UTC = "hasta_utc"
+KEY_ERRORS = "errores"
+KEY_SYNODIC_DAYS = "periodo_sinodico_dias"
+KEY_WINDOW_DAYS = "ventana_dias"
+KEY_EVENTS_SUN = "puestas_sol"
+KEY_EVENTS_EARTH = "puestas_tierra"
+KEY_EVENTS_REAL = "eventos_reales"
+KEY_EVENTS_PROJECTED = "eventos_proyectados"
+KEY_EVENTS_MATCHED_PCT = "emparejados_pct"
+KEY_EVENTS_MAE_H = "mae_h"
+KEY_EVENTS_MEDIAN_H = "mediana_h"
+KEY_EVENTS_MAX_H = "max_h"
+KEY_TRAFFIC_HITS = "semaforo"
+KEY_MONTHS = "meses"
+KEY_MONTHS_DETAIL = "meses_detalle"
+KEY_MONTH = "mes"
+KEY_HIT = "acierta"
+KEY_HITS_PREFIX = "aciertos_"
+KEY_REAL = "real"
+MONTH_FORMAT = "%Y-%m"
+KEY_PCT_SUN_REAL, KEY_PCT_SUN_PROJ = "pct_sol_real", "pct_sol_proy"
+KEY_PCT_EARTH_REAL, KEY_PCT_EARTH_PROJ = "pct_tierra_real", "pct_tierra_proy"
+KEY_PROJECTION_SIDE = "proyeccion"
+# columnas de los LazyFrame del pipeline (app/analysis/pipeline.py)
+COL_WINDOW_VISIBLE, COL_WINDOW_START, COL_WINDOW_END = "visible", "inicio", "fin"
+COL_WINDOW_HOURS, COL_WINDOW_COMPLETE = "duracion_h", "completa"
+COL_EVENT_KIND, EVENT_SET, EVENT_RISE = "tipo", "puesta", "salida"
+COL_LUNAR_DAY, COL_SAMPLES, COL_RUN, COL_LAST_SAMPLE = "dia_lunar", "muestras", "tramo", "ultima"
+COL_STATE_NOW, COL_STATE_BEFORE, COL_DATE = "ahora", "antes", "fecha"
+COL_DAY_SUN_MAX, COL_DAY_SUN_MIN, COL_DAY_SUN_MEAN = "sol_el_max", "sol_el_min", "sol_el_media"
+COL_LIB_AZ_RANGE, COL_LIB_AZ_STD = "tierra_az_rango_deg", "tierra_az_std_deg"
+COL_LIB_EL_RANGE, COL_LIB_EL_STD, COL_LIB_EL_MEAN = "tierra_el_rango_deg", "tierra_el_std_deg", "tierra_el_media_deg"
+SIM_DEFAULT_DAYS = 30
+SIM_MIN_STEP_HOURS = 0.25
+SIM_MAX_STEP_HOURS = 24.0
+SIM_DEFAULT_STEP_HOURS = 1.0
+SIM_MAX_POINTS = 9000                    # un año a paso de 1 h son 8785 puntos (≈ 75 ms, 2 MiB)
+SIM_AZIMUTH_MAX_SUN_EL_DEG = 85.0        # con el Sol casi en el cénit el azimut gira de golpe y no se proyecta bien
+ORIGEN_DATOS = "datos"
+ORIGEN_PROYECCION = "proyeccion"
+ROUTE_SIMULACION = "/simulacion/{site_id}"
+PARAM_PASO_HORAS = "paso_horas"
+KEY_PUNTOS = "puntos"
+KEY_FIN_DATOS = "fin_datos_utc"
+KEY_INCERTIDUMBRE = "incertidumbre_deg"
+AVISO_PROYECCION = "proyeccion_estadistica"
+AVISO_AZIMUT_CENIT = "azimut_solar_cenit"
+MSG_SIM_BEFORE_DATA = "'desde' es anterior al primer dato disponible"
+MSG_SIM_BEYOND_PROJECTION = "'hasta' supera el máximo proyectable ({days} días tras el último dato)"
+MSG_SIM_STEP = "'paso_horas' debe estar entre {min:g} y {max:g}"
+MSG_SIM_TOO_MANY_POINTS = "El rango pedido da {points} puntos; el máximo es {max} (sube paso_horas o acorta el rango)"
+MSG_SIM_NOT_ENOUGH_DATA = "No hay datos suficientes para proyectar (se necesitan al menos {days:.0f} días)"
+MSG_SIM_WARNING = ("Los puntos con origen «proyeccion» son una estimación estadística, no efemérides físicas: "
+                   "sirven para explorar tendencias y animar el cielo. La incertidumbre sale de la validación contra Horizons.")
+MSG_SIM_AZIMUTH_WARNING = "Con el Sol cerca del cénit el azimut solar proyectado no es fiable."
+AVISO_SIN_INCERTIDUMBRE = "sin_incertidumbre"
+MSG_SIM_NO_UNCERTAINTY = "No hay validación de este sitio: los puntos proyectados van sin incertidumbre_deg"
+MSG_SIM_ERRORS_MISSING = "Falta la tabla de errores de la proyección (app/analysis/proyeccion_errores.json)"
+MSG_SIM_ERRORS_INVALID = "La tabla de errores de la proyección no es válida; hay que regenerarla con analizar_proyeccion.py"

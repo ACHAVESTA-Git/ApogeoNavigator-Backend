@@ -18,7 +18,11 @@ def read_sites() -> ValidationResult | None:
     path = config.get_data_dir() / config.SITES_FILENAME
     if not path.is_file():
         return None
-    return validate_csv(config.TIPO_SITES, path.name, path.read_bytes())
+    try:
+        raw = path.read_bytes()
+    except FileNotFoundError:           # desapareció entre la comprobación y la lectura: equivale a «no existe»
+        return None
+    return validate_csv(config.TIPO_SITES, path.name, raw)
 
 
 def known_site_ids() -> set[str] | None:

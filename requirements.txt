@@ -6,3 +6,5 @@ sqlalchemy==2.0.44
 alembic==1.14.0
 psycopg[binary]==3.2.13
 google-cloud-storage==3.17.1
+polars==2.1.0
+numpy==2.2.6

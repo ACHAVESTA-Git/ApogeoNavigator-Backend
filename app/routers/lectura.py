@@ -4,17 +4,11 @@ from typing import Annotated
 from fastapi import APIRouter, Path, Query
 
 from app.core import config as c
-from app.schemas.common import ErrorOut
+from app.routers.comun import RESPONSES
 from app.schemas.lectura import EphemerisOut, MetricsOut, SunsetsOut
 from app.services import lectura
 
 router = APIRouter(prefix=c.API_PREFIX, tags=[c.ROUTER_TAG_LECTURA])
-
-RESPONSES = {
-    c.HTTP_NOT_FOUND: {"description": c.DESC_NOT_FOUND, "model": ErrorOut},
-    c.HTTP_UNPROCESSABLE: {"description": c.DESC_UNPROCESSABLE, "model": ErrorOut},
-    c.HTTP_UNAVAILABLE: {"description": c.DESC_UNAVAILABLE, "model": ErrorOut},
-}
 
 
 DESDE = Query(description="Inicio (UTC, `YYYY-MM-DDTHH:MMZ`). Por defecto, el inicio de los datos.", examples=["2026-12-01T00:00Z"])

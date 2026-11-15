@@ -12,6 +12,7 @@ from app.db.enums import AccionAuditoria
 from app.db.session import get_db
 from app.schemas.auditoria import PaginaAuditoria, VerificacionOut, evento_out
 from app.utils import auditoria_util
+from app.utils.dates import as_utc
 
 router = APIRouter(tags=[config.ROUTER_TAG_AUDIT], dependencies=[Depends(require_api_key)])
 
@@ -21,6 +22,7 @@ def listar(usuario: str | None = Query(None, description="UUID del usuario o tex
            accion: AccionAuditoria | None = None, desde: datetime | None = None, hasta: datetime | None = None,
            limite: int = Query(config.AUDIT_PAGE_DEFAULT, ge=1, le=config.AUDIT_PAGE_MAX), offset: int = Query(0, ge=0),
            incluir_firma: bool = False, db: Session = Depends(get_db)):
+    desde, hasta = (as_utc(d) if d else None for d in (desde, hasta))
     if desde and hasta and hasta <= desde:
         raise HTTPException(status_code=config.HTTP_UNPROCESSABLE, detail=config.MSG_AUDIT_RANGE_ORDER)
     try:
