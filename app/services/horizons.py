@@ -4,6 +4,13 @@ Pide a Horizons el azimut y la elevación aparentes del Sol ('10') y de la Tierr
 superficie de la Luna (`coord@301`, coordenadas geodésicas, sin refracción), y devuelve las filas con el mismo formato que
 `/api/efemerides`, más las métricas (con el semáforo) y las puestas, reutilizando `app.services.lectura`.
 
+Limitaciones conocidas (aceptadas para esta fase):
+  - Sin «single-flight»: dos peticiones idénticas simultáneas que no estén en caché hacen dos consultas a JPL; el límite de
+    consultas y el semáforo acotan el daño.
+  - La caché y los límites son POR INSTANCIA de Cloud Run. Con --max-instances=1 son exactos; con N instancias, N veces más.
+  - El límite por cliente usa la IP que añade el balanceador (entrada `TRUSTED_PROXY_HOPS` desde el final de
+    X-Forwarded-For); el límite global es la defensa real de JPL.
+
 Cortesía hacia JPL: caché por (lat, lon redondeados, rango, paso), como máximo `HORIZONS_MAX_CONCURRENT` consultas a la
 vez y un límite de consultas en vivo por ventana, global y por cliente. Los errores nunca reflejan el texto de JPL.
 """
