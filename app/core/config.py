@@ -251,6 +251,7 @@ HTTP_UNAUTHORIZED = 401
 HTTP_OK = 200
 HTTP_NOT_FOUND = 404
 HTTP_UNAVAILABLE = 503
+HTTP_INTERNAL_ERROR = 500
 HTTP_CREATED = 201
 HTTP_CONFLICT = 409
 
@@ -458,6 +459,12 @@ MSG_REPLICA_RESET_FAILED = "No se pudo restablecer la réplica local desde el bu
 SEED_SUFFIX = ".csv"
 MSG_PROD_NEEDS_BUCKET = ("En producción hay que configurar DATA_BUCKET: el disco de Cloud Run es efímero y los datos "
                          "cargados se perderían. Define DATA_BUCKET (y dale al servicio permiso sobre el bucket)")
+MSG_DB_UNAVAILABLE = "La base de datos no está disponible; inténtalo de nuevo en unos minutos"
+MSG_INTERNAL_ERROR = "Error interno"
+LOGGER_ERRORS = "apogeo.errores"
+MSG_UNHANDLED_LOG = "Error no controlado en %s %s"
+MSG_DB_ERROR_LOG = "Error de base de datos en %s %s (%s)"
+UTC_FIELD_PATTERN = rf"^{UTC_RE.pattern}$"      # patrón anclado para campos UTC de los DTO
 MSG_BUCKET_UNAVAILABLE = "No se pudo acceder al almacenamiento de datos; no se guardó nada"
 MSG_DATA_CONFLICT = "Otro proceso modificó los datos a la vez; se recargó la versión vigente. Reintenta la carga"
 MSG_SEED_MANIFEST_SKIPPED = "No se pudo firmar el manifiesto de la semilla (%s); se publicará con la primera carga"

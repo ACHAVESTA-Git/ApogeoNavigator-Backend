@@ -32,6 +32,7 @@ from app.db.enums import AccionAuditoria
 from app.db.models import Usuario, utcnow
 from app.db.session import get_db
 from app.models.claves import ClaveUsuario, EstadoClave, TipoClave
+from app.schemas.common import Page
 from app.security import gestor_claves as gk
 from app.utils import auditoria_util
 
@@ -73,11 +74,7 @@ class ClaveOut(BaseModel):
     backups: int = Field(description="Copias de la privada entregadas: 0 (sin entregar) o 1")
 
 
-class PaginaClaves(BaseModel):
-    total: int
-    limite: int
-    offset: int
-    items: list[ClaveOut]
+PaginaClaves = Page[ClaveOut]
 
 
 class ClaveEntregada(ClaveOut):

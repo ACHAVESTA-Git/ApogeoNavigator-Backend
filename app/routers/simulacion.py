@@ -3,7 +3,7 @@ from fastapi import APIRouter
 
 from app.analysis import simulacion
 from app.core import config as c
-from app.routers.comun import RESPONSES, run_service
+from app.routers.comun import RESPONSES
 from app.schemas.simulacion import SimulacionOut
 
 router = APIRouter(prefix=c.API_PREFIX, tags=[c.ROUTER_TAG_SIMULACION])
@@ -19,4 +19,4 @@ def simular(site_id: str, desde: str | None = None, hasta: str | None = None,
     no un intervalo de confianza: el error real puede superarla.
     La proyección es una estimación estadística: no sustituye a las efemérides físicas.
     """
-    return run_service(simulacion.simulate, site_id, desde, hasta, paso_horas)
+    return simulacion.simulate(site_id, desde, hasta, paso_horas)

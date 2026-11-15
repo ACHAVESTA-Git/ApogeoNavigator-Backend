@@ -5,6 +5,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from app.core.errors import register_handlers
 from app.routers import lectura
 from app.services import lectura as service
 
@@ -27,6 +28,7 @@ def api(data_dir) -> TestClient:
     service.clear_cache()
     app = FastAPI()
     app.include_router(lectura.router)
+    register_handlers(app)          # los errores de lectura los convierte el manejador centralizado
     return TestClient(app)
 
 
