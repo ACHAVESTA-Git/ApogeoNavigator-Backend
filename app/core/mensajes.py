@@ -59,6 +59,8 @@ DOMINIO: dict[str, Mensaje] = {m.codigo: m for m in (
        "Envía una clave válida en la cabecera X-API-Key."),
     _m("RANGO_FECHAS_INVALIDO", 422, "Rango de fechas inválido", "{detalle}",
        "Usa fechas UTC con el formato AAAA-MM-DDTHH:MMZ y que «hasta» sea posterior a «desde»."),
+    _m("VARIABLE_INVALIDA", 422, "Variable no válida", "{detalle}",
+       "Elige sol_el_deg, sol_az_deg, tierra_az_deg o tierra_el_deg."),
     _m("RANGO_DEMASIADO_LARGO", 422, "Rango demasiado largo", "{detalle}", "Pide un rango de 35 días como máximo y consulta por tramos."),
     _m("CSV_INVALIDO", 422, "CSV inválido", "{resumen}", "Corrige las filas indicadas en el informe (detail) y vuelve a subirlo."),
     _m("DATOS_NO_DISPONIBLES", 503, "Datos no disponibles", "No se pueden leer los datos en este momento.",
@@ -91,6 +93,8 @@ _POR_DETALLE: dict[str, str] = {
 _POR_PATRON: list[tuple[re.Pattern, str]] = [
     (re.compile(r"^'(desde|hasta)': "), "RANGO_FECHAS_INVALIDO"),
     (re.compile(r"está fuera del rango de datos disponible$"), "RANGO_FECHAS_INVALIDO"),
+    (re.compile(r"^'(desde|hasta)' (es anterior|supera)"), "RANGO_FECHAS_INVALIDO"),
+    (re.compile(r"^'variable' debe ser"), "VARIABLE_INVALIDA"),
     (re.compile(r"^El rango máximo es de \d+"), "RANGO_DEMASIADO_LARGO"),
     (re.compile(r"^El usuario ya tiene una clave activa"), "CLAVE_DUPLICADA"),
     (re.compile(r"^Tipo desconocido; usa uno de"), "TIPO_DATOS_DESCONOCIDO"),

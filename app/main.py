@@ -9,7 +9,7 @@ from app.core.limits import upload_guard
 from app.core.logging_config import configurar_logging
 from app.core.peticion import RequestContextMiddleware
 from app.db.session import db_enabled
-from app.routers import admin_claves, auditoria, datos, horizons, lectura, seguridad, simulacion
+from app.routers import admin_claves, analisis, auditoria, datos, horizons, lectura, seguridad, simulacion
 from app.schemas.seguridad import HealthOut
 from app.schemas.sites import Site
 from app.services import datastore, storage
@@ -33,6 +33,7 @@ register_handlers(app)
 app.include_router(datos.router)
 app.include_router(lectura.router, dependencies=[Depends(datastore.refresh_if_stale)])
 app.include_router(simulacion.router, dependencies=[Depends(datastore.refresh_if_stale)])
+app.include_router(analisis.router, dependencies=[Depends(datastore.refresh_if_stale)])
 app.include_router(horizons.router)
 app.include_router(auditoria.router)
 app.include_router(seguridad.router, dependencies=[Depends(datastore.refresh_if_stale)])
