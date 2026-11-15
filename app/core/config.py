@@ -415,6 +415,39 @@ KEY_SOL_EL_MEDIA_DIA = "sol_el_media_horas_sol_deg"
 KEY_HORAS = "horas"
 KEY_TRUNCA_INICIO = "trunca_inicio"
 KEY_TRUNCA_FIN = "trunca_fin"
+# Proyección hasta jul-2028 (solo admin, HU-20)
+ROUTE_PROYECCION = "/proyeccion"
+PROYECCION_DIR = "proyecciones"
+PROYECCION_FILENAME = "proyeccion_{site_id}.csv"
+PROYECCION_MODELO_FILENAME = "modelo.json"
+PROYECCION_PASOS_H = (1, 6, 24)
+PROYECCION_OBJECT_RE = re.compile(rf"{PROYECCION_DIR}/(proyeccion_[a-z0-9_]+\.csv|modelo\.json)")   # único objeto del bucket con subcarpeta
+PROYECCION_PASO_DEFECTO_H = 6
+PROYECCION_MAX_SITIOS = 5
+PROYECCION_MAX_PUNTOS = 20_000               # puntos de serie por sitio
+PROYECCION_COLUMNAS = (COL_UTC, COL_SOL_AZ, COL_SOL_EL, COL_TIERRA_AZ, COL_TIERRA_EL)
+PROYECCION_UTC_FORMAT = "%Y-%m-%dT%H:%MZ"
+PROYECCION_MES_FORMAT = "%Y-%m"
+MSG_PROJ_STEP = "'paso_horas' debe ser {opciones}"
+MSG_PROJ_STEP_FILE = "'paso_horas' debe ser múltiplo del paso de la proyección ({paso:g} h) y no menor"
+MSG_PROJ_INVALID = "El archivo de proyección no cumple el formato esperado"
+MSG_PROJ_SESSION_REQUIRED = "Inicia sesión como administrador para ver la proyección"
+MSG_PROJ_AUDIT_RESOURCE = "proyeccion"
+KEY_MODELO = "modelo"
+KEY_LIMITACIONES = "limitaciones"
+KEY_MESES = "meses"
+KEY_MES = "mes"
+KEY_SERIE = "serie"
+KEY_SHA3 = "sha3_256"
+LIM_SIN_DATOS = "sin_datos_de_proyeccion"
+LIM_SIN_MODELO = "modelo_no_disponible"
+LIM_NO_ES_EFEMERIDE = "proyeccion_no_es_efemeride"
+LIM_HORIZONTE_IDEAL = "horizonte_ideal"
+MSG_LIM_SIN_DATOS = "No hay proyección cargada para: {sitios}. Se devuelve vacía; no se inventa ningún valor."
+MSG_LIM_SIN_MODELO = "No hay archivo del modelo: los errores de la proyección no están disponibles."
+MSG_LIM_NO_ES_EFEMERIDE = ("Es una proyección de un modelo, no una efeméride de JPL Horizons: su error está medido contra "
+                           "Horizons en el periodo de control y crece con la distancia al último dato real.")
+MSG_LIM_HORIZONTE_IDEAL = "Elevación respecto a un horizonte ideal (Luna lisa, sin relieve): el relieve real solo puede empeorar las cifras."
 
 # ---------------------------------------------------------------- base de datos y auditoría
 DB_POOL_RECYCLE_SECONDS = 1800
