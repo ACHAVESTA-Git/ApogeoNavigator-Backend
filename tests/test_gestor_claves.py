@@ -14,11 +14,14 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core import config
+from app.core.errors import register_handlers
 from app.db import session as db_session
 from app.db.base import Base
 from app.db.enums import AccionAuditoria
 from app.db.models import EventoAuditoria, Usuario
 from app.models.claves import ClaveUsuario, EstadoClave, TipoClave
+from app.repositories import claves as repositorio_claves
+from app.repositories.claves import SqlClavesRepository
 from app.routers import admin_claves
 from app.security import gestor_claves as gk
 from app.security import pqc
@@ -59,6 +62,7 @@ def engine(entorno):
 @pytest.fixture
 def client():
     app = FastAPI()
+    register_handlers(app)
     app.include_router(admin_claves.router)
     return TestClient(app)
 
@@ -265,6 +269,7 @@ def test_ningun_endpoint_devuelve_la_privada_dos_veces(client, engine):
 
 def test_las_rutas_no_ofrecen_ninguna_descarga_de_privada():
     app = FastAPI()
+    register_handlers(app)
     app.include_router(admin_claves.router)
     rutas = {(m, r.path) for r in app.routes if hasattr(r, "methods") and r.path.startswith("/api/admin/claves")
              for m in r.methods}
@@ -638,10 +643,8 @@ def test_revocar_y_rotar_piden_bloqueo_de_fila(engine, monkeypatch):
 
     monkeypatch.setattr(Session, "scalar", espia)
     with Session(engine) as s:
-        with pytest.raises(Exception):
-            admin_claves._get(s, uuid.uuid4(), bloquear=True)
-        with pytest.raises(Exception):
-            admin_claves._get(s, uuid.uuid4())
+        SqlClavesRepository(s).obtener(uuid.uuid4(), bloquear=True)
+        SqlClavesRepository(s).obtener(uuid.uuid4())
     assert pedidos == [True, False]
 
 
@@ -665,7 +668,7 @@ def test_si_falla_el_contador_la_entrega_sigue_y_backups_queda_en_0(client, engi
             raise RuntimeError("base caída solo para el contador")
 
     with monkeypatch.context() as parche:
-        parche.setattr(admin_claves, "db_session", _SinBase)
+        parche.setattr(repositorio_claves, "db_session", _SinBase)
         r = _generar(client, _usuario(engine))
     assert r.status_code == 201 and r.json()["claves"][0]["privada_pem"].startswith("-----BEGIN PRIVATE KEY-----")
     with Session(engine) as s:

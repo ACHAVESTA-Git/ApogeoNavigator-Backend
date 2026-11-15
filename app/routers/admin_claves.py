@@ -11,30 +11,21 @@
 """
 from __future__ import annotations
 
-import base64
 import logging
 import uuid
-from contextlib import contextmanager
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response
 from fastapi.responses import JSONResponse
-from sqlalchemy import func, or_, select
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 from starlette.background import BackgroundTask
 
+from app.api.deps import get_claves_service
 from app.core import config as c
 from app.core.security import matches_api_key
-from app.db import session as db_session
-from app.db.enums import AccionAuditoria
-from app.db.models import Usuario, utcnow
-from app.db.session import get_db
-from app.models.claves import ClaveUsuario, EstadoClave, TipoClave
-from app.schemas.claves import (ClaveEntregada, ClaveOut, Entrega, GenerarIn, HuellaOut, PaginaClaves, PublicaOut, RevocarIn,
-                                RotarIn)
-from app.schemas.claves import FORMATO_DESCRIPTION, PUBLICA_DESCRIPTION, PUBLICA_PEM_CONTENT
-from app.security import gestor_claves as gk
-from app.utils import auditoria_util
+from app.mappers.claves import nombre_archivo_publica
+from app.models.claves import EstadoClave, TipoClave
+from app.schemas.claves import (FORMATO_DESCRIPTION, PUBLICA_DESCRIPTION, PUBLICA_PEM_CONTENT, ClaveOut, Entrega, GenerarIn,
+                                HuellaOut, PaginaClaves, PublicaOut, RevocarIn, RotarIn)
+from app.services.claves import ClavesService, EntregaPendiente
 
 log = logging.getLogger(c.KEYS_LOGGER)
 
@@ -53,227 +44,49 @@ def require_admin_key(x_api_key: str | None = Header(default=None, alias=c.API_K
 router = APIRouter(prefix=c.KEYS_ROUTE_PREFIX, tags=[c.KEYS_ROUTER_TAG], dependencies=[Depends(require_admin_key)])
 
 
-# ---------------------------------------------------------------- utilidades
-def _email(usuario: Usuario | None) -> str | None:
-    """Email descifrado del usuario (se guarda cifrado). None si no hay usuario o su clave ya no está configurada."""
-    if usuario is None:
-        return None
-    try:
-        return gk.descifrar_email(usuario.email_cifrado)
-    except gk.ErrorGestorClaves:
-        return None
-
-
-def _out(clave: ClaveUsuario, usuario: Usuario | None = None) -> dict:
-    """Campos públicos de una clave. Nunca incluye material privado (no existe en la base)."""
-    return {"id": clave.id, "usuario_id": clave.usuario_id, "tipo": clave.tipo, "algoritmo": clave.algoritmo,
-            "estado": clave.estado, "huella_sha3_256": clave.huella_sha3_256, "tamano_publica": clave.tamano_publica,
-            "tamano_privada": clave.tamano_privada, "tamano_privada_fips": c.TAMANO_PRIVADA_FIPS[clave.tipo.value],
-            "creada_utc": clave.creada_utc, "revocada_utc": clave.revocada_utc,
-            "motivo_revocacion": clave.motivo_revocacion, "reemplazada_por": clave.reemplazada_por,
-            "backups": clave.backups,
-            "usuario_email": _email(usuario), "usuario_nombre": usuario.nombre if usuario else None}
-
-
-def _auditar(db: Session, operacion: str, clave: ClaveUsuario, motivo: str | None = None, extra: dict | None = None) -> None:
-    detalle = {"operacion": operacion, "clave_id": str(clave.id), "usuario_id": str(clave.usuario_id),
-               "tipo": clave.tipo.value, "algoritmo": clave.algoritmo, "huella": clave.huella_sha3_256}
-    if motivo:
-        detalle["motivo"] = motivo
-    detalle.update(extra or {})
-    try:
-        auditoria_util.registrar_evento(AccionAuditoria.CAMBIO_DATOS, c.ACTOR_ADMIN,
-                                        recurso=c.KEYS_AUDIT_RESOURCE.format(id=clave.id), detalle=detalle, db=db,
-                                        estricto=True)
-    except auditoria_util.ErrorAuditoria:
-        raise HTTPException(status_code=c.HTTP_UNAVAILABLE, detail=c.MSG_KEYS_AUDIT_FAILED) from None
-
-
-def _log_lectura(operacion: str, filtros: str, resultados: int) -> None:
-    """Las lecturas no entran en la cadena firmada: dejan rastro en el log (sin emails ni material de claves)."""
-    log.info(c.MSG_KEYS_READ_LOG, operacion, filtros, resultados)
-
-
-def _nueva_clave(db: Session, usuario: Usuario, tipo: str) -> tuple[ClaveUsuario, gk.ParNuevo]:
-    par = gk.generar_par(tipo)
-    clave = ClaveUsuario(id=uuid.uuid4(), usuario_id=usuario.id, tipo=TipoClave(tipo), algoritmo=par.algoritmo,
-                         clave_publica=par.publica, huella_sha3_256=par.huella, tamano_publica=par.tamano_publica,
-                         tamano_privada=par.tamano_privada, estado=EstadoClave.ACTIVA, backups=0)
-    db.add(clave)
-    return clave, par
-
-
-def _borrar_todas(creadas: list[tuple[ClaveUsuario, gk.ParNuevo]]) -> None:
-    for _, par in creadas:
-        gk.borrar(par.privada_pem)
-
-
-@contextmanager
-def _cambio(db: Session, creadas: list[tuple[ClaveUsuario, gk.ParNuevo]]):
-    """Protege una escritura: ante cualquier fallo borra las privadas generadas; un choque con el índice único
-    «una activa por usuario y tipo» (dos peticiones simultáneas) es un 409, no un 500."""
-    try:
-        yield
-    except IntegrityError:
-        db.rollback()
-        _borrar_todas(creadas)
-        raise HTTPException(status_code=c.HTTP_CONFLICT, detail=c.MSG_KEYS_ALREADY_ACTIVE_GENERIC) from None
-    except BaseException:
-        _borrar_todas(creadas)
-        raise
-
-
-def _entregar(db: Session, usuario: Usuario, creadas: list[tuple[ClaveUsuario, gk.ParNuevo]]) -> JSONResponse:
-    """Confirma la transacción y devuelve las privadas UNA vez. Tras enviar la respuesta marca backups=1 y borra."""
-    with _cambio(db, creadas):
-        db.commit()
-    claves = []
-    for clave, par in creadas:
-        claves.append(_out(clave, usuario) | {
-            "clave_publica_pem": gk.publica_pem(clave.tipo.value, clave.clave_publica),
-            "privada_pem": par.privada_pem.decode("ascii"),
-            "nombre_archivo_privada": c.KEYS_PRIVATE_FILENAME.format(
-                tipo=clave.tipo.value, huella=clave.huella_sha3_256[:c.KEYS_FILE_FINGERPRINT_CHARS])})
-    cuerpo = Entrega(aviso=c.MSG_KEYS_WARNING, claves=[ClaveEntregada(**item) for item in claves]).model_dump(mode="json")
-    ids = [clave.id for clave, _ in creadas]
-    buffers = [par.privada_pem for _, par in creadas]
-    return JSONResponse(content=cuerpo, status_code=c.HTTP_CREATED, headers=c.NO_STORE_HEADERS,
-                        background=BackgroundTask(_marcar_entregadas, ids, buffers))
-
-
-def _marcar_entregadas(ids: list[uuid.UUID], buffers: list[bytearray]) -> None:
-    """Se ejecuta DESPUÉS de enviar la respuesta: cuenta la entrega (backups=1) y borra la privada de memoria."""
-    try:
-        with db_session.session_scope() as session:
-            for clave in session.scalars(select(ClaveUsuario).where(ClaveUsuario.id.in_(ids))):
-                clave.backups = 1
-    except Exception as exc:  # noqa: BLE001  (la entrega ya ocurrió; solo se registra el fallo del contador)
-        log.error(c.MSG_KEYS_DELIVERY_COUNT_FAILED, type(exc).__name__)
-    finally:
-        for buffer in buffers:
-            gk.borrar(buffer)
-
-
-def _get(db: Session, clave_id: uuid.UUID, bloquear: bool = False) -> ClaveUsuario:
-    """Busca la clave. Con ``bloquear`` toma un bloqueo de fila (SELECT ... FOR UPDATE; SQLite lo ignora)."""
-    consulta = select(ClaveUsuario).where(ClaveUsuario.id == clave_id)
-    clave = db.scalar(consulta.with_for_update() if bloquear else consulta)
-    if clave is None:
-        raise HTTPException(status_code=c.HTTP_NOT_FOUND, detail=c.MSG_KEYS_NO_KEY)
-    return clave
-
-
-def _usuario_activo(db: Session, usuario_id: uuid.UUID) -> Usuario:
-    usuario = db.get(Usuario, usuario_id)
-    if usuario is None:
-        raise HTTPException(status_code=c.HTTP_NOT_FOUND, detail=c.MSG_KEYS_NO_USER)
-    if not usuario.activo:
-        raise HTTPException(status_code=c.HTTP_CONFLICT, detail=c.MSG_KEYS_INACTIVE_USER)
-    return usuario
-
-
 # ---------------------------------------------------------------- endpoints
+def _respuesta_entrega(pendiente: EntregaPendiente, servicio: ClavesService) -> JSONResponse:
+    """La privada viaja una sola vez; el contador de entrega y el borrado de memoria corren tras enviar la respuesta."""
+    return JSONResponse(content=pendiente.entrega.model_dump(mode="json"), status_code=c.HTTP_CREATED,
+                        headers=c.NO_STORE_HEADERS, background=BackgroundTask(servicio.cerrar_entrega, pendiente))
+
+
 @router.get("", response_model=PaginaClaves, summary="List keys (filters and pagination)")
 def listar(usuario_id: uuid.UUID | None = None, estado: EstadoClave | None = None, tipo: TipoClave | None = None,
            q: str | None = Query(None, max_length=c.KEYS_Q_MAX, description="Text in the user name, or the full email (exact match: the email is stored encrypted)"),
            limite: int = Query(c.KEYS_PAGE_DEFAULT, ge=1, le=c.KEYS_PAGE_MAX), offset: int = Query(0, ge=0),
-           db: Session = Depends(get_db)):
-    consulta = select(ClaveUsuario, Usuario).join(Usuario, Usuario.id == ClaveUsuario.usuario_id)
-    if usuario_id:
-        consulta = consulta.where(ClaveUsuario.usuario_id == usuario_id)
-    if estado:
-        consulta = consulta.where(ClaveUsuario.estado == estado)
-    if tipo:
-        consulta = consulta.where(ClaveUsuario.tipo == tipo)
-    if q:
-        escape = c.LIKE_ESCAPE
-        patron = "%" + q.replace(escape, escape * 2).replace("%", escape + "%").replace("_", escape + "_") + "%"
-        try:
-            hashes = gk.email_hash_candidatos(q)
-        except gk.ErrorGestorClaves:         # sin claves del servidor (producción mal configurada): solo por nombre
-            hashes = []
-        consulta = consulta.where(or_(Usuario.email_hash.in_(hashes), Usuario.nombre.ilike(patron, escape=escape)))
-    total = db.scalar(select(func.count()).select_from(consulta.subquery()))
-    filas = db.execute(consulta.order_by(ClaveUsuario.creada_utc.desc(), ClaveUsuario.id).limit(limite).offset(offset)).all()
-    _log_lectura(c.OP_KEY_READ + ":listar",
-                 f"usuario_id={bool(usuario_id)} estado={estado} tipo={tipo} q={bool(q)} limite={limite} offset={offset}",
-                 len(filas))
-    return PaginaClaves(total=total, limite=limite, offset=offset, items=[ClaveOut(**_out(k, u)) for k, u in filas])
+           servicio: ClavesService = Depends(get_claves_service)):
+    return servicio.listar(usuario_id, estado, tipo, q, limite, offset)
 
 
 @router.post("", status_code=c.HTTP_CREATED, response_model=Entrega, summary="Generate a key pair for a user (private key delivered once)")
-def generar(cuerpo: GenerarIn, db: Session = Depends(get_db)):
-    usuario = _usuario_activo(db, cuerpo.usuario_id)
-    tipos = list(dict.fromkeys(cuerpo.tipos))
-    for tipo in tipos:
-        existe = db.scalar(select(ClaveUsuario.id).where(
-            ClaveUsuario.usuario_id == usuario.id, ClaveUsuario.tipo == tipo, ClaveUsuario.estado == EstadoClave.ACTIVA))
-        if existe:
-            raise HTTPException(status_code=c.HTTP_CONFLICT, detail=c.MSG_KEYS_ALREADY_ACTIVE.format(tipo=tipo.value))
-    creadas = [_nueva_clave(db, usuario, tipo.value) for tipo in tipos]
-    with _cambio(db, creadas):
-        db.flush()
-        for clave, _ in creadas:
-            _auditar(db, c.OP_KEY_GENERATED, clave)
-    return _entregar(db, usuario, creadas)
+def generar(cuerpo: GenerarIn, servicio: ClavesService = Depends(get_claves_service)):
+    return _respuesta_entrega(servicio.generar(cuerpo), servicio)
 
 
 @router.get("/{clave_id}/publica", response_model=PublicaOut, summary="Public key (JSON or PEM)",
             responses={c.HTTP_OK: {"description": PUBLICA_DESCRIPTION, "content": {c.PEM_MEDIA_TYPE: PUBLICA_PEM_CONTENT}}})
 def publica(clave_id: uuid.UUID, formato: str = Query(c.KEYS_FORMAT_JSON, pattern=c.KEYS_FORMAT_PATTERN, description=FORMATO_DESCRIPTION),
-            db: Session = Depends(get_db)):
+            servicio: ClavesService = Depends(get_claves_service)):
     """Pública (también si está revocada: sirve para verificar lo firmado antes)."""
-    clave = _get(db, clave_id)
-    pem = gk.publica_pem(clave.tipo.value, clave.clave_publica)
-    _log_lectura(c.OP_KEY_READ + ":publica", f"clave_id={clave.id} formato={formato}", 1)
+    salida = servicio.publica(clave_id, formato)
     if formato == c.KEYS_FORMAT_PEM:
-        nombre = c.KEYS_PUBLIC_FILENAME.format(tipo=clave.tipo.value,
-                                               huella=clave.huella_sha3_256[:c.KEYS_FILE_FINGERPRINT_CHARS])
-        return Response(content=pem, media_type=c.PEM_MEDIA_TYPE,
-                        headers={"Content-Disposition": f'attachment; filename="{nombre}"'})
-    return PublicaOut(id=clave.id, tipo=clave.tipo, algoritmo=clave.algoritmo, estado=clave.estado,
-                      huella_sha3_256=clave.huella_sha3_256, clave_publica_pem=pem,
-                      clave_publica_b64=base64.b64encode(clave.clave_publica).decode("ascii"))
+        return Response(content=salida.clave_publica_pem, media_type=c.PEM_MEDIA_TYPE,
+                        headers={"Content-Disposition": f'attachment; filename="{nombre_archivo_publica(salida)}"'})
+    return salida
 
 
 @router.get("/{clave_id}/huella", response_model=HuellaOut, summary="SHA3-256 fingerprint of a public key")
-def huella(clave_id: uuid.UUID, db: Session = Depends(get_db)):
-    clave = _get(db, clave_id)
-    _log_lectura(c.OP_KEY_READ + ":huella", f"clave_id={clave.id}", 1)
-    return HuellaOut(id=clave.id, algoritmo=clave.algoritmo, estado=clave.estado, huella_sha3_256=clave.huella_sha3_256)
+def huella(clave_id: uuid.UUID, servicio: ClavesService = Depends(get_claves_service)):
+    return servicio.huella(clave_id)
 
 
 @router.post("/{clave_id}/revocar", response_model=ClaveOut, summary="Revoke a key with a reason")
-def revocar(clave_id: uuid.UUID, cuerpo: RevocarIn, db: Session = Depends(get_db)):
-    clave = _get(db, clave_id, bloquear=True)
-    if clave.estado == EstadoClave.REVOCADA:
-        raise HTTPException(status_code=c.HTTP_CONFLICT, detail=c.MSG_KEYS_ALREADY_REVOKED)
-    clave.estado, clave.revocada_utc, clave.motivo_revocacion = EstadoClave.REVOCADA, utcnow(), cuerpo.motivo
-    with _cambio(db, []):
-        db.flush()
-        _auditar(db, c.OP_KEY_REVOKED, clave, motivo=cuerpo.motivo)
-    usuario = db.get(Usuario, clave.usuario_id)
-    db.commit()
-    return ClaveOut(**_out(clave, usuario))
+def revocar(clave_id: uuid.UUID, cuerpo: RevocarIn, servicio: ClavesService = Depends(get_claves_service)):
+    return servicio.revocar(clave_id, cuerpo)
 
 
 @router.post("/{clave_id}/rotar", status_code=c.HTTP_CREATED, response_model=Entrega, summary="Revoke a key and issue its replacement")
-def rotar(clave_id: uuid.UUID, cuerpo: RotarIn | None = None, db: Session = Depends(get_db)):
+def rotar(clave_id: uuid.UUID, cuerpo: RotarIn | None = None, servicio: ClavesService = Depends(get_claves_service)):
     """Revoca la clave y emite otra del mismo tipo para el mismo usuario (la privada nueva se entrega una vez)."""
-    motivo = (cuerpo or RotarIn()).motivo
-    vieja = _get(db, clave_id, bloquear=True)
-    if vieja.estado == EstadoClave.REVOCADA:
-        raise HTTPException(status_code=c.HTTP_CONFLICT, detail=c.MSG_KEYS_ALREADY_REVOKED)
-    usuario = _usuario_activo(db, vieja.usuario_id)
-    vieja.estado, vieja.revocada_utc, vieja.motivo_revocacion = EstadoClave.REVOCADA, utcnow(), motivo
-    creadas: list[tuple[ClaveUsuario, gk.ParNuevo]] = []
-    with _cambio(db, creadas):
-        db.flush()                                    # libera el hueco del índice de «una activa por tipo»
-        creadas.append(_nueva_clave(db, usuario, vieja.tipo.value))
-        nueva = creadas[0][0]
-        db.flush()
-        vieja.reemplazada_por = nueva.id
-        db.flush()
-        _auditar(db, c.OP_KEY_ROTATED, nueva, motivo=motivo,
-                 extra={"reemplaza_a": str(vieja.id), "huella_anterior": vieja.huella_sha3_256})
-    return _entregar(db, usuario, creadas)
+    return _respuesta_entrega(servicio.rotar(clave_id, cuerpo), servicio)
