@@ -2,6 +2,7 @@
 import base64
 import logging
 import uuid
+from collections.abc import Callable
 from contextlib import contextmanager
 from sqlalchemy.exc import IntegrityError
 
@@ -58,7 +59,7 @@ class ClavesServiceImpl:
         return HuellaOut(id=clave.id, algoritmo=clave.algoritmo, estado=clave.estado, huella_sha3_256=clave.huella_sha3_256)
 
     # ------------------------------------------------------------ cambios
-    def generar(self, cuerpo: GenerarIn) -> EntregaPendiente:
+    def generar(self, cuerpo: GenerarIn, antes_de_confirmar: Callable[[EntregaPendiente], None] | None = None) -> EntregaPendiente:
         usuario = self._usuario_activo(cuerpo.usuario_id)
         tipos = list(dict.fromkeys(cuerpo.tipos))
         for tipo in tipos:
@@ -69,7 +70,7 @@ class ClavesServiceImpl:
             self.repo.flush()
             for clave, _ in creadas:
                 self.auditor.registrar(c.OP_KEY_GENERATED, clave)
-        return self._entregar(usuario, creadas)
+        return self._entregar(usuario, creadas, antes_de_confirmar)
 
     def revocar(self, clave_id: uuid.UUID, cuerpo: RevocarIn) -> ClaveOut:
         clave = self._get(clave_id, bloquear=True)
@@ -171,11 +172,19 @@ class ClavesServiceImpl:
         for _, par in creadas:
             self.gestor.borrar(par.privada_pem)
 
-    def _entregar(self, usuario: Usuario, creadas: Creadas) -> EntregaPendiente:
-        """Confirma la transacción y prepara las privadas para devolverlas UNA vez."""
-        with self._cambio(creadas):
-            self.repo.commit()
+    def _entregar(self, usuario: Usuario, creadas: Creadas,
+                  antes_de_confirmar: Callable[[EntregaPendiente], None] | None = None) -> EntregaPendiente:
+        """Prepara las privadas para devolverlas UNA vez y confirma la transacción.
+
+        `antes_de_confirmar` recibe la entrega ANTES del commit: quien guarda las privadas fuera de la respuesta HTTP (la semilla
+        de usuarios, en un archivo) las asegura primero, y si no puede, no se confirma nada y no se pierde ninguna privada.
+        """
         claves = [mapper.clave_entregada(self._out(clave, usuario), self.gestor.publica_pem(clave.tipo.value, clave.clave_publica),
                                          par.privada_pem.decode("ascii")) for clave, par in creadas]
-        return EntregaPendiente(entrega=Entrega(aviso=c.MSG_KEYS_WARNING, claves=claves),
-                                ids=[clave.id for clave, _ in creadas], buffers=[par.privada_pem for _, par in creadas])
+        pendiente = EntregaPendiente(entrega=Entrega(aviso=c.MSG_KEYS_WARNING, claves=claves),
+                                     ids=[clave.id for clave, _ in creadas], buffers=[par.privada_pem for _, par in creadas])
+        with self._cambio(creadas):
+            if antes_de_confirmar is not None:
+                antes_de_confirmar(pendiente)
+            self.repo.commit()
+        return pendiente
