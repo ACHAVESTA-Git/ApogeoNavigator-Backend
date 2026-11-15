@@ -21,7 +21,8 @@ class Punto(BaseModel):
     sol_el_deg: float
     tierra_az_deg: float
     tierra_el_deg: float
-    incertidumbre_deg: Incertidumbre | None  # solo en la proyección: RMSE de validación (optimista; no es un intervalo)
+    azimut_solar_fiable: bool                # False si el Sol proyectado está cerca del cénit o del nadir (ver avisos)
+    incertidumbre_deg: Incertidumbre | None  # solo en la proyección: RMSE de validación; 2× cubre el 98–100 %. No es un intervalo
 
 
 class SimulacionOut(BaseModel):

@@ -42,6 +42,13 @@ def _check_errors_table(data) -> dict:
             if (not isinstance(months, list) or len(months) != c.PROJECTION_MONTHS_AHEAD
                     or not all(m is None or _is_number(m) for m in months) or not _is_number(entry.get(c.KEY_RMSE_DEG))):
                 raise LecturaError(c.HTTP_UNAVAILABLE, c.MSG_SIM_ERRORS_INVALID)
+        angular = table.get(c.KEY_ANGULAR)
+        for body in (projection.SUN, projection.EARTH):
+            entry = angular.get(body) if isinstance(angular, dict) else None
+            months = entry.get(c.KEY_RMSE_MONTHS) if isinstance(entry, dict) else None
+            if (not isinstance(months, list) or len(months) != c.PROJECTION_MONTHS_AHEAD
+                    or not all(m is None or _is_number(m) for m in months) or not _is_number(entry.get(c.KEY_RMSE_DEG))):
+                raise LecturaError(c.HTTP_UNAVAILABLE, c.MSG_SIM_ERRORS_INVALID)
     return sites
 
 
@@ -61,17 +68,28 @@ def _error_table(site_id: str) -> dict | None:
     return sites.get(site_id)
 
 
-def _uncertainty(table: dict | None, months_ahead: np.ndarray) -> list[dict | None]:
-    """Incertidumbre (RMSE de validación, grados) por punto según los meses de horizonte."""
+def _month_value(months: list, month: int, total: float) -> float:
+    return months[month] if months[month] is not None else total
+
+
+def _uncertainty(table: dict | None, months_ahead: np.ndarray, series: dict[str, np.ndarray]) -> list[dict | None]:
+    """Incertidumbre (RMSE de validación, grados) por punto según los meses de horizonte.
+
+    Las elevaciones usan su RMSE por mes. Los azimuts usan el error de DIRECCIÓN del cuerpo escalado por 1/cos(elevación)
+    del propio punto (con tope de 180°): cerca del cénit o del nadir el azimut gira de golpe y falla mucho más que lejos.
+    """
     if not table:
         return [None] * len(months_ahead)
     out = []
-    for month in months_ahead:
+    for i, month in enumerate(months_ahead):
         entry = {}
-        for column in VARIABLES:
-            by_month = table[column][c.KEY_RMSE_MONTHS]
-            entry[column] = by_month[month] if by_month[month] is not None else table[column][c.KEY_RMSE_DEG]
-        out.append(entry)
+        for body, (az_col, el_col) in projection.COLUMNS.items():
+            angular = table[c.KEY_ANGULAR][body]
+            direction = _month_value(angular[c.KEY_RMSE_MONTHS], month, angular[c.KEY_RMSE_DEG])
+            cos_el = max(math.cos(math.radians(series[el_col][i])), c.SIM_COS_FLOOR)
+            entry[az_col] = min(direction / cos_el, c.SIM_AZIMUTH_MAX_UNCERTAINTY_DEG)
+            entry[el_col] = _month_value(table[el_col][c.KEY_RMSE_MONTHS], month, table[el_col][c.KEY_RMSE_DEG])
+        out.append({col: round(entry[col], c.ROUND_DEG) for col in VARIABLES})
     return out
 
 
@@ -120,18 +138,20 @@ def simulate(site_id: str, desde: str | None, hasta: str | None, paso_horas: flo
     months = np.clip(np.floor((t_days - model.last_t_days) / c.MONTH_DAYS), 0,
                      c.PROJECTION_MONTHS_AHEAD - 1).astype(int)
     table = _error_table(site_id) if not in_data.all() else None
-    uncertainty = _uncertainty(table, months)
+    uncertainty = _uncertainty(table, months, series)
+    unreliable = ~in_data & (np.abs(series[c.COL_SOL_EL]) > c.SIM_AZIMUTH_WARN_EL_DEG)
     points = [{c.COL_UTC: lectura.fmt(t), c.KEY_ORIGEN: c.ORIGEN_DATOS if inside else c.ORIGEN_PROYECCION,
                **{col: round(float(series[col][i]), c.ROUND_DEG) for col in VARIABLES},
-               c.KEY_INCERTIDUMBRE: None if inside else uncertainty[i]}
+               c.KEY_INCERTIDUMBRE: None if inside else uncertainty[i], c.KEY_AZIMUT_FIABLE: not unreliable[i]}
               for i, (t, inside) in enumerate(zip(times, in_data))]
     warnings = []
     if not in_data.all():
         warnings.append({c.KEY_CODIGO: c.AVISO_PROYECCION, c.KEY_MENSAJE: c.MSG_SIM_WARNING})
         if table is None:
             warnings.append({c.KEY_CODIGO: c.AVISO_SIN_INCERTIDUMBRE, c.KEY_MENSAJE: c.MSG_SIM_NO_UNCERTAINTY})
-        if max(r[c.COL_SOL_EL] for r in rows) > c.SIM_AZIMUTH_MAX_SUN_EL_DEG:
-            warnings.append({c.KEY_CODIGO: c.AVISO_AZIMUT_CENIT, c.KEY_MENSAJE: c.MSG_SIM_AZIMUTH_WARNING})
+        if unreliable.any():
+            message = c.MSG_SIM_AZIMUTH_POINTS.format(n=int(unreliable.sum()), total=int((~in_data).sum()), deg=c.SIM_AZIMUTH_WARN_EL_DEG)
+            warnings.append({c.KEY_CODIGO: c.AVISO_AZIMUT_CENIT, c.KEY_MENSAJE: message})
     return {c.COL_SITE_ID: site_id, c.KEY_DESDE_UTC: lectura.fmt(start), c.KEY_HASTA_UTC: lectura.fmt(end),
             c.KEY_PASO_HORAS: paso_horas, c.KEY_FIN_DATOS: lectura.fmt(rows[-1][c.COL_UTC]),
             c.KEY_AVISOS: warnings, c.KEY_PUNTOS: points}
