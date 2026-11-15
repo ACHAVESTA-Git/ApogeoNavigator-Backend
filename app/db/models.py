@@ -30,6 +30,8 @@ class Usuario(Base):
     email_cifrado: Mapped[bytes] = mapped_column(LargeBinary)
     email_hash: Mapped[str] = mapped_column(String(c.HASH_HEX_LENGTH), unique=True)
     nombre: Mapped[str] = mapped_column(String(c.DB_NAME_MAX))
+    # Login local: hash Argon2id (nunca la contraseña). Null = sin login local (p. ej. solo OAuth, futuro).
+    password_hash: Mapped[str | None] = mapped_column(String(c.DB_PASSWORD_HASH_MAX))
     proveedor_oauth: Mapped[str | None] = mapped_column(String(c.DB_PROVIDER_MAX))
     sub_oauth: Mapped[str | None] = mapped_column(String(c.DB_SUB_MAX))
     rol: Mapped[RolUsuario] = mapped_column(Enum(RolUsuario, name="rol_usuario", values_callable=lambda e: [m.value for m in e]),
@@ -43,13 +45,16 @@ class Usuario(Base):
 
 class Sesion(Base):
     __tablename__ = "sesiones"
-    __table_args__ = (Index("ix_sesiones_usuario_id", "usuario_id"), Index("ix_sesiones_expira_utc", "expira_utc"))
+    __table_args__ = (Index("ix_sesiones_usuario_id", "usuario_id"), Index("ix_sesiones_expira_utc", "expira_utc"),
+                      Index("ix_sesiones_token_hash", "token_hash", unique=True))
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     usuario_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("usuarios.id", ondelete="CASCADE"))
     creada_utc: Mapped[datetime] = mapped_column(UTC_DATETIME, default=utcnow)
     expira_utc: Mapped[datetime] = mapped_column(UTC_DATETIME)
     revocada: Mapped[bool] = mapped_column(Boolean, default=False)
+    # SHA3-256 del token opaco de la cookie: el token en claro nunca se guarda.
+    token_hash: Mapped[str | None] = mapped_column(String(c.HASH_HEX_LENGTH))
     ip_hash: Mapped[str | None] = mapped_column(String(c.HASH_HEX_LENGTH))
     user_agent: Mapped[str | None] = mapped_column(String(c.DB_USER_AGENT_MAX))
 

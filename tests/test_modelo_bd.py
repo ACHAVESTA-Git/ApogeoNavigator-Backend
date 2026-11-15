@@ -198,3 +198,22 @@ def test_check_de_firma_coincide_entre_modelo_y_migracion():
     spec.loader.exec_module(mod)
     assert mod.SIGNED_OR_NONE == models.SIGNED_OR_NONE
     assert f"'{c.UNSIGNED_ALGORITHM}'" in mod.SIGNED_OR_NONE
+
+
+def test_migracion_0005_agrega_y_quita_las_columnas_de_login(tmp_path):
+    url = f"sqlite:///{tmp_path / 'login.db'}"
+    cfg = Config(str(ROOT / "alembic.ini"))
+    cfg.set_main_option("script_location", str(ROOT / "alembic"))
+    cfg.set_main_option("sqlalchemy.url", url)
+    command.upgrade(cfg, "0004_email_contraer")
+    assert "password_hash" not in {col["name"] for col in inspect(create_engine(url)).get_columns("usuarios")}
+    command.upgrade(cfg, "head")
+    eng = create_engine(url)
+    assert {col["name"]: col["nullable"] for col in inspect(eng).get_columns("usuarios")}["password_hash"] is True
+    assert "token_hash" in {col["name"] for col in inspect(eng).get_columns("sesiones")}
+    indices = {ix["name"]: ix["unique"] for ix in inspect(eng).get_indexes("sesiones")}
+    assert indices["ix_sesiones_token_hash"]
+    command.downgrade(cfg, "0004_email_contraer")
+    eng = create_engine(url)
+    assert "password_hash" not in {col["name"] for col in inspect(eng).get_columns("usuarios")}
+    assert "token_hash" not in {col["name"] for col in inspect(eng).get_columns("sesiones")}
