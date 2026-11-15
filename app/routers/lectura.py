@@ -29,7 +29,7 @@ def efemerides(site_id: Annotated[str, SITE_PATH], desde: Annotated[str | None, 
 
 
 @router.get(c.ROUTE_METRICAS, response_model=MetricsOut, responses=RESPONSES, summary="Sunlight and Earth-visibility metrics with a traffic light")
-def metricas(site_id: Annotated[list[str], Query(description="Sitio a consultar; repítelo para comparar de 1 a 3 sitios.", examples=[["shackleton", "change4"]])] = [],
+def metricas(site_id: Annotated[list[str], Query(default_factory=list, description="Sitio a consultar; repítelo para comparar de 1 a 3 sitios.", examples=[["shackleton", "change4"]])],
              desde: Annotated[str | None, DESDE] = None, hasta: Annotated[str | None, HASTA] = None):
     """Métricas recalculadas desde las efemérides, con semáforo y comparación con
     `metricas.csv` si existe una fila para ese rango. Siempre `{"resultados": [...]}`.
