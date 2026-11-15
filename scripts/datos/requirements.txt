@@ -1,0 +1,4 @@
+# Dependencias SOLO de los scripts de análisis (la API no usa matplotlib)
+polars==2.1.0
+numpy>=2.2.6
+matplotlib>=3.9

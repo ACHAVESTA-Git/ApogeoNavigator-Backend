@@ -15,5 +15,6 @@ def add_cors(app: FastAPI) -> None:
         allow_methods=list(config.CORS_ALLOW_METHODS),
         allow_headers=list(config.CORS_ALLOW_HEADERS),
         allow_credentials=config.CORS_ALLOW_CREDENTIALS,
+        expose_headers=list(config.CORS_EXPOSE_HEADERS),
         max_age=config.CORS_MAX_AGE_SECONDS,
     )

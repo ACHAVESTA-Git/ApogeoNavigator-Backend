@@ -47,7 +47,7 @@ def test_clave_publica_sigue_dando_503_sin_claves_en_produccion(api, monkeypatch
     monkeypatch.delenv("PQC_PUBLIC_KEY")
     pqc.reiniciar()
     r = api.get("/api/seguridad/clave-publica")
-    assert (r.status_code, r.json()) == (503, {"detail": c.MSG_SIGNING_UNAVAILABLE})
+    assert (r.status_code, r.json()["detail"]) == (503, c.MSG_SIGNING_UNAVAILABLE)
 
 
 # ------------------------------------------------------------------ manifiesto: documentado, no modelado
@@ -93,3 +93,17 @@ def test_los_cuerpos_reales_del_401_y_del_413_cumplen_errorout(api):
 def test_el_guardado_correcto_sigue_siendo_savresult(api):
     r = upload(api, "sites", fixture_bytes("sites_limites.csv"), "sites.csv", dry_run=False)
     assert r.status_code == 200 and {"guardado", "copia_historial"} <= set(r.json())
+
+
+def test_el_422_de_una_peticion_mal_formada_es_una_lista_y_cumple_el_modelo(api):
+    r = api.post("/api/datos/validar/sites", headers={"X-API-Key": API_KEY})        # sin el campo file
+    assert r.status_code == 422 and isinstance(r.json()["detail"], list)
+    assert isinstance(ErrorValidacionOut.model_validate(r.json()).detail, list)
+
+
+def test_errorout_documenta_el_codigo_del_413(api):
+    grande = api.post("/api/datos/validar/sites", headers={"X-API-Key": API_KEY},
+                                  files={"file": ("sites.csv", b"a" * (c.MAX_FILE_BYTES + c.MULTIPART_OVERHEAD_BYTES + 10))})
+    assert grande.status_code == 413 and ErrorOut.model_validate(grande.json()).codigo == c.E_TAMANO
+    assert ErrorOut(detail="x").codigo is None
+    assert "codigo" in OPENAPI["components"]["schemas"]["ErrorOut"]["properties"]

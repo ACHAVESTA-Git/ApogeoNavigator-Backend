@@ -37,7 +37,7 @@ def test_el_servicio_lanza_lecturaerror_503_con_los_textos_de_siempre(data_dir):
 def test_el_endpoint_sigue_dando_el_503_de_texto(api, data_dir):
     (data_dir / "sites.csv").unlink()
     r = api.get("/api/sites")
-    assert (r.status_code, r.json()) == (503, {"detail": c.MSG_NO_SITES})
+    assert (r.status_code, r.json()["detail"]) == (503, c.MSG_NO_SITES)
 
 
 def test_el_servicio_devuelve_los_sitios_tipados(data_dir):
@@ -95,7 +95,7 @@ def test_las_puestas_nulas_siguen_siendo_validas():
 
 def test_metricas_sin_site_id_sigue_dando_el_422_de_texto(api):
     r = api.get("/api/metricas")
-    assert (r.status_code, r.json()) == (422, {"detail": "Indica al menos un site_id"})
+    assert (r.status_code, r.json()["detail"]) == (422, "Indica al menos un site_id")
     param = next(p for p in OPENAPI["paths"]["/api/metricas"]["get"]["parameters"] if p["name"] == "site_id")
     assert param["required"] is False
 

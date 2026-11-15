@@ -83,9 +83,33 @@ def _con_clave(ctx, tipo="firma"):
     return entrega["claves"][0]["id"]
 
 
+def _efemerides_cortas(sitio: str, dias: int = 90) -> bytes:
+    lineas = (REAL_DATA / f"efemerides_{sitio}.csv").read_text(encoding="utf-8").splitlines()
+    return ("\n".join(lineas[: 1 + 24 * dias]) + "\n").encode()
+
+
 def _con_evento(ctx, peticion):
     _subida(ctx, "/api/datos/validar/sites", fixture_bytes("sites_valido.csv"), "sites.csv")      # deja un evento auditado
     return peticion(ctx)
+
+
+def _horizons(modo="ok", **params):
+    """/api/horizons con Horizons simulado (sin red) y sin esperas entre reintentos."""
+    def peticion(ctx):
+        from app.services import horizons
+        from tests.horizons_falso import FakeHorizons
+        antes = config.HORIZONS_RETRY_BACKOFF_S
+        config.HORIZONS_RETRY_BACKOFF_S = 0
+        horizons.set_transport(FakeHorizons(mode=modo).transport)
+        horizons.reset_state()
+        try:
+            return ctx.client.get("/api/horizons", params={"lat": -89.66, "lon": 129.2, "desde": "2026-12-01T00:00Z",
+                                                           "hasta": "2026-12-01T03:00Z", **params})
+        finally:
+            config.HORIZONS_RETRY_BACKOFF_S = antes
+            horizons.set_transport(None)
+            horizons.reset_state()
+    return peticion
 
 
 ESCENARIOS = {
@@ -112,6 +136,26 @@ ESCENARIOS = {
     "puestas_sin_desde": lambda c: c.client.get("/api/puestas/apollo11"),
     "puestas_sitio_inexistente_404": lambda c: c.client.get("/api/puestas/no_existe"),
     "ruta_inexistente_404": lambda c: c.client.get("/api/no-existe"),
+    # ---- simulación del cielo (datos reales y proyección)
+    "simulacion_datos": lambda c: c.client.get("/api/simulacion/shackleton", params={"desde": "2026-12-01T00:00Z", "hasta": "2026-12-01T03:00Z"}),
+    "simulacion_con_proyeccion": lambda c: c.client.get("/api/simulacion/shackleton", params={"desde": "2027-05-31T00:00Z", "hasta": "2027-06-02T00:00Z", "paso_horas": 12}),
+    "simulacion_paso_invalido_422": lambda c: c.client.get("/api/simulacion/shackleton", params={"paso_horas": 0.01}),
+    "simulacion_sitio_inexistente_404": lambda c: c.client.get("/api/simulacion/no_existe"),
+    # ---- transparencia del análisis
+    "analisis_ok": lambda c: c.client.get("/api/analisis/shackleton"),
+    "analisis_otra_variable_y_rango": lambda c: c.client.get("/api/analisis/apollo15", params={"variable": "tierra_az_deg", "desde": "2027-01-01T00:00Z", "hasta": "2027-07-01T00:00Z"}),
+    "analisis_tras_subir_efemerides": lambda c: (_subida(c, "/api/datos/efemerides", _efemerides_cortas("slim"), "efemerides_slim.csv"),
+                                                 c.client.get("/api/analisis/slim"))[1],
+    "analisis_sitio_inexistente_404": lambda c: c.client.get("/api/analisis/no_existe"),
+    "analisis_variable_invalida_422": lambda c: c.client.get("/api/analisis/shackleton", params={"variable": "temperatura"}),
+    "analisis_rango_invalido_422": lambda c: c.client.get("/api/analisis/shackleton", params={"desde": "2027-01-01T00:00Z", "hasta": "2026-12-01T00:00Z"}),
+    "metodo_no_permitido_405": lambda c: c.client.post("/api/sites"),
+    # ---- coordenadas propias (Horizons en vivo, simulado)
+    "horizons_ok": _horizons(),
+    "horizons_lat_fuera_de_rango_422": _horizons(lat=91),
+    "horizons_rango_largo_422": _horizons(hasta="2027-03-01T00:00Z"),
+    "horizons_jpl_falla_502": _horizons("http500"),
+    "horizons_jpl_tarda_504": _horizons("timeout"),
     # ---- seguridad (público)
     "seguridad_clave_publica": lambda c: c.client.get("/api/seguridad/clave-publica"),
     "seguridad_manifiesto_sin_generar_404": lambda c: c.client.get("/api/seguridad/manifiesto"),
@@ -158,6 +202,8 @@ def observar(respuesta) -> dict:
     tipo = respuesta.headers.get("content-type", "").split(";")[0]
     observado = {"estado": respuesta.status_code, "tipo_contenido": tipo}
     cabeceras = {k: respuesta.headers[k] for k in CABECERAS_CONGELADAS if k in respuesta.headers}
+    if "x-request-id" in respuesta.headers:          # el valor cambia en cada petición: se congela solo que esté
+        cabeceras["x-request-id"] = "presente"
     if cabeceras:
         observado["cabeceras"] = cabeceras
     if tipo == "application/json":
@@ -225,6 +271,34 @@ CAMPOS_FRONTEND = {
     ("datos_guardar_ok", ("forma",)): {"archivo", "tipo", "valido", "total_filas", "total_errores", "errores", "advertencias",
                                        "guardado", "copia_historial"},
     ("datos_validar_invalido_422", ("forma", "detail", "errores", 0)): {"fila", "columna", "codigo", "mensaje", "valor"},
+    # Transparencia del análisis (sección nueva del frontend): claves exactas del DTO que se le entregó a Fable.
+    ("analisis_ok", ("forma",)): {"site_id", "desde_utc", "hasta_utc", "pasos", "entrada", "espectro", "modelo", "validacion",
+                                  "limitaciones", "serie"},
+    ("analisis_ok", ("forma", "pasos", 0)): {"id", "nombre", "descripcion", "estado", "resultado"},
+    ("analisis_ok", ("forma", "pasos", 0, "resultado", 0)): {"nombre", "valor", "unidad"},
+    ("analisis_ok", ("forma", "entrada")): {"archivo", "filas", "bytes", "inicio_utc", "fin_utc", "paso_horas", "calidad", "origen"},
+    ("analisis_ok", ("forma", "entrada", "calidad")): {"filas_validas", "filas_con_error", "huecos", "paso_constante"},
+    ("analisis_ok", ("forma", "entrada", "origen")): {"tipo", "descripcion", "sha3_256", "coincide_con_semilla", "ultima_carga", "manifiesto"},
+    ("analisis_tras_subir_efemerides", ("forma", "entrada", "origen", "ultima_carga")): {"cargado_utc", "archivo", "sha3_256", "coincide",
+                                                                                        "cargado_por"},
+    ("analisis_tras_subir_efemerides", ("forma", "entrada", "origen", "manifiesto")): {"sha3_256", "generado_utc", "firmado", "firma_nota", "coincide"},
+    ("analisis_ok", ("forma", "espectro")): {"ventana_dias", "resolucion_dias", "sinodico_teorico_dias", "sinodico_afinado_dias",
+                                             "series", "nota"},
+    ("analisis_ok", ("forma", "espectro", "series", 0)): {"variable", "nombre", "picos"},
+    ("analisis_ok", ("forma", "espectro", "series", 0, "picos", 0)): {"periodo_dias", "amplitud_rel", "candidatos", "es_sinodico"},
+    ("analisis_ok", ("forma", "modelo")): {"terminos_por_cuerpo", "periodos", "ajuste_directo_elevacion_sol", "r2", "residuos",
+                                          "nota_ajuste"},
+    ("analisis_ok", ("forma", "modelo", "periodos", 0)): {"cuerpo", "periodo_dias", "rol"},
+    ("analisis_ok", ("forma", "validacion")): {"disponible", "vigente", "motivo", "validacion_desde_utc", "validacion_hasta_utc",
+                                               "filas_entrenamiento_validadas", "rmse_deg", "mae_deg", "rmse_referencia_ingenua_deg",
+                                               "mejora_frente_a_ingenua", "rmse_por_mes_deg", "semaforo_aciertos", "puestas_sol"},
+    ("analisis_ok", ("forma", "limitaciones", 0)): {"codigo", "mensaje", "aplica"},
+    ("analisis_ok", ("forma", "serie")): {"variable", "nombre", "paso_horas", "fin_datos_utc", "puntos"},
+    ("analisis_ok", ("forma", "serie", "puntos", 0)): {"utc", "observado", "ajustado", "proyectado"},
+    # Simulación del cielo.
+    ("simulacion_con_proyeccion", ("forma",)): {"site_id", "desde_utc", "hasta_utc", "paso_horas", "fin_datos_utc", "avisos", "puntos"},
+    ("simulacion_con_proyeccion", ("forma", "puntos", 0)): {"utc", "origen", "sol_az_deg", "sol_el_deg", "tierra_az_deg", "tierra_el_deg",
+                                                            "incertidumbre_deg"},
 }
 
 
@@ -251,3 +325,14 @@ def test_los_campos_que_pueden_ser_nulos_lo_son_en_algun_escenario():
     assert snap["metricas_un_sitio"]["forma"]["resultados"][0]["sol_el_media_deg"] == "number"
     assert snap["metricas_sin_referencia"]["forma"]["resultados"][0]["referencia"] == "null"
     assert snap["datos_guardar_ok"]["forma"]["copia_historial"] in ("null", "str")
+
+
+def test_la_transparencia_distingue_nulos_y_valores_en_el_origen_y_la_serie():
+    snap = _cargar()
+    origen = snap["analisis_ok"]["forma"]["entrada"]["origen"]
+    assert origen["ultima_carga"] == "null" and origen["manifiesto"] == "null"          # datos de la semilla: sin carga registrada
+    tras = snap["analisis_tras_subir_efemerides"]["forma"]["entrada"]["origen"]
+    assert tras["ultima_carga"] != "null" and tras["manifiesto"] != "null"
+    punto = snap["analisis_ok"]["forma"]["serie"]["puntos"][0]
+    assert {"null", "number"} <= set(punto["observado"].split("|")) | {"null"}
+    assert snap["analisis_ok"]["forma"]["validacion"]["motivo"] == "null"

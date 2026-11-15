@@ -1,4 +1,6 @@
 """Validadores de texto reutilizables: longitud, caracteres prohibidos, fórmulas y recortes."""
+import unicodedata
+
 from app.core import config
 from app.utils.errors import CellError
 
@@ -36,14 +38,34 @@ def clip_value(value, max_chars: int = config.MAX_VALUE_CHARS) -> str | None:
     return None if value is None else str(value)[:max_chars]
 
 
+def es_peligroso(ch: str) -> bool:
+    """Caracteres que no deben llegar a la base, a un nombre de archivo ni a una línea de log: controles ASCII y C1 (incluidos
+    CR, LF, tab y DEL), de formato (marcas bidireccionales, ancho cero) y los separadores de línea y párrafo U+2028 y U+2029."""
+    return unicodedata.category(ch) in config.UNSAFE_CHAR_CATEGORIES
+
+
 def clean_text(value: str | None, max_chars: int) -> str | None:
-    """Texto del usuario apto para guardar: sin caracteres de control y recortado a `max_chars`."""
+    """Texto del usuario apto para guardar: sin caracteres peligrosos (ver `es_peligroso`) y recortado a `max_chars`."""
     if value is None:
         return None
-    return "".join(ch for ch in str(value) if ord(ch) > config.CONTROL_CHAR_MAX)[:max_chars]
+    return "".join(ch for ch in str(value) if not es_peligroso(ch))[:max_chars]
+
+
+def escapar_control(value, max_chars: int | None = None) -> str:
+    """Texto para una línea de log: los caracteres peligrosos se sustituyen por su escape visible (\\r, \\n, \\x85, \\u2028…),
+    de modo que un cliente no pueda fabricar líneas falsas. Se recorta a `max_chars` si se indica."""
+    partes = []
+    for ch in str(value):
+        if not es_peligroso(ch):
+            partes.append(ch)
+        elif ch in config.LOG_ESCAPES:
+            partes.append(config.LOG_ESCAPES[ch])
+        else:
+            partes.append(f"\\x{ord(ch):02x}" if ord(ch) <= 0xFF else f"\\u{ord(ch):04x}")
+    texto = "".join(partes)
+    return texto if max_chars is None or len(texto) <= max_chars else texto[:max_chars] + "…"
 
 
 def sanitize_filename(name: str | None) -> str:
-    """Nombre apto para el informe: sin caracteres de control y con longitud limitada."""
-    cleaned = "".join(ch for ch in (name or "") if ord(ch) > config.CONTROL_CHAR_MAX)
-    return cleaned[: config.MAX_FILENAME_CHARS]
+    """Nombre apto para el informe: sin caracteres peligrosos y con longitud limitada."""
+    return "".join(ch for ch in (name or "") if not es_peligroso(ch))[: config.MAX_FILENAME_CHARS]
