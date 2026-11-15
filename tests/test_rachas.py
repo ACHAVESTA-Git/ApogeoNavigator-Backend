@@ -22,52 +22,53 @@ def _fin(filas, paso_h=1.0):
 
 def test_racha_en_el_medio_no_esta_truncada():
     filas = _filas([1, -1, -1, -1, 1, 1], [1] * 6)
-    r = racha_mas_larga(filas, lambda f: f[c.COL_SOL_EL] <= 0, 1.0, _fin(filas))
+    r = racha_mas_larga(filas, lambda f: f[c.COL_SOL_EL] <= 0, 1.0)
     assert r[c.KEY_HORAS] == 3.0
     assert r[c.COL_INICIO] == T0 + timedelta(hours=1) and r[c.COL_FIN] == T0 + timedelta(hours=4)
     assert (r[c.KEY_TRUNCA_INICIO], r[c.KEY_TRUNCA_FIN]) == (False, False)
 
 
-def test_racha_que_llega_al_final_termina_en_el_fin_del_rango_y_esta_truncada():
+def test_racha_que_llega_al_final_termina_un_paso_despues_de_la_ultima_fila_y_esta_truncada():
     filas = _filas([1, -1, -1], [1] * 3)
-    r = racha_mas_larga(filas, lambda f: f[c.COL_SOL_EL] <= 0, 1.0, _fin(filas))
+    r = racha_mas_larga(filas, lambda f: f[c.COL_SOL_EL] <= 0, 1.0)
     assert r[c.KEY_HORAS] == 2.0 and r[c.COL_FIN] == _fin(filas)
+    assert r[c.COL_FIN] - r[c.COL_INICIO] == timedelta(hours=r[c.KEY_HORAS])
     assert (r[c.KEY_TRUNCA_INICIO], r[c.KEY_TRUNCA_FIN]) == (False, True)
 
 
 def test_racha_desde_la_primera_muestra_esta_truncada_al_inicio():
     filas = _filas([-1, -1, 1], [1] * 3)
-    r = racha_mas_larga(filas, lambda f: f[c.COL_SOL_EL] <= 0, 1.0, _fin(filas))
+    r = racha_mas_larga(filas, lambda f: f[c.COL_SOL_EL] <= 0, 1.0)
     assert r[c.COL_INICIO] == T0 and r[c.KEY_TRUNCA_INICIO] is True and r[c.KEY_TRUNCA_FIN] is False
 
 
 def test_en_un_empate_gana_la_primera_racha():
     filas = _filas([-1, -1, 1, -1, -1, 1], [1] * 6)
-    r = racha_mas_larga(filas, lambda f: f[c.COL_SOL_EL] <= 0, 1.0, _fin(filas))
+    r = racha_mas_larga(filas, lambda f: f[c.COL_SOL_EL] <= 0, 1.0)
     assert r[c.COL_INICIO] == T0
 
 
 def test_sin_racha_devuelve_cero_y_fechas_nulas():
     filas = _filas([1, 2, 3], [1] * 3)
-    r = racha_mas_larga(filas, lambda f: f[c.COL_SOL_EL] <= 0, 1.0, _fin(filas))
+    r = racha_mas_larga(filas, lambda f: f[c.COL_SOL_EL] <= 0, 1.0)
     assert r == {c.KEY_HORAS: 0.0, c.COL_INICIO: None, c.COL_FIN: None, c.KEY_TRUNCA_INICIO: False, c.KEY_TRUNCA_FIN: False}
 
 
 def test_el_paso_de_la_serie_multiplica_las_horas():
     filas = _filas([1, -1, -1, 1], [1] * 4, paso_h=6.0)
-    r = racha_mas_larga(filas, lambda f: f[c.COL_SOL_EL] <= 0, 6.0, _fin(filas, 6.0))
+    r = racha_mas_larga(filas, lambda f: f[c.COL_SOL_EL] <= 0, 6.0)
     assert r[c.KEY_HORAS] == 12.0
 
 
 def test_una_serie_vacia_no_tiene_racha():
-    assert racha_mas_larga([], lambda f: True, 1.0, T0)[c.KEY_HORAS] == 0.0
+    assert racha_mas_larga([], lambda f: True, 1.0)[c.KEY_HORAS] == 0.0
 
 
 def test_indicadores_combinan_sol_y_tierra():
     #            sol:   +  +  -  -  -  +  +  +
     #          tierra:  +  -  -  +  +  +  +  -
     filas = _filas([1, 1, -1, -1, -1, 1, 1, 1], [1, -1, -1, 1, 1, 1, 1, -1])
-    ind = lectura.astronaut_indicators(filas, 1.0, _fin(filas), 1.5)
+    ind = lectura.astronaut_indicators(filas, 1.0, 1.5)
     assert ind[c.KEY_NOCHE_LARGA][c.KEY_HORAS] == 3.0
     assert ind[c.KEY_APAGON_TIERRA][c.KEY_HORAS] == 2.0
     assert ind[c.KEY_VENTANA_SOL_TIERRA][c.KEY_HORAS] == 2.0
@@ -79,7 +80,7 @@ def test_indicadores_combinan_sol_y_tierra():
 
 def test_sol_siempre_arriba_no_tiene_noche_ni_puesta():
     filas = _filas([1, 2, 3], [-1, -1, -1])
-    ind = lectura.astronaut_indicators(filas, 1.0, _fin(filas), 2.0)
+    ind = lectura.astronaut_indicators(filas, 1.0, 2.0)
     assert ind[c.KEY_NOCHE_LARGA][c.KEY_HORAS] == 0.0 and ind[c.KEY_PUESTA_SOL] is None
     assert ind[c.KEY_VENTANA_SOL_TIERRA][c.KEY_HORAS] == 0.0
     assert ind[c.KEY_APAGON_TIERRA][c.KEY_HORAS] == 3.0 and ind[c.KEY_PUESTA_TIERRA] is None

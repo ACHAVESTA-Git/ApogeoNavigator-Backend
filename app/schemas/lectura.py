@@ -79,7 +79,7 @@ class AstronautIndicators(BaseModel):
     ventana_sol_y_tierra: Streak = Field(description="Longest continuous window with the Sun and the Earth above the horizon at once.")
     proxima_puesta_sol_utc: UtcStr | None = Field(description=f"First Sun set after the start of the range ({UTC_NOTE}); null if there is none in the range.")
     proxima_puesta_tierra_utc: UtcStr | None = Field(description=f"First Earth set after the start of the range ({UTC_NOTE}); null if there is none in the range.")
-    sol_el_media_horas_sol_deg: float | None = Field(description="Mean Sun elevation during the hours of sunlight; null if the Sun never rises. Same value as `sol_el_media_deg`.")
+    sol_el_media_horas_sol_deg: float | None = Field(description="Mean Sun elevation during the hours of sunlight; null if the Sun never rises. Same value as `sol_el_media_deg`, grouped here with the other indicators.")
 
 
 class MetricsItem(BaseModel):
@@ -94,7 +94,7 @@ class MetricsItem(BaseModel):
                        "horas_tierra_visible": 291.0, "pct_tierra": 39.11, "coincide": True},
         "indicadores_astronauta": {
             "noche_mas_larga": {"horas": 0.0, "inicio_utc": None, "fin_utc": None, "trunca_inicio": False, "trunca_fin": False},
-            "apagon_tierra_mas_largo": {"horas": 336.0, "inicio_utc": "2026-12-14T23:00Z", "fin_utc": "2026-12-27T02:00Z",
+            "apagon_tierra_mas_largo": {"horas": 291.0, "inicio_utc": "2026-12-14T23:00Z", "fin_utc": "2026-12-27T02:00Z",
                                         "trunca_inicio": False, "trunca_fin": False},
             "ventana_sol_y_tierra": {"horas": 120.0, "inicio_utc": "2026-12-01T00:00Z", "fin_utc": "2026-12-06T00:00Z",
                                      "trunca_inicio": True, "trunca_fin": False},
@@ -112,7 +112,7 @@ class MetricsItem(BaseModel):
     avisos: list[Aviso] = Field(default_factory=list, description="Warnings that accompany the traffic light; empty if there are none.")
     origen: Literal[*config.ORIGENES] = Field(description="`calculado`: recomputed from the ephemerides; `horizons_en_vivo`: computed from a live JPL Horizons query.")
     referencia: Reference | None = Field(description="Row of metricas.csv with the same site and range; null if there is none or the range does not match.")
-    indicadores_astronauta: AstronautIndicators = Field(description="Indicators for astronauts, computed over the same range: longest night, longest Earth blackout, longest Sun-and-Earth window, next sets and mean Sun elevation in daylight.")
+    indicadores_astronauta: AstronautIndicators = Field(description="Indicators for astronauts, computed over the same range: longest night, longest Earth blackout, longest Sun-and-Earth window, next Sun and Earth sets and mean Sun elevation in daylight.")
 
 
 class MetricsOut(BaseModel):
