@@ -17,9 +17,9 @@ router = APIRouter(prefix=config.UPLOAD_ROUTER_PREFIX, tags=[config.ROUTER_TAG],
 
 RESPONSES = {
     401: {"description": "Missing or invalid API key", "model": ErrorOut},
-    413: {"description": "E_TAMANO: file over 5 MB or 10 000 rows", "model": ErrorOut},
+    413: {"description": "E_TAMANO: file over 5 MB or 10 000 rows; the body also carries `codigo`", "model": ErrorOut},
     415: {"description": "E_TIPO_ARCHIVO: not a .csv text file; `detail` carries the report", "model": ErrorValidacionOut},
-    422: {"description": "Rejected file: `detail` is the validation report (or a list for malformed requests)", "model": ErrorValidacionOut},
+    422: {"description": "Rejected file (`detail` is the validation report) or malformed request (`detail` is FastAPI's list of errors)", "model": ErrorValidacionOut},
 }
 
 

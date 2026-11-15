@@ -35,8 +35,9 @@ class Report(BaseModel):
 
 
 class ErrorValidacionOut(BaseModel):
-    """Cuerpo de un archivo rechazado: el informe va dentro de `detail`."""
-    detail: Report
+    """Cuerpo de un 422 en la carga: el informe de un archivo rechazado, o la lista de errores nativa de FastAPI si la
+    petición está mal formada (por ejemplo, sin el campo `file`)."""
+    detail: Report | list
 
 
 class SaveResult(Report):
