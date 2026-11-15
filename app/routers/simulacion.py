@@ -1,5 +1,7 @@
 """Simulación del cielo lunar: datos reales dentro del rango y proyección estadística fuera de él."""
-from fastapi import APIRouter
+from typing import Annotated
+
+from fastapi import APIRouter, Path, Query
 
 from app.analysis import simulacion
 from app.core import config as c
@@ -11,13 +13,19 @@ router = APIRouter(prefix=c.API_PREFIX, tags=[c.ROUTER_TAG_SIMULACION])
 
 @router.get(c.ROUTE_SIMULACION, response_model=SimulacionOut, responses=RESPONSES,
             summary="Simulate the lunar sky: real data plus a statistical projection")
-def simular(site_id: str, desde: str | None = None, hasta: str | None = None,
-            paso_horas: float = c.SIM_DEFAULT_STEP_HOURS):
-    """Serie de azimut y elevación del Sol y de la Tierra para animar el cielo.
+def simular(site_id: Annotated[str, Path(description="Site identifier (see /api/sites).", examples=["shackleton"])],
+            desde: Annotated[str | None, Query(description="Start (UTC, `YYYY-MM-DDTHH:MMZ`). Defaults to the start of the data.",
+                                               examples=["2027-05-31T23:00Z"])] = None,
+            hasta: Annotated[str | None, Query(description="End (UTC, `YYYY-MM-DDTHH:MMZ`). Defaults to 30 days after `desde`; "
+                                                           "up to 366 days after the last data point can be projected.",
+                                               examples=["2027-06-01T03:00Z"])] = None,
+            paso_horas: Annotated[float, Query(description="Spacing between points, in hours (between 0.25 and 24; the series is "
+                                                           "capped at 9000 points).", examples=[1.0])] = c.SIM_DEFAULT_STEP_HOURS):
+    """Series of Sun and Earth azimuth and elevation, to animate the sky.
 
-    Dentro de los datos reales cada punto trae `origen: "datos"`. Después del último dato, y hasta 366 días,
-    `origen: "proyeccion"` con `incertidumbre_deg`: el RMSE de validación contra Horizons por mes de horizonte. Es una cifra optimista y
-    no un intervalo de confianza: el error real puede superarla.
-    La proyección es una estimación estadística: no sustituye a las efemérides físicas.
+    Inside the real data every point has `origen: "datos"`. After the last data point, and up to 366 days, points have
+    `origen: "proyeccion"` with `incertidumbre_deg`: the validation RMSE against Horizons by horizon month. It is an
+    optimistic figure and not a confidence interval: the real error can exceed it.
+    The projection is a statistical estimate: it does not replace the physical ephemerides.
     """
     return simulacion.simulate(site_id, desde, hasta, paso_horas)
