@@ -54,7 +54,7 @@ def _fail(result: ValidationResult) -> JSONResponse:
 
 @router.post("/validar/{tipo}", response_model=Report, responses=RESPONSES, summary="Validate a CSV file without saving it (dry run)")
 def validar(tipo: str, file: UploadFile, request: Request):
-    """Dry-run: valida y devuelve el informe sin guardar nada. Registra la validación en la auditoría."""
+    """Dry run: validates and returns the report without saving anything. The validation is recorded in the audit log."""
     result, raw = _validate(tipo, file)
     ok = result.report.valido
     _audit(tipo, result, raw, AccionAuditoria.CARGA_VALIDADA if ok else AccionAuditoria.CARGA_RECHAZADA, request)
@@ -63,10 +63,10 @@ def validar(tipo: str, file: UploadFile, request: Request):
 
 @router.post("/{tipo}", response_model=SaveResult, responses=RESPONSES, summary="Validate and save a CSV file")
 def guardar(tipo: str, file: UploadFile, request: Request):
-    """Valida y, si no hay errores, guarda de forma atómica con copia en data/_historial/.
+    """Validates and, if there are no errors, saves atomically, keeping the previous version in data/_historial/.
 
-    La auditoría se registra ANTES de escribir y se confirma después: si firmar el manifiesto o el evento
-    falla, no se guarda nada y la respuesta es 503.
+    The audit event is written BEFORE saving and committed afterwards: if signing the manifest or the event fails,
+    nothing is saved and the response is 503.
     """
     result, raw = _validate(tipo, file)
     if not result.report.valido:

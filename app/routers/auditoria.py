@@ -36,5 +36,5 @@ def listar(usuario: str | None = Query(None, description="UUID del usuario o tex
 
 @router.get(config.ROUTE_AUDIT_VERIFY, response_model=VerificacionOut, summary="Verify the whole audit hash chain and its signatures")
 def verificar(db: Session = Depends(get_db)):
-    """Recorre toda la cadena. Compara `hash_cabeza` con el último «auditoria cabeza» del log para detectar truncados."""
+    """Walks the whole chain. Compare `hash_cabeza` with the last «auditoria cabeza» line of the log to detect truncation."""
     return VerificacionOut(**asdict(auditoria_util.verificar_cadena(db=db)))

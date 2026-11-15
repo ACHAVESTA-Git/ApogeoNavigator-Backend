@@ -21,7 +21,7 @@ def clave_publica() -> dict:
 
 @router.get(config.ROUTE_SECURITY_MANIFEST, summary="Signed manifest of the data files (exact bytes of manifest.json)")
 def manifiesto() -> Response:
-    """Devuelve data/manifest.json tal cual está. Cambia con cada carga: no se cachea."""
+    """Returns data/manifest.json exactly as it is on disk. It changes with every upload, so it is never cached."""
     path = config.get_data_dir() / pqc.MANIFEST_FILENAME
     try:
         body = path.read_bytes()
