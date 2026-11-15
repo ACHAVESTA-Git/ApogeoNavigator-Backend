@@ -4,6 +4,7 @@ La caché se invalida sola cuando cambian la fecha de modificación o el tamaño
 (por ejemplo, tras una carga en /api/datos). Los datos pasan por el mismo validador que
 la API de carga, así que aquí solo llegan filas ya tipadas.
 """
+import hashlib
 import threading
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -54,6 +55,12 @@ def cached_by_mtime(path: Path, loader: Callable[[Path], Any], kind: str = "") -
     with _lock:
         _cache[slot] = (key, value)
     return value
+
+
+def file_sha3(path: Path) -> str | None:
+    """SHA3-256 del archivo, en caché por mtime. None si no existe. Es la huella con la que se compara el origen y la
+    vigencia de la validación."""
+    return cached_by_mtime(path, lambda p: hashlib.sha3_256(p.read_bytes()).hexdigest(), c.CACHE_KIND_SHA3)
 
 
 def clear_cache() -> None:

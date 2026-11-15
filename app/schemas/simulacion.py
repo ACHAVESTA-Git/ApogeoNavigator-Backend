@@ -22,8 +22,12 @@ class Punto(BaseModel):
     sol_el_deg: float = Field(description="Sun elevation above the ideal horizon, in degrees.")
     tierra_az_deg: float = Field(description="Earth azimuth in degrees, clockwise from north.")
     tierra_el_deg: float = Field(description="Earth elevation above the ideal horizon, in degrees.")
+    azimut_solar_fiable: bool = Field(
+        description="False for a projected point whose Sun is above 70° of elevation or below -70° (near zenith or nadir): "
+                    "its azimuth is unreliable and `incertidumbre_deg.sol_az_deg` is large.")
     incertidumbre_deg: Incertidumbre | None = Field(
-        description="Only in projected points: validation RMSE against Horizons by horizon month. Optimistic; not a confidence interval.")
+        description="Only in projected points: validation RMSE against Horizons by horizon month (azimuths scaled by 1/cos of the "
+                    "point's elevation). Not a confidence interval, but 2x this figure covers 98-100% of points.")
 
 
 class SimulacionOut(BaseModel):
@@ -35,9 +39,9 @@ class SimulacionOut(BaseModel):
                                                                   "La incertidumbre sale de la validación contra Horizons."}],
         "puntos": [
             {"utc": "2027-05-31T23:00Z", "origen": "datos", "sol_az_deg": 94.7103, "sol_el_deg": -1.4204, "tierra_az_deg": 223.8475,
-             "tierra_el_deg": 5.5166, "incertidumbre_deg": None},
+             "tierra_el_deg": 5.5166, "azimut_solar_fiable": True, "incertidumbre_deg": None},
             {"utc": "2027-06-01T01:00Z", "origen": "proyeccion", "sol_az_deg": 93.6879, "sol_el_deg": -1.4176, "tierra_az_deg": 223.6033,
-             "tierra_el_deg": 5.4245, "incertidumbre_deg": {"sol_az_deg": 0.0548, "sol_el_deg": 0.0463, "tierra_az_deg": 0.227,
+             "tierra_el_deg": 5.4245, "azimut_solar_fiable": True, "incertidumbre_deg": {"sol_az_deg": 0.0548, "sol_el_deg": 0.0463, "tierra_az_deg": 0.227,
                                                             "tierra_el_deg": 0.1243}},
         ]}]})
 

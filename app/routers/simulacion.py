@@ -24,8 +24,17 @@ def simular(site_id: Annotated[str, Path(description="Site identifier (see /api/
     """Series of Sun and Earth azimuth and elevation, to animate the sky.
 
     Inside the real data every point has `origen: "datos"`. After the last data point, and up to 366 days, points have
-    `origen: "proyeccion"` with `incertidumbre_deg`: the validation RMSE against Horizons by horizon month. It is an
-    optimistic figure and not a confidence interval: the real error can exceed it.
-    The projection is a statistical estimate: it does not replace the physical ephemerides.
+    `origen: "proyeccion"` with `incertidumbre_deg`: the validation RMSE against Horizons by horizon month. For the
+    azimuths it is the direction error of the body divided by cos of the point's own elevation (capped at 180°),
+    because near the zenith or nadir the azimuth turns abruptly and fails much more.
+
+    `incertidumbre_deg` is not a confidence interval, but **2x that figure covers 98-100% of the points** (measured
+    against Horizons over 14,640 points per variable; 97-99.6% before the azimuth was scaled). 1x covers 54-87%.
+
+    `azimut_solar_fiable` is `false` for projected points with the Sun above 70° of elevation or below -70°; the
+    `azimut_solar_cenit` warning appears when any requested point is in that case and says how many. The warning
+    `incertidumbre_de_otros_datos` appears when the site's CSV is not the one the model was validated with (for example,
+    a user uploaded new ephemerides): the uncertainty is then a reference from other data. The projection is a
+    statistical estimate: it does not replace the physical ephemerides.
     """
     return simulacion.simulate(site_id, desde, hasta, paso_horas)

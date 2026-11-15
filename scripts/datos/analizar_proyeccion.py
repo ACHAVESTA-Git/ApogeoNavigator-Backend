@@ -208,7 +208,7 @@ def main() -> None:
     RESULTS.write_text(json.dumps({**meta, "sitios": results}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     table = {sid: {**{col: {k: v for k, v in r[c.KEY_ERRORS][col].items()
                             if k in (c.KEY_MAE_DEG, c.KEY_RMSE_DEG, c.KEY_RMSE_MONTHS, c.KEY_RMSE_NAIVE)}
-                      for col in r[c.KEY_ERRORS]}, c.KEY_SUMMARY: summary(sid, r)} for sid, r in results.items()}
+                      for col in r[c.KEY_ERRORS]}, c.KEY_ANGULAR: r[c.KEY_ANGULAR], c.KEY_SUMMARY: summary(sid, r)} for sid, r in results.items()}
     ERRORS.write_text(json.dumps({c.KEY_VERSION: c.ERRORS_VERSION, **meta, c.KEY_SITES: table}, ensure_ascii=False, indent=1) + "\n",
                       encoding="utf-8")
     if "--sin-graficos" in sys.argv:

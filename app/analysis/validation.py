@@ -34,6 +34,25 @@ def error_by_month(truth: pl.DataFrame, pred: pl.DataFrame, last_t_days: float, 
     return out
 
 
+def angular_error_by_month(truth: pl.DataFrame, pred: pl.DataFrame, last_t_days: float, t0) -> dict[str, dict]:
+    """Error de DIRECCIÓN de cada cuerpo (distancia angular entre la dirección proyectada y la real) por mes de horizonte.
+
+    A diferencia del error en azimut, no se dispara cerca del cénit: el azimut de un punto a elevación `el` falla
+    aproximadamente el error angular dividido por cos(el). Es la base de la incertidumbre del azimut por punto.
+    """
+    days = np.array([(t - t0).total_seconds() / SECONDS_PER_DAY for t in truth[c.COL_UTC].to_list()])
+    month = np.clip(np.floor((days - last_t_days) / c.MONTH_DAYS), 0, c.PROJECTION_MONTHS_AHEAD - 1).astype(int)
+    out = {}
+    for body, (az, el) in projection.COLUMNS.items():
+        a = harmonic.direction_vector(pred[az].to_numpy(), pred[el].to_numpy())
+        b = harmonic.direction_vector(truth[az].to_numpy(), truth[el].to_numpy())
+        err = np.rad2deg(np.arccos(np.clip((a * b).sum(axis=1), -1.0, 1.0)))
+        out[body] = {c.KEY_RMSE_DEG: _clean(np.sqrt(np.mean(err ** 2))),
+                     c.KEY_RMSE_MONTHS: [_clean(np.sqrt(np.mean(err[month == m] ** 2))) if np.any(month == m) else None
+                                         for m in range(c.PROJECTION_MONTHS_AHEAD)]}
+    return out
+
+
 def _event_times(frame: pl.DataFrame, visible_column: str) -> dict[str, np.ndarray]:
     events = pipeline.transitions(frame.lazy(), visible_column).collect()
     return {kind: events.filter(pl.col(pipeline.EVENT_KIND) == kind)[c.COL_UTC].dt.epoch("s").to_numpy()
@@ -91,7 +110,7 @@ def evaluate_site(training: pl.LazyFrame, truth_lazy: pl.LazyFrame) -> dict:
         errors[column][c.KEY_RMSE_NAIVE] = _clean(np.sqrt(np.mean(
             _error(column, baseline[column], truth[column].to_numpy()) ** 2)))
     return {c.KEY_SYNODIC_DAYS: _clean(model.synodic_days), c.KEY_WINDOW_DAYS: _clean(model.window_days),
-            c.KEY_ERRORS: errors,
+            c.KEY_ERRORS: errors, c.KEY_ANGULAR: angular_error_by_month(truth, pred, model.last_t_days, model.t0),
             c.KEY_EVENTS_SUN: event_errors(truth, pred, c.COL_SOL_EL, SOL_VISIBLE),
             c.KEY_EVENTS_EARTH: event_errors(truth, pred, c.COL_TIERRA_EL, TIERRA_VISIBLE),
             c.KEY_TRAFFIC_HITS: semaforo_hits(truth, pred, pipeline.step_hours(truth_lazy))}

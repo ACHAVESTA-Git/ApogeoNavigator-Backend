@@ -298,7 +298,7 @@ CAMPOS_FRONTEND = {
     # Simulación del cielo.
     ("simulacion_con_proyeccion", ("forma",)): {"site_id", "desde_utc", "hasta_utc", "paso_horas", "fin_datos_utc", "avisos", "puntos"},
     ("simulacion_con_proyeccion", ("forma", "puntos", 0)): {"utc", "origen", "sol_az_deg", "sol_el_deg", "tierra_az_deg", "tierra_el_deg",
-                                                            "incertidumbre_deg"},
+                                                            "azimut_solar_fiable", "incertidumbre_deg"},
 }
 
 

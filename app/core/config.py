@@ -671,6 +671,7 @@ KEY_MAE_DEG = "mae_deg"
 KEY_RMSE_DEG = "rmse_deg"
 KEY_RMSE_MONTHS = "rmse_por_mes_deg"
 KEY_RMSE_NAIVE = "rmse_referencia_ingenua_deg"
+KEY_ANGULAR = "angular"                   # error de dirección (distancia angular en la esfera celeste) por cuerpo
 KEY_HASTA_UTC = "hasta_utc"
 KEY_ERRORS = "errores"
 KEY_SYNODIC_DAYS = "periodo_sinodico_dias"
@@ -730,6 +731,12 @@ AVISO_SIN_INCERTIDUMBRE = "sin_incertidumbre"
 MSG_SIM_NO_UNCERTAINTY = "No hay validación de este sitio: los puntos proyectados van sin incertidumbre_deg"
 MSG_SIM_ERRORS_MISSING = "Falta la tabla de errores de la proyección (app/analysis/proyeccion_errores.json)"
 MSG_SIM_ERRORS_INVALID = "La tabla de errores de la proyección no es válida; hay que regenerarla con analizar_proyeccion.py"
+SIM_AZIMUTH_WARN_EL_DEG = 70.0           # |elevación| del Sol desde la que su azimut proyectado es poco fiable (cénit o nadir)
+SIM_AZIMUTH_MAX_UNCERTAINTY_DEG = 180.0  # el azimut no puede fallar más de media vuelta
+SIM_COS_FLOOR = 1e-6                     # evita dividir por cero justo en el cénit
+KEY_AZIMUT_FIABLE = "azimut_solar_fiable"
+MSG_SIM_AZIMUTH_POINTS = ("En {n} de {total} puntos proyectados el Sol está a más de {deg:g}° de elevación (cénit) o por debajo de "
+                          "−{deg:g}° (nadir): su azimut es poco fiable y su incertidumbre es grande.")
 
 # ---------------------------------------------------------------- respuestas HTTP estandarizadas y logs
 REQUEST_ID_HEADER = "X-Request-ID"
@@ -932,3 +939,6 @@ MSG_HORIZONS_BAD_ROW_LOG = "fila de efemérides ilegible"
 MSG_HORIZONS_LOG_REJECTED = "JPL Horizons rechazó la consulta de %s: %s"
 NOTE_FIT_IN_SAMPLE_DOC = ("In-sample fit: the model has already seen these data, so R² can approach 1. It does not measure how well the "
                          "model predicts beyond them; that is validacion.rmse_deg.")
+AVISO_INCERTIDUMBRE_OTROS_DATOS = "incertidumbre_de_otros_datos"
+MSG_SIM_STALE_UNCERTAINTY = ("La incertidumbre mostrada viene de la validación con los datos de la semilla, no con los datos actuales de "
+                             "este sitio (se subieron o cambiaron): es de referencia y con tus datos puede ser mayor.")

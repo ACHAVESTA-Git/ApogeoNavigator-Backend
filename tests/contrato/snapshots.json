@@ -2392,6 +2392,7 @@
    "paso_horas": "number",
    "puntos": [
     {
+     "azimut_solar_fiable": "bool",
      "incertidumbre_deg": {
       "__o__?": [
        "null",
@@ -2432,6 +2433,7 @@
    "paso_horas": "number",
    "puntos": [
     {
+     "azimut_solar_fiable": "bool",
      "incertidumbre_deg": "null",
      "origen": "str",
      "sol_az_deg": "number",

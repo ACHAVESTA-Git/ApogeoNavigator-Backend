@@ -36,10 +36,6 @@ def _r(value: float | None, digits: int = c.ROUND_DEG) -> float | None:
 
 
 # ------------------------------------------------------------------ origen de los datos
-def _file_sha3(path: Path) -> str | None:
-    return lectura.cached_by_mtime(path, lambda p: hashlib.sha3_256(p.read_bytes()).hexdigest(), c.CACHE_KIND_SHA3)
-
-
 def _manifest_signature(manifest: dict) -> tuple[bool | None, str | None]:
     """(firmado, nota): True solo si la firma del manifiesto es VÁLIDA; None si no se puede verificar; False si no es válida.
 
@@ -94,7 +90,7 @@ def _last_saved_load(filename: str) -> dict | None:
 def _origin(filename: str, current_sha3: str) -> dto.Origen:
     """De dónde vienen los datos, afirmando solo lo que se puede demostrar con hashes."""
     seed_dir = c.get_seed_dir()
-    seed_sha3 = _file_sha3(seed_dir / filename) if seed_dir else None
+    seed_sha3 = lectura.file_sha3(seed_dir / filename) if seed_dir else None
     load = _last_saved_load(filename)
     manifest = _manifest_entry(filename)
     if manifest is not None:
@@ -192,7 +188,7 @@ def _analyse(site_id: str, rows: list[lectura.Row], path: Path) -> dict[str, Any
     terms, counts = _terms(model)
     return {
         "frame_features": _features(frame, step_h), "step_h": step_h, "first": first, "last": last, "gaps": gaps,
-        "bytes": path.stat().st_size, "sha3": _file_sha3(path), "model": model,
+        "bytes": path.stat().st_size, "sha3": lectura.file_sha3(path), "model": model,
         "observed": observed, "fitted": fitted, "t_days": t_days,
         "r2": {col: _r(_r_squared(col, observed[col], fitted[col])) for col in VARIABLES},
         "residuals": {col: _residuals(col, observed[col], fitted[col]) for col in VARIABLES},
@@ -218,7 +214,7 @@ def _validation(site_id: str, current_sha3: str) -> dto.Validacion:
     rmse = {col: table[col][c.KEY_RMSE_DEG] for col in VARIABLES}
     naive = {col: table[col].get(c.KEY_RMSE_NAIVE) for col in VARIABLES}
     return dto.Validacion(
-        disponible=True, vigente=summary.get(c.KEY_DATA_SHA3) == current_sha3, motivo=None,
+        disponible=True, vigente=simulacion.validation_is_current(table, current_sha3), motivo=None,
         validacion_desde_utc=period.get(c.KEY_START), validacion_hasta_utc=period.get(c.KEY_END),
         filas_entrenamiento_validadas=summary.get(c.KEY_TRAINING, {}).get(c.KEY_ROWS), rmse_deg=rmse,
         mae_deg={col: table[col][c.KEY_MAE_DEG] for col in VARIABLES}, rmse_referencia_ingenua_deg=naive,
