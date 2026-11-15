@@ -6,6 +6,7 @@ Es el único sitio que conoce las implementaciones. Autenticación de los endpoi
   `X-Requested-With` o un `Origin` de confianza (defensa CSRF, además de SameSite=Strict).
 """
 import re
+import uuid
 from collections.abc import Iterator
 from dataclasses import dataclass
 
@@ -26,14 +27,6 @@ from app.services.claves import ClavesService, ClavesServiceImpl
 from app.services.claves.auditor import AuditorSql
 
 
-def get_claves_service(db: Session = Depends(get_db)) -> ClavesService:
-    return ClavesServiceImpl(SqlClavesRepository(db), AuditorSql(db))
-
-
-def get_carga_service() -> CargaService:
-    return CargaServiceImpl()
-
-
 def get_auth_service(db: Session = Depends(get_db)) -> AuthService:
     return AuthServiceImpl(SqlAuthRepository(db), AuditorAuth(db))
 
@@ -52,6 +45,10 @@ class Principal:
     """Quién hace la petición: un script con API key o una persona con sesión."""
     via: str
     usuario: Usuario | None = None
+
+    def actor(self, por_defecto: str = c.ACTOR_ADMIN) -> tuple[str, "uuid.UUID | None"]:
+        """(actor, usuario_id) para la auditoría: el usuario real si hay sesión; si no, el actor de la API key."""
+        return (c.ACTOR_USER, self.usuario.id) if self.usuario is not None else (por_defecto, None)
 
 
 def _token(request: Request) -> str | None:
@@ -108,3 +105,22 @@ def autenticar_admin(request: Request, x_api_key: str | None = Header(default=No
         return _por_sesion(request, db, c.ROLES_ADMIN, c.MSG_KEYS_ADMIN_KEY)
     require_admin_key(x_api_key)
     return Principal("api_key")
+
+
+def get_claves_service(db: Session = Depends(get_db), principal: "Principal" = Depends(autenticar_admin)) -> ClavesService:
+    """El actor de la auditoría es quien hace el cambio: el usuario de la sesión o, con la API key, `admin-api-key`."""
+    actor, usuario_id = principal.actor()
+    return ClavesServiceImpl(SqlClavesRepository(db), AuditorSql(db, actor, usuario_id))
+
+
+def get_carga_service(principal: "Principal" = Depends(autenticar_carga)) -> CargaService:
+    actor, usuario_id = principal.actor(c.ACTOR_API_KEY)
+    return CargaServiceImpl(actor=actor, usuario_id=usuario_id)
+
+
+def sesion_valida(token: str) -> bool:
+    """¿Hay una sesión vigente con este token? Para el guardia de subida (corre en un hilo)."""
+    if not db_session.db_enabled():
+        return False
+    with db_session.session_scope() as db:
+        return AuthServiceImpl(SqlAuthRepository(db), AuditorAuth(db)).autenticar(token) is not None

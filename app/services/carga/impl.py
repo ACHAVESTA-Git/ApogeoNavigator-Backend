@@ -20,7 +20,8 @@ from app.validation.engine import validate_csv
 class CargaServiceImpl:
     """`auditoria`, `datos` y `almacen` son los módulos reales por defecto; se sustituyen por falsos en las pruebas."""
 
-    def __init__(self, auditoria=auditoria_util, datos=datastore, almacen=storage):
+    def __init__(self, auditoria=auditoria_util, datos=datastore, almacen=storage, *, actor: str = config.ACTOR_API_KEY, usuario_id=None):
+        self.actor, self.usuario_id = actor, usuario_id          # quién sube: el usuario de la sesión o la API key
         self.auditoria = auditoria
         self.datos = datos
         self.almacen = almacen
@@ -41,7 +42,7 @@ class CargaServiceImpl:
         try:
             self.auditoria.registrar_carga(tipo, resultado.report.archivo, resultado.content or revision.bruto,
                                            resultado.report.total_filas, resultado.report.valido,
-                                           resultado.report.total_errores, accion, request=origen,
+                                           resultado.report.total_errores, accion, actor=self.actor, usuario_id=self.usuario_id, request=origen,
                                            truncado=len(revision.bruto) > config.MAX_FILE_BYTES)
         except self.auditoria.ErrorAuditoria:
             raise ErrorServicio(config.HTTP_UNAVAILABLE, config.MSG_AUDIT_UNAVAILABLE) from None
@@ -57,7 +58,7 @@ class CargaServiceImpl:
             with self.auditoria.unidad_de_trabajo() as db:
                 registro = self.auditoria.registrar_carga(
                     tipo, resultado.target_filename, resultado.content, resultado.report.total_filas, True, 0,
-                    AccionAuditoria.CARGA_GUARDADA, request=origen, ruta_almacenamiento=resultado.target_filename,
+                    AccionAuditoria.CARGA_GUARDADA, actor=self.actor, usuario_id=self.usuario_id, request=origen, ruta_almacenamiento=resultado.target_filename,
                     db=db) if db else None
                 copia = self.datos.guardar(resultado.target_filename, resultado.content)
                 if registro and copia:

@@ -71,17 +71,27 @@ for the IP hash of the audit event.
 
 How it works:
 
-* **Passwords** are hashed with Argon2id (`argon2-cffi`). A missing user is verified against a dummy hash so the response
+* **Passwords** are hashed with Argon2id (`argon2-cffi`) with the OWASP profile (m=19 MiB, t=2, p=1). At most 2 verifications run at once
+  (a semaphore); if none frees up within a second the answer is 503 with `Retry-After`, so a burst of logins cannot exhaust the
+  memory of a small instance. A missing user is verified against a dummy hash so the response
   time does not reveal whether the e-mail exists; the answer is always the same 401.
-* **Session** = an opaque random token (256 bits) in an `httpOnly`, `SameSite=Strict` cookie (`Secure` in production) valid for
+* **Session** = an opaque random token (256 bits) in an `httpOnly`, `SameSite=Strict` cookie named `__session` (Firebase Hosting only
+  forwards that cookie name to Cloud Run) (`Secure` in production) valid for
   8 hours. Only its SHA3-256 is stored (`sesiones.token_hash`). Login rotates the token (a presented cookie is revoked);
   logout revokes it.
-* **Failed attempts** are limited per e-mail (5 / 15 min) and per IP (20 / 15 min) with the in-memory sliding-window limiter,
-  then 429 with `Retry-After`. Everything is in the signed audit chain (`LOGIN`, `LOGIN_FALLIDO`, `LOGOUT`); no e-mail or password is logged.
+* **Attempts** are limited per e-mail (5 / 15 min) and per IP (20 / 15 min) with the in-memory sliding-window limiter, then 429 with
+  `Retry-After`. The attempt is **reserved before** the password is checked, so a concurrent burst cannot get past the limit; a correct
+  login gives it back. Everything is in the signed audit chain (`LOGIN`, `LOGIN_FALLIDO`, `LOGOUT`); no e-mail or password is logged.
+  When the limit trips, one event per key and window is signed (and at most 10 per minute overall), not one per 429.
+* **Upload guard**: `app/core/limits.py` is a pure ASGI middleware. It authenticates for real (API key, or a live session looked up in the
+  database; a made-up cookie does not skip it) and counts the bytes as they arrive, so a body without `Content-Length` is cut at the
+  limit instead of being read whole into memory.
+* **Audit actor**: key-manager and upload actions done with a session are audited with the real user (`actor=usuario`, `usuario_id`); with an
+  API key they keep the key's actor.
 * **Roles**: CSV upload accepts `analista`, `revisor` or `admin`; the key manager only `admin` (403 `ROL_INSUFICIENTE`).
   The `X-API-Key` of scripts keeps working unchanged.
-* **CSRF**: besides `SameSite=Strict`, any state-changing request authenticated by cookie must carry `X-Requested-With`
-  (any value) or a trusted `Origin`; otherwise 403 `ORIGEN_NO_PERMITIDO`. CORS now allows credentials, only for the listed origins.
+* **CSRF**: besides `SameSite=Strict`, `POST /login` and any state-changing request authenticated by cookie must carry `X-Requested-With`
+  (any value) or a trusted `Origin`; otherwise 403 `ORIGEN_NO_PERMITIDO`. CORS now allows credentials, only for the listed origins; `CORS_ORIGIN_REGEX` is rejected at startup if it does not compile or accepts an origin a third party can control (for example every `*.pages.dev`).
 * The limiter is per process: with several Cloud Run instances each keeps its own counters (acceptable for the demo; a shared
   store is future work). Google OAuth is future work.
 

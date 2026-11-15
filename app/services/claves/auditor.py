@@ -11,8 +11,9 @@ from app.utils import auditoria_util
 class AuditorSql:
     """Escribe en la cadena firmada usando la sesión de la petición (estricto: sin firma, 503)."""
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session, actor: str = c.ACTOR_ADMIN, usuario_id=None):
         self.db = db
+        self.actor, self.usuario_id = actor, usuario_id      # quién hace el cambio (el usuario de la sesión, o la API key)
 
     def registrar(self, operacion: str, clave: ClaveUsuario, motivo: str | None = None, extra: dict | None = None) -> None:
         detalle = {"operacion": operacion, "clave_id": str(clave.id), "usuario_id": str(clave.usuario_id),
@@ -21,8 +22,8 @@ class AuditorSql:
             detalle["motivo"] = motivo
         detalle.update(extra or {})
         try:
-            auditoria_util.registrar_evento(AccionAuditoria.CAMBIO_DATOS, c.ACTOR_ADMIN,
+            auditoria_util.registrar_evento(AccionAuditoria.CAMBIO_DATOS, self.actor,
                                             recurso=c.KEYS_AUDIT_RESOURCE.format(id=clave.id), detalle=detalle, db=self.db,
-                                            estricto=True)
+                                            usuario_id=self.usuario_id, estricto=True)
         except auditoria_util.ErrorAuditoria:
             raise ErrorServicio(c.HTTP_UNAVAILABLE, c.MSG_KEYS_AUDIT_FAILED) from None

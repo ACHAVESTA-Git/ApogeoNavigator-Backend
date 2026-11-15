@@ -593,8 +593,23 @@ def get_cors_origins() -> list[str]:
     return origins
 
 
+CORS_REGEX_CANARIES = ("null", "https://atacante.example", "http://atacante.example", "https://atacante.pages.dev",
+                       "https://atacante.web.app", "https://atacante.firebaseapp.com")   # orígenes que cualquiera puede controlar
+
+
 def get_cors_origin_regex() -> str | None:
-    return os.getenv(ENV_CORS_ORIGIN_REGEX) or None
+    """Regex de orígenes permitidos. Con credenciales (cookie de sesión) una regex laxa sería un agujero: se rechaza si no
+    compila o si acepta algún origen que un tercero puede controlar (p. ej. todo *.pages.dev)."""
+    raw = os.getenv(ENV_CORS_ORIGIN_REGEX)
+    if not raw:
+        return None
+    try:
+        patron = re.compile(raw)
+    except re.error:
+        raise ValueError(MSG_CORS_REGEX_UNSAFE) from None
+    if any(patron.fullmatch(origen) for origen in CORS_REGEX_CANARIES):
+        raise ValueError(MSG_CORS_REGEX_UNSAFE)
+    return raw
 
 # ---------------------------------------------------------------- documentación OpenAPI (/docs)
 ROUTER_TAG_ANALISIS = "analisis"                # etiqueta de la transparencia del análisis (la usa OPENAPI_TAGS)
@@ -965,10 +980,19 @@ MSG_SIM_STALE_UNCERTAINTY = ("La incertidumbre mostrada viene de la validación 
 
 # ---------------------------------------------------------------- login local con sesión en cookie (HU auth)
 AUTH_ROUTE_PREFIX = "/api/auth"
-AUTH_COOKIE_NAME = "apogeo_sesion"
+AUTH_COOKIE_NAME = "__session"             # Firebase Hosting solo reenvía a Cloud Run la cookie llamada «__session»
 AUTH_COOKIE_PATH = "/"
 AUTH_COOKIE_SAMESITE = "strict"
 AUTH_SESSION_HOURS = 8
+AUTH_COOKIE_CACHE_CONTROL = "no-store"          # no cacheable: Firebase Hosting conserva Set-Cookie solo en respuestas no cacheables
+AUTH_ARGON2_TIME_COST = 2                   # perfil OWASP: m=19 MiB, t=2, p=1 (cabe en 512 MB con varios logins a la vez)
+AUTH_ARGON2_MEMORY_KIB = 19456
+AUTH_ARGON2_PARALLELISM = 1
+AUTH_HASH_CONCURRENCY = 2                   # verificaciones Argon2 simultáneas como máximo (memoria acotada)
+AUTH_HASH_WAIT_S = 1.0                      # espera máxima por un hueco; si no, 503 con Retry-After
+AUTH_BUSY_RETRY_AFTER_S = 2
+AUTH_AUDIT_LIMIT_WINDOW_S = 900.0           # un evento de auditoría por clave y ventana cuando salta el límite (no uno por 429)
+AUTH_AUDIT_LIMIT_GLOBAL = (10, 60.0)        # y como mucho 10 por minuto en total
 AUTH_TOKEN_BYTES = 32                       # 256 bits de entropía en el token opaco
 AUTH_CSRF_HEADER = "X-Requested-With"
 AUTH_SAFE_METHODS = ("GET", "HEAD", "OPTIONS")
@@ -981,11 +1005,13 @@ ROLES_CARGA = ("analista", "revisor", "admin")
 ROLES_ADMIN = ("admin",)
 AUTH_DUMMY_PASSWORD = "contraseña-de-relleno"  # solo para igualar el tiempo cuando el email no existe
 MSG_LOGIN_INVALID = "Correo o contraseña incorrectos"
+MSG_LOGIN_BUSY = "El inicio de sesión está ocupado; reintenta en unos segundos"
 MSG_LOGIN_TOO_MANY = "Demasiados intentos de inicio de sesión; espera unos minutos"
 MSG_SESSION_INVALID = "Sesión no válida o caducada"
 MSG_ROLE_FORBIDDEN = "Tu rol no permite esta operación"
 MSG_CSRF_FORBIDDEN = "Origen de la petición no permitido"
 MOTIVO_LOGIN_CREDENCIALES = "credenciales"
+MSG_CORS_REGEX_UNSAFE = "CORS_ORIGIN_REGEX es demasiado permisiva: con credenciales no puede aceptar orígenes de terceros"
 MOTIVO_LOGIN_LIMITE = "limite_de_intentos"
 
 

@@ -364,8 +364,8 @@ def test_r2_y_residuos_llevan_la_nota_de_que_son_del_ajuste_dentro_de_los_datos(
 @pytest.mark.parametrize("site,params,status,code", [
     ("no_existe", {}, 404, "SITIO_NO_ENCONTRADO"),
     ("shackleton", {"variable": "temperatura"}, 422, "VARIABLE_INVALIDA"),
-    ("shackleton", {"desde": "2026-11-01T00:00Z"}, 422, "RANGO_FECHAS_INVALIDO"),
-    ("shackleton", {"hasta": "2028-07-01T00:00Z"}, 422, "RANGO_FECHAS_INVALIDO"),
+    ("shackleton", {"desde": "2026-11-01T00:00Z"}, 422, "FECHA_ANTES_DE_LOS_DATOS"),
+    ("shackleton", {"hasta": "2028-07-01T00:00Z"}, 422, "FECHA_FUERA_DE_PROYECCION"),
     ("shackleton", {"desde": "2027-01-01T00:00Z", "hasta": "2026-12-01T00:00Z"}, 422, "RANGO_FECHAS_INVALIDO"),
     ("shackleton", {"desde": "ayer"}, 422, "RANGO_FECHAS_INVALIDO"),
 ])
@@ -381,4 +381,4 @@ def test_sitio_sin_efemerides_y_datos_invalidos_tienen_su_codigo(stack):
     assert get(stack, "slim").json()["error"]["codigo"] == "EFEMERIDES_NO_ENCONTRADAS"
     (stack.data / "efemerides_slim.csv").write_text("utc,sol_az_deg\n2026-12-01T00:00Z,1\n", encoding="utf-8")
     body = get(stack, "slim")
-    assert body.status_code == 503 and body.json()["error"]["codigo"] == "DATOS_NO_DISPONIBLES"
+    assert body.status_code == 503 and body.json()["error"]["codigo"] == "EFEMERIDES_INVALIDAS"
