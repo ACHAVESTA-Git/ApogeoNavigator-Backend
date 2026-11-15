@@ -6,6 +6,8 @@ from app.core import config
 from app.core.cors import add_cors
 from app.core.errors import register_handlers
 from app.core.limits import upload_guard
+from app.core.logging_config import configurar_logging
+from app.core.peticion import RequestContextMiddleware
 from app.db.session import db_enabled
 from app.routers import admin_claves, analisis, auditoria, datos, horizons, lectura, seguridad, simulacion
 from app.schemas.sites import Site
@@ -20,9 +22,11 @@ async def lifespan(_: FastAPI):
     yield
 
 
+configurar_logging()
 app = FastAPI(title=config.API_TITLE, version=config.API_VERSION, description=config.API_DESCRIPTION,
               openapi_tags=config.OPENAPI_TAGS, contact=config.API_CONTACT, license_info=config.API_LICENSE, lifespan=lifespan)
 app.middleware("http")(upload_guard)
+app.add_middleware(RequestContextMiddleware)      # por dentro de CORS: hasta el 500 lleva sus cabeceras
 add_cors(app)      # el último en añadirse es el más externo
 register_handlers(app)
 app.include_router(datos.router)

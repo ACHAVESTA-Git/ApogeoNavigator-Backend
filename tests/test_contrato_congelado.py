@@ -149,6 +149,7 @@ ESCENARIOS = {
     "analisis_sitio_inexistente_404": lambda c: c.client.get("/api/analisis/no_existe"),
     "analisis_variable_invalida_422": lambda c: c.client.get("/api/analisis/shackleton", params={"variable": "temperatura"}),
     "analisis_rango_invalido_422": lambda c: c.client.get("/api/analisis/shackleton", params={"desde": "2027-01-01T00:00Z", "hasta": "2026-12-01T00:00Z"}),
+    "metodo_no_permitido_405": lambda c: c.client.post("/api/sites"),
     # ---- coordenadas propias (Horizons en vivo, simulado)
     "horizons_ok": _horizons(),
     "horizons_lat_fuera_de_rango_422": _horizons(lat=91),
@@ -201,6 +202,8 @@ def observar(respuesta) -> dict:
     tipo = respuesta.headers.get("content-type", "").split(";")[0]
     observado = {"estado": respuesta.status_code, "tipo_contenido": tipo}
     cabeceras = {k: respuesta.headers[k] for k in CABECERAS_CONGELADAS if k in respuesta.headers}
+    if "x-request-id" in respuesta.headers:          # el valor cambia en cada petición: se congela solo que esté
+        cabeceras["x-request-id"] = "presente"
     if cabeceras:
         observado["cabeceras"] = cabeceras
     if tipo == "application/json":

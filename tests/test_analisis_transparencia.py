@@ -359,3 +359,26 @@ def test_r2_y_residuos_llevan_la_nota_de_que_son_del_ajuste_dentro_de_los_datos(
     schema = app.openapi()["components"]["schemas"]["Modelo"]["properties"]
     assert schema["r2"]["description"] == schema["residuos"]["description"] == c.NOTE_FIT_IN_SAMPLE_DOC
     assert model["r2"]["tierra_el_deg"] > 0.99          # el R² da ~1: por eso no debe leerse como acierto fuera de los datos
+
+
+@pytest.mark.parametrize("site,params,status,code", [
+    ("no_existe", {}, 404, "SITIO_NO_ENCONTRADO"),
+    ("shackleton", {"variable": "temperatura"}, 422, "VARIABLE_INVALIDA"),
+    ("shackleton", {"desde": "2026-11-01T00:00Z"}, 422, "RANGO_FECHAS_INVALIDO"),
+    ("shackleton", {"hasta": "2028-07-01T00:00Z"}, 422, "RANGO_FECHAS_INVALIDO"),
+    ("shackleton", {"desde": "2027-01-01T00:00Z", "hasta": "2026-12-01T00:00Z"}, 422, "RANGO_FECHAS_INVALIDO"),
+    ("shackleton", {"desde": "ayer"}, 422, "RANGO_FECHAS_INVALIDO"),
+])
+def test_los_errores_del_analisis_llevan_su_objeto_error_con_codigo_de_dominio(stack, site, params, status, code):
+    body = get(stack, site, **params)
+    error = body.json()["error"]
+    assert body.status_code == status and error["codigo"] == code and error["estado"] == status
+    assert error["titulo"] and error["mensaje"] and error["accion"] and isinstance(body.json()["detail"], str)
+
+
+def test_sitio_sin_efemerides_y_datos_invalidos_tienen_su_codigo(stack):
+    (stack.data / "efemerides_slim.csv").unlink()
+    assert get(stack, "slim").json()["error"]["codigo"] == "EFEMERIDES_NO_ENCONTRADAS"
+    (stack.data / "efemerides_slim.csv").write_text("utc,sol_az_deg\n2026-12-01T00:00Z,1\n", encoding="utf-8")
+    body = get(stack, "slim")
+    assert body.status_code == 503 and body.json()["error"]["codigo"] == "DATOS_NO_DISPONIBLES"
