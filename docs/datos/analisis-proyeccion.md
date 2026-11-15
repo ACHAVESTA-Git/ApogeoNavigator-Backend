@@ -79,7 +79,7 @@ Verdad de terreno: `scripts/datos/validacion/horizons_verdad.parquet` (2027-06-0
 
 ![Proyección frente a la verdad](img/proyeccion_vs_verdad.png)
 
-**Revisión de datos: APROBADA, y reproducible.** Una verificación independiente (el agente revisor) confirmó el esquema y la continuidad del Parquet (la primera fila de cada sitio es idéntica a la última de los datos de entrenamiento), 16 consultas propias a Horizons sin diferencias, y recalculó el error con su propio código con el mismo resultado hasta el 4.º decimal. Las comprobaciones están en un script que cualquiera puede repetir; imprime una línea por comprobación y termina con `APROBADO` (código 0) o `CORREGIR` (código 1):
+**Revisión de datos: APROBADA, y reproducible.** Una verificación independiente (la revisión de datos) confirmó el esquema y la continuidad del Parquet (la primera fila de cada sitio es idéntica a la última de los datos de entrenamiento), 16 consultas propias a Horizons sin diferencias, y recalculó el error con su propio código con el mismo resultado hasta el 4.º decimal. Las comprobaciones están en un script que cualquiera puede repetir; imprime una línea por comprobación y termina con `APROBADO` (código 0) o `CORREGIR` (código 1):
 
 ```bash
 python scripts/datos/revisar_validacion.py              # esquema, filas, paso de 1 h, rangos, saltos, continuidad con los CSV y tabla de errores
@@ -155,7 +155,7 @@ Excluye el azimut solar de Apolo 11. El error **no crece de forma monótona**: o
 2. **Shackleton tiene estaciones.** Cinco meses de Sol continuo (agosto–diciembre 2027) y otros cinco de casi oscuridad (marzo–julio de 2027), por la inclinación de solo 1,54° del eje lunar. Es la base de elegir un sitio y una fecha (HU-08).
 3. **La Tierra baila en el cielo.** Su azimut oscila entre 11° y 38° y su elevación entre 10° y 20°. En el polo eso la hace salir y ponerse cada mes, con solo el 39–57 % de visibilidad.
 4. **La cara oculta nunca ve la Tierra** (Chang'e 4 y 6): dependen de un satélite de enlace.
-5. **Predecir con honestidad:** un modelo armónico simple acierta la libración con 0,3–1,1° de error medio a 12 meses y el semáforo en 118 de 120 meses, pero falla donde la física es delicada (Sol en el cénit, Sol rasante en el polo). Por eso la API entrega la incertidumbre de cada punto.
+5. **Predecir con honestidad:** un modelo armónico simple acierta la libración con un RMSE de 0,3–1,1° a 12 meses y el semáforo en 118 de 120 meses, pero falla donde la física es delicada (Sol en el cénit, Sol rasante en el polo). Por eso la API entrega la incertidumbre de cada punto.
 
 ## 8. Limitaciones
 - **No sustituye a las efemérides físicas.** Horizons es la fuente; la proyección sirve para explorar tendencias y animar. No debe usarse para decidir una operación.
