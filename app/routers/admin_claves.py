@@ -238,7 +238,7 @@ def _usuario_activo(db: Session, usuario_id: uuid.UUID) -> Usuario:
 
 
 # ---------------------------------------------------------------- endpoints
-@router.get("", response_model=PaginaClaves)
+@router.get("", response_model=PaginaClaves, summary="List keys (filters and pagination)")
 def listar(usuario_id: uuid.UUID | None = None, estado: EstadoClave | None = None, tipo: TipoClave | None = None,
            q: str | None = Query(None, max_length=c.KEYS_Q_MAX, description="Texto en el nombre del usuario, o su email completo (exacto: el email se guarda cifrado)"),
            limite: int = Query(c.KEYS_PAGE_DEFAULT, ge=1, le=c.KEYS_PAGE_MAX), offset: int = Query(0, ge=0),
@@ -266,7 +266,7 @@ def listar(usuario_id: uuid.UUID | None = None, estado: EstadoClave | None = Non
     return PaginaClaves(total=total, limite=limite, offset=offset, items=[ClaveOut(**_out(k, u)) for k, u in filas])
 
 
-@router.post("", status_code=c.HTTP_CREATED, response_model=Entrega)
+@router.post("", status_code=c.HTTP_CREATED, response_model=Entrega, summary="Generate a key pair for a user (private key delivered once)")
 def generar(cuerpo: GenerarIn, db: Session = Depends(get_db)):
     usuario = _usuario_activo(db, cuerpo.usuario_id)
     tipos = list(dict.fromkeys(cuerpo.tipos))
@@ -283,7 +283,7 @@ def generar(cuerpo: GenerarIn, db: Session = Depends(get_db)):
     return _entregar(db, usuario, creadas)
 
 
-@router.get("/{clave_id}/publica", response_model=PublicaOut)
+@router.get("/{clave_id}/publica", response_model=PublicaOut, summary="Public key (JSON or PEM)")
 def publica(clave_id: uuid.UUID, formato: str = Query(c.KEYS_FORMAT_JSON, pattern=c.KEYS_FORMAT_PATTERN),
             db: Session = Depends(get_db)):
     """Pública (también si está revocada: sirve para verificar lo firmado antes)."""
@@ -300,14 +300,14 @@ def publica(clave_id: uuid.UUID, formato: str = Query(c.KEYS_FORMAT_JSON, patter
                       clave_publica_b64=base64.b64encode(clave.clave_publica).decode("ascii"))
 
 
-@router.get("/{clave_id}/huella", response_model=HuellaOut)
+@router.get("/{clave_id}/huella", response_model=HuellaOut, summary="SHA3-256 fingerprint of a public key")
 def huella(clave_id: uuid.UUID, db: Session = Depends(get_db)):
     clave = _get(db, clave_id)
     _log_lectura(c.OP_KEY_READ + ":huella", f"clave_id={clave.id}", 1)
     return HuellaOut(id=clave.id, algoritmo=clave.algoritmo, estado=clave.estado, huella_sha3_256=clave.huella_sha3_256)
 
 
-@router.post("/{clave_id}/revocar", response_model=ClaveOut)
+@router.post("/{clave_id}/revocar", response_model=ClaveOut, summary="Revoke a key with a reason")
 def revocar(clave_id: uuid.UUID, cuerpo: RevocarIn, db: Session = Depends(get_db)):
     clave = _get(db, clave_id, bloquear=True)
     if clave.estado == EstadoClave.REVOCADA:
@@ -321,7 +321,7 @@ def revocar(clave_id: uuid.UUID, cuerpo: RevocarIn, db: Session = Depends(get_db
     return ClaveOut(**_out(clave, usuario))
 
 
-@router.post("/{clave_id}/rotar", status_code=c.HTTP_CREATED, response_model=Entrega)
+@router.post("/{clave_id}/rotar", status_code=c.HTTP_CREATED, response_model=Entrega, summary="Revoke a key and issue its replacement")
 def rotar(clave_id: uuid.UUID, cuerpo: RotarIn | None = None, db: Session = Depends(get_db)):
     """Revoca la clave y emite otra del mismo tipo para el mismo usuario (la privada nueva se entrega una vez)."""
     motivo = (cuerpo or RotarIn()).motivo
