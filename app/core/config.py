@@ -718,6 +718,7 @@ HORIZONS_CACHE_MAX_ENTRIES = 64
 HORIZONS_MAX_CONCURRENT = 2               # consultas simultáneas a JPL
 HORIZONS_RATE_GLOBAL = (30, 60.0)         # consultas en vivo por ventana (segundos), entre todos los clientes
 HORIZONS_RATE_CLIENT = (6, 60.0)          # ídem por cliente (según X-Forwarded-For o el socket)
+HORIZONS_RATE_MAX_KEYS = 10_000           # clientes distintos que recuerda el limitador (los más antiguos se expulsan)
 HORIZONS_RETRY_AFTER_HEADER = "Retry-After"
 HORIZONS_LOGGER = "apogeo.horizons"
 HORIZONS_LOG_SNIPPET_CHARS = 160           # cuánto de una respuesta rara de JPL va al log (nunca al cliente)
