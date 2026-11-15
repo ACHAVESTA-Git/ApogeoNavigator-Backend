@@ -265,6 +265,25 @@
     ]
    }
   },
+  "/api/proyeccion": {
+   "GET": {
+    "cuerpo": null,
+    "parametros": [
+     "query:desde:opcional",
+     "query:hasta:opcional",
+     "query:paso_horas:opcional",
+     "query:site_id:opcional"
+    ],
+    "respuestas": [
+     "200",
+     "401",
+     "403",
+     "404",
+     "422",
+     "503"
+    ]
+   }
+  },
   "/api/puestas/{site_id}": {
    "GET": {
     "cuerpo": null,

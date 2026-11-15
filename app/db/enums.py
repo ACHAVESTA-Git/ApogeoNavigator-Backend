@@ -16,6 +16,7 @@ class AccionAuditoria(enum.StrEnum):
     CARGA_RECHAZADA = "CARGA_RECHAZADA"
     CAMBIO_ROL = "CAMBIO_ROL"
     CAMBIO_DATOS = "CAMBIO_DATOS"
+    VER_PROYECCION = "VER_PROYECCION"
 
 
 class TipoCarga(enum.StrEnum):

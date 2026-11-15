@@ -368,3 +368,15 @@ def test_el_restablecimiento_fallido_olvida_las_generaciones_y_el_ultimo_refresc
     store.fail = StoreError("caído")
     datastore._reset_replica()
     assert datastore._generations == {} and datastore._last_check == float("-inf")
+
+
+def test_el_bucket_trae_la_proyeccion_a_su_subcarpeta_y_rechaza_nombres_peligrosos(local, monkeypatch):
+    buenos = {"sites.csv": b"a", "proyecciones/proyeccion_shackleton.csv": b"p", "proyecciones/modelo.json": b"{}"}
+    malos = {"proyecciones/../escape.csv": b"x", "proyecciones/otra/proyeccion_a.csv": b"x", "proyecciones/proyeccion_A.csv": b"x",
+             "otra/sites.csv": b"x", "proyecciones/notas.txt": b"x"}
+    with_store(monkeypatch, MemoryStore({**buenos, **malos}))
+    datastore.startup()
+    assert (local / "proyecciones" / "proyeccion_shackleton.csv").read_bytes() == b"p"
+    assert (local / "proyecciones" / "modelo.json").read_bytes() == b"{}"
+    assert not (local / "escape.csv").exists() and not (local / "otra").exists()
+    assert sorted(p.name for p in (local / "proyecciones").iterdir()) == ["modelo.json", "proyeccion_shackleton.csv"]
