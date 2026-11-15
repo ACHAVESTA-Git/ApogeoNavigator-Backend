@@ -38,7 +38,7 @@ ADMIN_KEY = "clave-admin-de-prueba"
 H_UPLOAD = {"X-API-Key": API_KEY}
 H_ADMIN = {"X-API-Key": ADMIN_KEY}
 DIC = {"desde": "2026-12-01T00:00Z", "hasta": "2027-01-01T00:00Z"}
-CABECERAS_CONGELADAS = ("cache-control",)
+CABECERAS_CONGELADAS = ("cache-control", "x-content-type-options", "referrer-policy", "x-frame-options")   # HSTS no: solo en producción
 
 
 @pytest.fixture
