@@ -27,7 +27,7 @@ def engine_options(url: str) -> dict:
       transacción (puerto 6543) no admite. Es inocuo con conexión directa; el coste de rendimiento es mínimo.
     - TLS: se pide en la URL (?sslmode=require, o verify-full con el certificado de la CA).
     """
-    options: dict = {"pool_pre_ping": True}
+    options: dict = {"pool_pre_ping": True, "hide_parameters": True}   # los parámetros SQL no aparecen en las excepciones ni en las trazas
     if not url.startswith(config.DB_SQLITE_PREFIX):          # SQLite no admite estos parámetros de pool
         options |= {"pool_size": config.DB_POOL_SIZE, "max_overflow": config.DB_MAX_OVERFLOW,
                     "pool_recycle": config.DB_POOL_RECYCLE_SECONDS, "pool_timeout": config.DB_POOL_TIMEOUT_SECONDS}
