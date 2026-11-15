@@ -486,3 +486,8 @@ def test_el_login_tambien_comprueba_el_origen(client, engine):
     assert ajeno.status_code == 403
     bueno = client.post("/api/auth/login", json={"email": "ana@apogeo.test", "password": PASSWORD}, headers={"Origin": "http://localhost:5173"})
     assert bueno.status_code == 200
+
+
+def test_la_imagen_limita_los_arenas_de_malloc_para_que_argon2_quepa_en_512_mb():
+    dockerfile = (Path(__file__).parent.parent / "Dockerfile").read_text()
+    assert "ENV MALLOC_ARENA_MAX=2" in dockerfile.splitlines()
