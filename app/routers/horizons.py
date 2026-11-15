@@ -19,18 +19,19 @@ RESPONSES = {
 }
 
 
-@router.get(c.ROUTE_HORIZONS, response_model=HorizonsOut, responses=RESPONSES)
+@router.get(c.ROUTE_HORIZONS, response_model=HorizonsOut, responses=RESPONSES,
+            summary="Sun and Earth sky for custom lunar coordinates, queried live from JPL Horizons")
 def consultar(request: Request,
-              lat: Annotated[float, Query(ge=c.LAT_MIN, le=c.LAT_MAX, description="Latitud en grados (sur negativo)")],
-              lon: Annotated[float, Query(ge=c.LON_MIN, le=c.LON_MAX, description="Longitud en grados (Este positivo)")],
-              desde: Annotated[str, Query(description="Inicio, UTC `YYYY-MM-DDTHH:MMZ`")],
-              hasta: Annotated[str, Query(description="Fin, UTC `YYYY-MM-DDTHH:MMZ` (máx. 35 días después de `desde`)")],
-              paso_horas: Annotated[int, Query(ge=c.HORIZONS_STEP_MIN_H, le=c.HORIZONS_STEP_MAX_H)] = c.HORIZONS_STEP_DEFAULT_H):
-    """Sol y Tierra vistos desde un punto de la Luna, consultados EN VIVO a NASA/JPL Horizons (observador `coord@301`,
-    sin refracción), con el mismo formato que `/api/efemerides/{site_id}` más `metricas` (con semáforo y avisos) y `puestas`.
+              lat: Annotated[float, Query(ge=c.LAT_MIN, le=c.LAT_MAX, description="Latitude in degrees, -90 to 90 (south is negative)")],
+              lon: Annotated[float, Query(ge=c.LON_MIN, le=c.LON_MAX, description="Longitude in degrees, -180 to 180 (east is positive)")],
+              desde: Annotated[str, Query(description="Start, UTC `YYYY-MM-DDTHH:MMZ` (years 1900-2100)")],
+              hasta: Annotated[str, Query(description="End, UTC `YYYY-MM-DDTHH:MMZ` (at most 35 days after `desde`)")],
+              paso_horas: Annotated[int, Query(ge=c.HORIZONS_STEP_MIN_H, le=c.HORIZONS_STEP_MAX_H, description="Step in hours (1 to 24)")] = c.HORIZONS_STEP_DEFAULT_H):
+    """Sun and Earth as seen from any point on the Moon, queried LIVE from NASA/JPL Horizons (observer `coord@301`,
+    no refraction). Same format as `/api/efemerides/{site_id}`, plus `metricas` (with traffic light and warnings) and `puestas`.
 
-    Las coordenadas se redondean a 4 decimales (≈ 3 m). Las métricas usan el intervalo [desde, hasta) y las puestas
-    solo miran dentro del rango pedido. Los resultados se guardan en caché 24 h y hay un límite de consultas en vivo
-    (429 con `Retry-After`); si JPL falla responde 502, y 504 si tarda demasiado.
+    Coordinates are rounded to 4 decimals (about 3 m). Metrics use the interval [desde, hasta) and sunsets only look inside
+    the requested range. Results are cached for 24 h and live queries are rate-limited (429 with `Retry-After`); if JPL
+    fails the answer is 502, 504 if it takes too long, and 503 if the live-query queue is full.
     """
     return horizons.query(lat, lon, desde, hasta, paso_horas, client=auditoria_util.trusted_client_ip(request))
