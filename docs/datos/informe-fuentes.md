@@ -75,7 +75,7 @@ December 2026 table (the first monthly row of `metricas.csv`; the other months a
 ## 5. Limitations
 
 - **Ideal horizon:** Horizons does not model terrain. Shackleton shows 100 % Sun, but its floor is in permanent shadow; the real figure corresponds to nearby ridges. At IM-1 and Chandrayaan-3, with a low Sun, local relief changes the real hours a lot. This warning must be shown next to the metric and validated with PGDA 69/90 or QuickMap (HU-12).
-- **Positions:** Blue Ghost 1 is the centre of the landing region (±0.01°), not the touchdown point. Shackleton is the crater centre, not a chosen landing site. The longitude of Chang'e 6 was converted from 206.0148° E.
+- **Positions:** Blue Ghost 1 is the centre of the landing region (±0.01°), not the touchdown point. Shackleton is the crater centre, not a chosen landing site. In `sites.csv` it is a reference point (agency «Referencia (JPL Horizons)», category `artemis`) because NASA lists «Peak Near Shackleton» among the 13 Artemis III candidate regions (2022, no coordinates). The longitude of Chang'e 6 was converted from 206.0148° E.
 - **Chandrayaan-3:** the LROC-measured position is used (−69.3741; 32.32). ISRO's planned target is −69.367621; 32.348126 (LVM3-M4 brochure); the difference is a few hundred metres.
 - **Range:** six months (Dec 2026 to May 2027), not a full year.
 - **Earth prediction:** the Horizons header states that the Earth orientation parameters (EOP) are predictions from February 2027; for an observer on the Moon the effect is below 1 s and does not change the data at 6 decimals.
@@ -164,7 +164,7 @@ Tabla de diciembre de 2026 (la primera fila mensual de `metricas.csv`; los demá
 ## 5. Limitaciones
 
 - **Horizonte ideal:** Horizons no modela relieve. Shackleton sale con 100 % de Sol, pero su fondo está en sombra permanente; el dato real corresponde a crestas cercanas. En IM-1 y Chandrayaan-3, con Sol bajo, el relieve local cambia mucho las horas reales. Hay que mostrar este aviso junto a la métrica y validar con PGDA 69/90 o QuickMap (HU-12).
-- **Posiciones:** Blue Ghost 1 es el centro de la región de aterrizaje (±0,01°), no el punto de contacto. Shackleton es el centro del cráter, no un sitio elegido. La longitud de Chang'e 6 se convirtió de 206,0148° E.
+- **Posiciones:** Blue Ghost 1 es el centro de la región de aterrizaje (±0,01°), no el punto de contacto. Shackleton es el centro del cráter, no un sitio elegido. En `sites.csv` figura como punto de referencia (agencia «Referencia (JPL Horizons)», categoría `artemis`) porque la NASA incluye «Peak Near Shackleton» entre las 13 regiones candidatas de Artemis III (2022, sin coordenadas). La longitud de Chang'e 6 se convirtió de 206,0148° E.
 - **Chandrayaan-3:** se usa la posición medida por LROC (−69,3741; 32,32). El objetivo planificado por ISRO es −69,367621; 32,348126 (folleto LVM3-M4); la diferencia es de unos centenares de metros.
 - **Rango:** seis meses (dic 2026 a may 2027), no un año completo.
 - **Predicción de la Tierra:** la cabecera de Horizons indica que los parámetros de orientación de la Tierra (EOP) son predicciones desde febrero de 2027; para un observador en la Luna el efecto es menor que 1 s y no cambia los datos a 6 decimales.
