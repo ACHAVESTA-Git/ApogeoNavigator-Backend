@@ -139,7 +139,7 @@ def test_las_credenciales_del_archivo_inician_sesion(engine, salida):
     _correr(salida)
     cliente = TestClient(app)
     for email, password in _credenciales(salida).items():
-        r = cliente.post("/api/auth/login", json={"email": email, "password": password})
+        r = cliente.post("/api/auth/login", json={"email": email, "password": password}, headers={c.AUTH_CSRF_HEADER: "fetch"})
         assert r.status_code == 200 and sorted(k["algoritmo"] for k in r.json()["claves"]) == ["ML-DSA-65", "ML-KEM-1024"]
         assert "privada" not in r.text.lower()
 
@@ -171,6 +171,74 @@ def test_en_produccion_con_el_flag_si_corre(engine, salida, monkeypatch):
 def test_sin_base_de_datos_falla_con_un_mensaje_claro(salida, capsys):
     db_session.configure(None)
     assert _correr(salida) == 2 and c.MSG_SEED_NO_DB in capsys.readouterr().err
+
+
+def test_el_archivo_se_escribe_antes_de_confirmar_la_base(engine, salida, monkeypatch):
+    """Si el commit falla, las privadas ya están en el archivo (no se pierden); la base no se confirma."""
+    from app.repositories.claves import SqlClavesRepository
+    original = SqlClavesRepository.commit
+
+    def commit_roto(self):
+        assert salida.exists() and salida.read_text().count("BEGIN PRIVATE KEY") == 2      # ya estaba escrito y en disco
+        raise RuntimeError("cae la base al confirmar")
+
+    monkeypatch.setattr(SqlClavesRepository, "commit", commit_roto)
+    with pytest.raises(RuntimeError):
+        _correr(salida)
+    monkeypatch.setattr(SqlClavesRepository, "commit", original)
+    with Session(engine) as s:
+        assert list(s.scalars(select(Usuario))) == []
+
+
+def test_si_falla_la_escritura_no_se_confirma_nada(engine, salida, monkeypatch):
+    from app.services import semilla_usuarios
+
+    def escribir_roto(archivo, texto):
+        raise OSError("disco lleno")
+
+    monkeypatch.setattr(semilla_usuarios, "_guardar", escribir_roto)
+    with pytest.raises(OSError):
+        _correr(salida)
+    with Session(engine) as s:
+        assert list(s.scalars(select(Usuario))) == [] and list(s.scalars(select(ClaveUsuario))) == []
+
+
+def test_no_sigue_enlaces_simbolicos_ni_escribe_en_archivos_ajenos(engine, tmp_path):
+    objetivo = tmp_path / "objetivo.txt"
+    objetivo.write_text("no me toques")
+    enlace = tmp_path / "enlace.local"
+    enlace.symlink_to(objetivo)
+    with pytest.raises(OSError):
+        _correr(enlace)
+    assert objetivo.read_text() == "no me toques"
+    with Session(engine) as s:
+        assert list(s.scalars(select(Usuario))) == []
+
+
+def test_un_archivo_existente_con_permisos_abiertos_se_deja_en_600(engine, salida):
+    salida.write_text("# previo\n")
+    salida.chmod(0o644)
+    _correr(salida)
+    assert stat.S_IMODE(salida.stat().st_mode) == 0o600 and salida.read_text().startswith("# previo")
+
+
+def test_con_forzar_produccion_deja_un_aviso_en_los_logs_sin_secretos(engine, salida, monkeypatch, capsys, caplog):
+    import logging
+    kem, clave_hash = gk.generar_claves_servidor()
+    monkeypatch.setenv(c.ENV_KEM_PRIVATE, kem)
+    monkeypatch.setenv(c.ENV_EMAIL_HASH_KEY, clave_hash)
+    gk.reiniciar()
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    with caplog.at_level(logging.INFO, logger=c.SEED_LOGGER):
+        assert _correr(salida, c.FLAG_FORCE_PRODUCTION) == 0
+    assert c.MSG_SEED_FORCED_PRODUCTION in caplog.text and c.MSG_SEED_FORCED_PRODUCTION in capsys.readouterr().err
+    assert not any(sec in caplog.text for sec in list(_credenciales(salida).values()) + ["BEGIN PRIVATE KEY"])
+
+
+def test_el_directorio_de_credenciales_de_la_imagen_es_700_y_el_dockerignore_cubre_cualquier_local():
+    assert "chmod 700 /srv/.seed" in (RAIZ / "Dockerfile").read_text()
+    assert "**/*.local" in (RAIZ / ".dockerignore").read_text().splitlines()
+    assert "scripts" in (RAIZ / ".dockerignore").read_text().splitlines()          # el .sh no viaja en la imagen: solo el módulo
 
 
 def test_la_ruta_por_defecto_sale_de_la_variable_de_entorno(engine, tmp_path, monkeypatch):
