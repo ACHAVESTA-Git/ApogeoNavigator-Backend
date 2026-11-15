@@ -712,6 +712,15 @@ ROLE_DRACONIC = "mes dracónico (libración en latitud)"
 ROLE_VARIATION = "variación lunar: 2·sinódico"
 ROLE_EVECTION = "evección: 2·sinódico {sign} anomalístico"
 ROLE_FALLBACK = "combinación de periodos lunares"
+DESC_VALIDATION_CURRENT = ("El modelo, entrenado solo con estos datos, predijo 12 meses que luego se compararon con los de JPL "
+                           "Horizons.")
+DESC_VALIDATION_STALE = ("Estas cifras son de otra validación: se entrenó con los datos de la semilla y no con los tuyos. Con tus datos "
+                         "el modelo todavía no se ha comparado con JPL Horizons.")
+DESC_VALIDATION_MISSING = "No hay una validación contra JPL Horizons de este sitio."
+DESC_PROJECTION_CURRENT = "El modelo se extiende más allá del último dato, con la incertidumbre medida en esa validación."
+DESC_PROJECTION_STALE = ("El modelo se extiende más allá del último dato. La incertidumbre mostrada es de referencia (de la validación "
+                         "con otros datos): con tus datos puede ser mayor.")
+DESC_PROJECTION_MISSING = "El modelo se extiende más allá del último dato, pero sin incertidumbre medida para este sitio."
 ANALISIS_STEPS = (
     ("carga", "Carga del archivo", "Se lee el CSV de efemérides del sitio, con la misma lectura segura que usa la carga de datos."),
     ("validacion_csv", "Validación del archivo", "Se comprueba el estándar de CSV: cabecera, tipos, rangos, fechas en UTC, paso constante y saltos físicos."),
@@ -722,10 +731,8 @@ ANALISIS_STEPS = (
     ("ajuste", "Ajuste del modelo armónico",
      "Se ajusta una suma de senos y cosenos con los periodos lunares. Su R² mide cuánto explica de estos datos; "
      "no mide cuánto acierta fuera de ellos (eso lo mide la validación)."),
-    ("validacion_horizons", "Validación contra Horizons",
-     "El modelo, entrenado solo con estos datos, predijo 12 meses que luego se compararon con los de JPL Horizons."),
-    ("proyeccion", "Proyección",
-     "El modelo se extiende más allá del último dato, con la incertidumbre medida en la validación."),
+    ("validacion_horizons", "Validación contra Horizons", DESC_VALIDATION_CURRENT),   # el texto real depende de la vigencia
+    ("proyeccion", "Proyección", DESC_PROJECTION_CURRENT),
 )
 LIMIT_IDEAL_HORIZON = "horizonte_ideal"
 LIMIT_NOT_EPHEMERIS = "no_sustituye_efemerides"
@@ -737,7 +744,8 @@ LIMIT_STALE_VALIDATION = "validacion_de_otros_datos"
 LIMITS_TEXT = {
     LIMIT_IDEAL_HORIZON: "Horizonte ideal: se supone una Luna lisa. El relieve real (montañas, cráteres) puede tapar un Sol bajo.",
     LIMIT_NOT_EPHEMERIS: "La proyección es una estimación estadística y no sustituye a las efemérides físicas de Horizons.",
-    LIMIT_SHORT_WINDOW: "Con unos 6 meses de datos no se pueden identificar ciclos largos (anual, año de eclipses): no se ajustan.",
+    LIMIT_SHORT_WINDOW: ("La ventana de datos es de {days:.0f} días, menos que el año de eclipses ({year:.1f} d): los ciclos largos "
+                         "no se pueden identificar y el modelo no los ajusta."),
     LIMIT_POLAR_SUN: "Sol rasante: si el Sol no supera 3° de elevación, un error de 1° cambia el resultado y las puestas casi no se predicen.",
     LIMIT_ZENITH: "Sol cerca del cénit: el azimut solar gira de golpe y su proyección no es fiable.",
     LIMIT_NOT_BLIND: "Se descartaron versiones del modelo mirando el error de validación: las cifras no son una prueba ciega estricta.",
@@ -776,3 +784,7 @@ ANALISIS_VARIABLE_NAMES = {COL_SOL_AZ: "Azimut del Sol", COL_SOL_EL: "Elevación
                            COL_TIERRA_AZ: "Azimut de la Tierra", COL_TIERRA_EL: "Elevación de la Tierra"}
 MSG_ANALYSIS_BEFORE_DATA = "'desde' es anterior al primer dato disponible"
 KEY_MANIFEST_FILES, KEY_MANIFEST_NAME, KEY_MANIFEST_GENERATED = "archivos", "nombre", "generado_utc"   # forma de data/manifest.json
+MSG_MANIFEST_UNVERIFIABLE = "No se pudo verificar la firma del manifiesto: este servidor no tiene la clave pública de firma."
+MSG_MANIFEST_NO_VERIFY_DETAIL = "La firma del manifiesto no es válida: {problems}"
+NOTE_FIT_IN_SAMPLE = ("R² y residuos son del ajuste DENTRO de los datos, que el modelo ya ha visto: pueden acercarse a 1 y no miden "
+                      "cuánto acierta fuera de ellos. Eso lo mide la validación (validacion.rmse_deg).")

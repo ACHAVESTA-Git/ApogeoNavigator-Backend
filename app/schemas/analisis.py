@@ -1,7 +1,7 @@
 """DTO de la sección de transparencia del análisis: cómo se usan los datos de un sitio, con números reales."""
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core import config as c
 
@@ -36,7 +36,8 @@ class UltimaCarga(BaseModel):
 class EntradaManifiesto(BaseModel):
     sha3_256: str
     generado_utc: str
-    firmado: bool
+    firmado: bool | None                  # True solo si la firma ML-DSA es VÁLIDA; None si no se pudo verificar; False si no lo es
+    firma_nota: str | None                # por qué es False o None
     coincide: bool
 
 
@@ -107,8 +108,9 @@ class Modelo(BaseModel):
     terminos_por_cuerpo: dict[str, int]
     periodos: list[Termino]
     ajuste_directo_elevacion_sol: bool
-    r2: dict[str, float | None]
-    residuos: dict[str, Residuos]
+    r2: dict[str, float | None] = Field(description=c.NOTE_FIT_IN_SAMPLE)
+    residuos: dict[str, Residuos] = Field(description=c.NOTE_FIT_IN_SAMPLE)
+    nota_ajuste: str                      # texto para pintar junto al R² y los residuos
 
 
 class Validacion(BaseModel):

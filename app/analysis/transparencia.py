@@ -40,21 +40,36 @@ def _file_sha3(path: Path) -> str | None:
     return lectura.cached_by_mtime(path, lambda p: hashlib.sha3_256(p.read_bytes()).hexdigest(), c.CACHE_KIND_SHA3)
 
 
+def _manifest_signature(manifest: dict) -> tuple[bool | None, str | None]:
+    """(firmado, nota): True solo si la firma del manifiesto es VÁLIDA; None si no se puede verificar; False si no es válida.
+
+    `firmado` no significa «tiene el campo firma»: se verifica con la clave pública del servidor y su huella.
+    """
+    try:
+        problems = pqc.verificar_manifiesto(manifest)      # versión, algoritmo, huella y firma (los archivos van aparte: `coincide`)
+    except pqc.ErrorClavesPQC:
+        return None, c.MSG_MANIFEST_UNVERIFIABLE
+    if problems:
+        return False, c.MSG_MANIFEST_NO_VERIFY_DETAIL.format(problems="; ".join(problems))
+    return True, None
+
+
 def _manifest_entry(filename: str) -> dto.EntradaManifiesto | None:
     """Lo que dice el manifiesto firmado del archivo. Un manifiesto ausente o ilegible no impide el análisis."""
     def loader(path: Path) -> dict:
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
             return {"files": {f[c.KEY_MANIFEST_NAME]: f for f in data[c.KEY_MANIFEST_FILES]},
-                    "generated": data[c.KEY_MANIFEST_GENERATED], "signed": bool(data.get(pqc.MANIFEST_SIGNATURE_FIELD))}
+                    "generated": data[c.KEY_MANIFEST_GENERATED], "raw": data}
         except (OSError, ValueError, KeyError, TypeError):
             return {}
     manifest = lectura.cached_by_mtime(c.get_data_dir() / c.MANIFEST_NAME, loader, c.CACHE_KIND_MANIFEST)
     entry = (manifest or {}).get("files", {}).get(filename)
     if not entry:
         return None
+    signed, note = _manifest_signature(manifest["raw"])     # en cada petición: depende de la clave actual, no solo del archivo
     return dto.EntradaManifiesto(sha3_256=entry[pqc.MANIFEST_HASH_ALGORITHM], generado_utc=manifest["generated"],
-                                 firmado=manifest["signed"], coincide=False)
+                                 firmado=signed, firma_nota=note, coincide=False)
 
 
 def _last_saved_load(filename: str) -> dict | None:
@@ -214,12 +229,14 @@ def _validation(site_id: str, current_sha3: str) -> dto.Validacion:
                      if k in (c.KEY_EVENTS_REAL, c.KEY_EVENTS_MATCHED_PCT, c.KEY_EVENTS_MAE_H)})
 
 
-def _limitations(sun_el_max: float, validation: dto.Validacion) -> list[dto.Limitacion]:
-    flags = {c.LIMIT_IDEAL_HORIZON: True, c.LIMIT_NOT_EPHEMERIS: True, c.LIMIT_SHORT_WINDOW: True, c.LIMIT_NOT_BLIND: True,
+def _limitations(sun_el_max: float, window_days: float, validation: dto.Validacion) -> list[dto.Limitacion]:
+    flags = {c.LIMIT_IDEAL_HORIZON: True, c.LIMIT_NOT_EPHEMERIS: True,
+             c.LIMIT_SHORT_WINDOW: window_days < c.ECLIPSE_YEAR_DAYS, c.LIMIT_NOT_BLIND: True,
              c.LIMIT_POLAR_SUN: sun_el_max < c.RELIEF_WARNING_MAX_SUN_EL_DEG,
              c.LIMIT_ZENITH: sun_el_max > c.SIM_AZIMUTH_MAX_SUN_EL_DEG,
              c.LIMIT_STALE_VALIDATION: validation.disponible and validation.vigente is False}
-    return [dto.Limitacion(codigo=code, mensaje=c.LIMITS_TEXT[code], aplica=applies) for code, applies in flags.items()]
+    return [dto.Limitacion(codigo=code, mensaje=c.LIMITS_TEXT[code].format(days=window_days, year=c.ECLIPSE_YEAR_DAYS),
+                           aplica=applies) for code, applies in flags.items()]
 
 
 # ------------------------------------------------------------------ serie para graficar
@@ -290,7 +307,15 @@ def _steps(a: dict, validation: dto.Validacion, entrada: dto.Entrada) -> list[dt
                      _m(c.LBL_UNC_FIRST, by_month[0], c.UNIT_DEG), _m(c.LBL_UNC_LAST, by_month[-1], c.UNIT_DEG)])]
     else:
         outcomes += [(no, [_m(c.LBL_VALID_STALE, False)]), (no, [_m(c.LBL_PROJECTABLE, c.PROJECTION_MONTHS_AHEAD, c.UNIT_MONTHS)])]
-    return [dto.Paso(id=sid, nombre=name, descripcion=desc, estado=state, resultado=measures)
+    ids = [step[0] for step in c.ANALISIS_STEPS]
+    if not validation.disponible:
+        texts = (c.DESC_VALIDATION_MISSING, c.DESC_PROJECTION_MISSING)
+    elif validation.vigente:
+        texts = (c.DESC_VALIDATION_CURRENT, c.DESC_PROJECTION_CURRENT)
+    else:
+        texts = (c.DESC_VALIDATION_STALE, c.DESC_PROJECTION_STALE)
+    override = dict(zip(ids[-2:], texts))
+    return [dto.Paso(id=sid, nombre=name, descripcion=override.get(sid, desc), estado=state, resultado=measures)
             for (sid, name, desc), (state, measures) in zip(c.ANALISIS_STEPS, outcomes, strict=True)]
 
 
@@ -312,7 +337,7 @@ def analyse(site_id: str, desde: str | None, hasta: str | None, variable: str | 
     serie, start, end = _series(a, rows, desde, hasta, variable)
     model = dto.Modelo(terminos_por_cuerpo=a["term_counts"], periodos=a["terms"],
                        ajuste_directo_elevacion_sol=a["model"].sun_elevation_direct is not None, r2=a["r2"],
-                       residuos=a["residuals"])
+                       residuos=a["residuals"], nota_ajuste=c.NOTE_FIT_IN_SAMPLE)
     return dto.AnalisisOut(site_id=site_id, desde_utc=lectura.fmt(start), hasta_utc=lectura.fmt(end),
                            pasos=_steps(a, validation, entrada), entrada=entrada, espectro=a["spectrum"], modelo=model,
-                           validacion=validation, limitaciones=_limitations(a["sun_el_max"], validation), serie=serie)
+                           validacion=validation, limitaciones=_limitations(a["sun_el_max"], a["model"].window_days, validation), serie=serie)
