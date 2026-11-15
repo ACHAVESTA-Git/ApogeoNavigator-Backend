@@ -74,7 +74,7 @@ def _usuario(engine, email="ana@apogeo.test", rol=RolUsuario.ANALISTA, activo=Tr
 
 
 def _entrar(client, email="ana@apogeo.test", password=PASSWORD):
-    return client.post("/api/auth/login", json={"email": email, "password": password})
+    return client.post("/api/auth/login", json={"email": email, "password": password}, headers=CSRF)
 
 
 def _eventos(engine, accion):
@@ -100,7 +100,7 @@ def test_login_correcto_abre_sesion_con_cookie_segura_y_perfil_sin_privadas(clie
     assert "privada" not in r.text.lower() and "BEGIN" not in r.text and set(cuerpo) == {"id", "nombre", "rol", "claves"}
     cookie = r.headers["set-cookie"].lower()
     assert "httponly" in cookie and "samesite=strict" in cookie and "max-age=28800" in cookie and "secure" not in cookie
-    assert r.headers["cache-control"] == "no-store"
+    assert r.headers["cache-control"] == "no-store" and client.get("/api/auth/me").headers["cache-control"] == "no-store"
     me = client.get("/api/auth/me")
     assert me.status_code == 200 and me.json() == cuerpo
 
@@ -138,8 +138,8 @@ def test_el_email_no_distingue_mayusculas(client, engine):
 
 
 def test_entradas_mal_formadas_son_422(client):
-    assert client.post("/api/auth/login", json={"email": "a@b.c"}).status_code == 422
-    assert client.post("/api/auth/login", json={"email": "a@b.c", "password": "x" * (c.AUTH_PASSWORD_MAX + 1)}).status_code == 422
+    assert client.post("/api/auth/login", json={"email": "a@b.c"}, headers=CSRF).status_code == 422
+    assert client.post("/api/auth/login", json={"email": "a@b.c", "password": "x" * (c.AUTH_PASSWORD_MAX + 1)}, headers=CSRF).status_code == 422
 
 
 # ------------------------------------------------------------------ límite de intentos
@@ -323,3 +323,166 @@ def test_la_cookie_pasa_el_guardia_de_subida_pero_sin_sesion_valida_es_401(clien
     client.cookies.set(c.AUTH_COOKIE_NAME, "falsa")
     r = _validar(client, headers=CSRF)
     assert r.status_code == 401
+
+
+# ------------------------------------------------------------------ revisión de seguridad: bloqueantes
+def _correr_guardia(cabeceras, trozos):
+    """Ejecuta el guardia de subida con un cuerpo en trozos SIN Content-Length. Devuelve (estado, trozos leídos)."""
+    import asyncio
+    from app.core.limits import UploadGuard
+    leidos = []
+    enviados = []
+
+    async def app_interna(scope, receive, send):
+        while True:                                     # lee todo el cuerpo, como haría el parser de formularios
+            mensaje = await receive()
+            if mensaje["type"] != "http.request" or not mensaje.get("more_body"):
+                break
+        await send({"type": "http.response.start", "status": 200, "headers": []})
+        await send({"type": "http.response.body", "body": b"ok"})
+
+    cola = list(trozos)
+
+    async def recibir():
+        if not cola:
+            return {"type": "http.disconnect"}
+        leidos.append(1)
+        cuerpo = cola.pop(0)
+        return {"type": "http.request", "body": cuerpo, "more_body": bool(cola)}
+
+    async def enviar(mensaje):
+        enviados.append(mensaje)
+
+    scope = {"type": "http", "method": "POST", "path": "/api/datos/sites", "query_string": b"", "headers": cabeceras, "state": {}}
+    asyncio.run(UploadGuard(app_interna)(scope, recibir, enviar))
+    return enviados[0]["status"], len(leidos)
+
+
+def test_una_cookie_falsa_no_salta_el_guardia_y_no_se_lee_el_cuerpo(engine):
+    trozos = [b"x" * 1_000_000] * 39                            # 39 MB, sin Content-Length
+    estado, leidos = _correr_guardia([(b"cookie", f"{c.AUTH_COOKIE_NAME}=inventada".encode())], trozos)
+    assert estado == 401 and leidos == 0
+
+
+def test_con_credenciales_validas_un_cuerpo_sin_content_length_se_corta_al_pasar_el_limite():
+    trozos = [b"x" * 1_000_000] * 39
+    estado, leidos = _correr_guardia([(c.API_KEY_HEADER.lower().encode(), UPLOAD_KEY.encode())], trozos)
+    limite_mb = (c.MAX_FILE_BYTES + c.MULTIPART_OVERHEAD_BYTES) // 1_000_000
+    assert estado == 413 and leidos <= limite_mb + 2           # se dejó de leer: no llegó entero a memoria
+
+
+def test_con_una_sesion_real_la_subida_pasa_el_guardia(client, engine):
+    _usuario(engine)
+    _entrar(client)
+    assert _validar(client, headers=CSRF).status_code == 200
+
+
+def test_argon2id_usa_el_perfil_owasp_de_19_mib():
+    assert "$argon2id$v=19$m=19456,t=2,p=1$" in passwords.hash_password("x")
+
+
+def test_si_no_hay_hueco_para_hashear_responde_503_con_retry_after_y_no_cuenta_como_intento(client, engine):
+    _usuario(engine)
+    for _ in range(c.AUTH_HASH_CONCURRENCY):
+        passwords._semaforo.acquire()
+    original = c.AUTH_HASH_WAIT_S
+    c.AUTH_HASH_WAIT_S = 0.05
+    try:
+        r = _entrar(client)
+    finally:
+        c.AUTH_HASH_WAIT_S = original
+        for _ in range(c.AUTH_HASH_CONCURRENCY):
+            passwords._semaforo.release()
+    assert r.status_code == 503 and r.headers["Retry-After"] == str(c.AUTH_BUSY_RETRY_AFTER_S)
+    assert r.json()["error"]["codigo"] == "LOGIN_OCUPADO"
+    for _ in range(c.AUTH_LOGIN_LIMIT_EMAIL[0]):                # el 503 no gastó ningún intento del límite
+        assert _entrar(client, password="mal").status_code == 401
+
+
+def test_una_rafaga_simultanea_no_pasa_el_limite_porque_el_intento_se_reserva_antes_de_verificar(monkeypatch):
+    import threading
+    import time
+    from types import SimpleNamespace
+    from app.services.auth import AuthServiceImpl
+
+    verificaciones = []
+
+    def lenta(hash_, password):
+        verificaciones.append(1)
+        time.sleep(0.2)
+        return False
+
+    monkeypatch.setattr(passwords, "verify_password", lenta)
+    repo = SimpleNamespace(usuario_por_email=lambda email: None)
+    auditor = SimpleNamespace(login_fallido=lambda motivo, origen: None)
+    resultados = []
+
+    def intento():
+        try:
+            AuthServiceImpl(repo, auditor).login("victima@apogeo.test", "x", None)
+        except Exception as exc:                                # noqa: BLE001
+            resultados.append(getattr(exc, "status", "otro"))
+
+    hilos = [threading.Thread(target=intento) for _ in range(12)]
+    [h.start() for h in hilos]
+    [h.join() for h in hilos]
+    assert len(verificaciones) == c.AUTH_LOGIN_LIMIT_EMAIL[0]
+    assert sorted(resultados) == sorted([401] * 5 + [429] * 7)
+
+
+def test_la_cookie_se_llama_session_para_que_firebase_hosting_la_reenvie():
+    assert c.AUTH_COOKIE_NAME == "__session"
+
+
+# ------------------------------------------------------------------ revisión de seguridad: importantes
+def test_los_429_no_llenan_la_auditoria(client, engine):
+    _usuario(engine)
+    for _ in range(40):
+        _entrar(client, password="mal")
+    motivos = [e.detalle["motivo"] for e in _eventos(engine, AccionAuditoria.LOGIN_FALLIDO)]
+    assert motivos.count(c.MOTIVO_LOGIN_CREDENCIALES) == c.AUTH_LOGIN_LIMIT_EMAIL[0] and motivos.count(c.MOTIVO_LOGIN_LIMITE) == 1
+
+
+def test_el_gestor_con_sesion_de_admin_audita_al_usuario_real_y_con_api_key_al_actor_de_la_clave(client, engine):
+    admin = _usuario(engine, "admin@apogeo.test", rol=RolUsuario.ADMIN, nombre="Admin")
+    objetivo = _usuario(engine, "otra@apogeo.test", nombre="Otra")
+    _entrar(client, "admin@apogeo.test")
+    assert client.post("/api/admin/claves", json={"usuario_id": str(objetivo), "tipos": ["kem"]}, headers=CSRF).status_code == 201
+    anonimo = TestClient(app)
+    otro = _usuario(engine, "tercera@apogeo.test", nombre="Tercera")
+    assert anonimo.post("/api/admin/claves", json={"usuario_id": str(otro), "tipos": ["kem"]}, headers={c.API_KEY_HEADER: ADMIN_KEY}).status_code == 201
+    with Session(engine) as s:
+        eventos = list(s.scalars(select(EventoAuditoria).where(EventoAuditoria.accion == AccionAuditoria.CAMBIO_DATOS).order_by(EventoAuditoria.secuencia)))
+    assert [(e.actor, e.usuario_id) for e in eventos] == [(c.ACTOR_USER, admin), (c.ACTOR_ADMIN, None)]
+
+
+def test_la_carga_con_sesion_audita_al_usuario_real(client, engine):
+    uid = _usuario(engine, rol=RolUsuario.REVISOR)
+    _entrar(client)
+    _validar(client, headers=CSRF)
+    with Session(engine) as s:
+        evento = s.scalars(select(EventoAuditoria).where(EventoAuditoria.accion == AccionAuditoria.CARGA_VALIDADA)).one()
+    assert (evento.actor, evento.usuario_id) == (c.ACTOR_USER, uid)
+
+
+@pytest.mark.parametrize("regex", [r"^https://.*\.pages\.dev$", ".*", r"^https?://.+$", "(sin-cerrar", r"^https://[a-z0-9-]+\.web\.app$"])
+def test_una_cors_origin_regex_laxa_o_invalida_se_rechaza(monkeypatch, regex):
+    monkeypatch.setenv(c.ENV_CORS_ORIGIN_REGEX, regex)
+    with pytest.raises(ValueError, match="CORS_ORIGIN_REGEX"):
+        c.get_cors_origin_regex()
+
+
+def test_una_cors_origin_regex_precisa_se_acepta(monkeypatch):
+    regex = r"^https://([a-z0-9-]+\.)?mi-proyecto\.pages\.dev$"
+    monkeypatch.setenv(c.ENV_CORS_ORIGIN_REGEX, regex)
+    assert c.get_cors_origin_regex() == regex
+
+
+def test_el_login_tambien_comprueba_el_origen(client, engine):
+    _usuario(engine)
+    sin = client.post("/api/auth/login", json={"email": "ana@apogeo.test", "password": PASSWORD})
+    assert sin.status_code == 403 and sin.json()["error"]["codigo"] == "ORIGEN_NO_PERMITIDO" and "set-cookie" not in sin.headers
+    ajeno = client.post("/api/auth/login", json={"email": "ana@apogeo.test", "password": PASSWORD}, headers={"Origin": "https://malo.example"})
+    assert ajeno.status_code == 403
+    bueno = client.post("/api/auth/login", json={"email": "ana@apogeo.test", "password": PASSWORD}, headers={"Origin": "http://localhost:5173"})
+    assert bueno.status_code == 200
