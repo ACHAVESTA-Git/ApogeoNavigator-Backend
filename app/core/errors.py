@@ -18,7 +18,6 @@ from app.core import config
 from app.core.respuestas import request_id_de, respuesta_error
 from app.services.blobstore import StoreError
 from app.services.errores import ErrorServicio
-from app.services.lectura import LecturaError
 from app.utils.text import escapar_control
 
 log = logging.getLogger(config.LOGGER_ERRORS)
@@ -38,10 +37,6 @@ async def validation_error(request: Request, exc: RequestValidationError) -> JSO
     campos = list(dict.fromkeys(str(e["loc"][-1]) for e in exc.errors() if e["loc"] and str(e["loc"][-1]) not in config.VALIDATION_LOC_NOISE))
     resumen = (config.MSG_VALIDATION_FIELDS.format(n=len(campos), campos=", ".join(campos)) if campos else config.MSG_VALIDATION_GENERIC)
     return respuesta_error(request, config.HTTP_UNPROCESSABLE, jsonable_encoder(exc.errors()), mensaje=resumen)
-
-
-async def lectura_error(request: Request, exc: LecturaError) -> JSONResponse:
-    return respuesta_error(request, exc.status, exc.detail)
 
 
 async def servicio_error(request: Request, exc: ErrorServicio) -> JSONResponse:
@@ -69,7 +64,6 @@ async def unhandled(request: Request, exc: Exception) -> JSONResponse:
 def register_handlers(app: FastAPI) -> None:
     app.add_exception_handler(StarletteHTTPException, http_exception)
     app.add_exception_handler(RequestValidationError, validation_error)
-    app.add_exception_handler(LecturaError, lectura_error)
     app.add_exception_handler(ErrorServicio, servicio_error)
     app.add_exception_handler(StoreError, store_error)
     app.add_exception_handler(SQLAlchemyError, db_error)

@@ -15,6 +15,10 @@ class EntregaPendiente:
     buffers: list[bytearray] = field(repr=False)
 
 
+class Auditor(Protocol):
+    def registrar(self, operacion: str, clave: ClaveUsuario, motivo: str | None = None, extra: dict | None = None) -> None: ...
+
+
 class ClavesService(Protocol):
     def listar(self, usuario_id: uuid.UUID | None, estado: EstadoClave | None, tipo: TipoClave | None, q: str | None,
                limite: int, offset: int) -> PaginaClaves: ...
