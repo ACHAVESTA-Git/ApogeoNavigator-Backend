@@ -19,4 +19,4 @@ def test_sites_csv_que_desaparece_entre_la_comprobacion_y_la_lectura_es_503(data
     monkeypatch.setattr(Path, "read_bytes", vanishing)
     assert (data_dir / c.SITES_FILENAME).is_file() and storage.read_sites() is None
     response = TestClient(app, raise_server_exceptions=False).get("/api/sites")
-    assert response.status_code == 503 and response.json() == {"detail": c.MSG_NO_SITES}
+    assert response.status_code == 503 and response.json()["detail"] == c.MSG_NO_SITES

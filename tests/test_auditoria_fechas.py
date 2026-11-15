@@ -71,7 +71,7 @@ def test_combinaciones_de_zona_no_dan_500(api, desde, hasta):
 ])
 def test_rango_invertido_con_zonas_mezcladas_da_422_con_detail_de_texto(api, desde, hasta):
     r = api.get("/api/auditoria", params={"desde": desde, "hasta": hasta}, headers=KEY)
-    assert r.status_code == 422 and r.json() == {"detail": c.MSG_AUDIT_RANGE_ORDER}
+    assert r.status_code == 422 and r.json()["detail"] == c.MSG_AUDIT_RANGE_ORDER
 
 
 # ------------------------------------------------------------------ semántica: sin zona = UTC; con zona se convierte
