@@ -380,6 +380,17 @@ KEY_PUESTA = "proxima_puesta_utc"
 KEY_SALIDA = "proxima_salida_utc"
 KEY_HORAS_RESTANTES = "horas_restantes"
 MSG_METRICS_INVALID = "metricas.csv no cumple el estándar de CSV"
+# Indicadores para astronautas (campo aditivo de las métricas)
+KEY_INDICADORES = "indicadores_astronauta"
+KEY_NOCHE_LARGA = "noche_mas_larga"
+KEY_APAGON_TIERRA = "apagon_tierra_mas_largo"
+KEY_VENTANA_SOL_TIERRA = "ventana_sol_y_tierra"
+KEY_PUESTA_SOL = "proxima_puesta_sol_utc"
+KEY_PUESTA_TIERRA = "proxima_puesta_tierra_utc"
+KEY_SOL_EL_MEDIA_DIA = "sol_el_media_horas_sol_deg"
+KEY_HORAS = "horas"
+KEY_TRUNCA_INICIO = "trunca_inicio"
+KEY_TRUNCA_FIN = "trunca_fin"
 
 # ---------------------------------------------------------------- base de datos y auditoría
 DB_POOL_RECYCLE_SECONDS = 1800

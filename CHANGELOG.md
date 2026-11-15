@@ -16,6 +16,7 @@ committed straight to `dev` before the pull-request rule started on 14 Nov 2026 
 - Live query for custom coordinates against JPL Horizons, cached, rate limited (429 with `Retry-After`) and bounded (#24, #29).
 - Typed response models (DTOs) for health, key and read endpoints (#21, #22) and an HTTP contract frozen by tests against the frontend types (#16).
 - OpenAPI in English with descriptions, tags and real examples (#20).
+- Astronaut indicators (additive `indicadores_astronauta` field in `/api/metricas` and the live Horizons metrics): longest night, longest Earth blackout, longest Sun-and-Earth window, next Sun and Earth sets and mean Sun elevation in daylight.
 
 ### Simulation
 - Sky simulation: real data inside the range and a statistical projection beyond it, computed with Polars (#13).

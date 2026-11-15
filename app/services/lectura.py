@@ -14,6 +14,7 @@ from app.core import config as c
 from app.services import storage
 from app.services.errores import ErrorServicio
 from app.utils import dates
+from app.utils.rachas import racha_mas_larga
 from app.utils.errors import CellError
 from app.validation.coherence import Context
 from app.validation.engine import validate_csv
@@ -181,6 +182,28 @@ def warnings_for(sun_el_max: float) -> list[dict[str, str]]:
     return []
 
 
+def _racha_fmt(racha: dict) -> dict:
+    """Racha con sus instantes ya en formato UTC del contrato (nulos si no hay racha)."""
+    return {**racha, **{k: fmt(racha[k]) if racha[k] else None for k in (c.COL_INICIO, c.COL_FIN)}}
+
+
+def astronaut_indicators(sample: list[Row], step_h: float, sun_el_media: float | None) -> dict:
+    """Indicadores para astronautas sobre las muestras del rango: noche más larga (Sol ≤ 0), apagón de Tierra más
+    largo (Tierra ≤ 0), ventana continua con Sol y Tierra a la vez, próxima puesta de cada cuerpo y elevación solar
+    media en las horas de sol (la misma cifra que `sol_el_media_deg`, agrupada con el resto de indicadores). Las rachas se miden sobre la serie del rango; si tocan un borde, `trunca_*` lo avisa."""
+    sun_down = racha_mas_larga(sample, lambda r: r[c.COL_SOL_EL] <= 0, step_h)
+    earth_down = racha_mas_larga(sample, lambda r: r[c.COL_TIERRA_EL] <= 0, step_h)
+    both_up = racha_mas_larga(sample, lambda r: r[c.COL_SOL_EL] > 0 and r[c.COL_TIERRA_EL] > 0, step_h)
+    first = sample[0][c.COL_UTC]
+    sunset = _events(sample, 0, c.COL_SOL_EL, first)[c.KEY_PUESTA]
+    earthset = _events(sample, 0, c.COL_TIERRA_EL, first)[c.KEY_PUESTA]
+    return {
+        c.KEY_NOCHE_LARGA: _racha_fmt(sun_down), c.KEY_APAGON_TIERRA: _racha_fmt(earth_down),
+        c.KEY_VENTANA_SOL_TIERRA: _racha_fmt(both_up), c.KEY_PUESTA_SOL: sunset, c.KEY_PUESTA_TIERRA: earthset,
+        c.KEY_SOL_EL_MEDIA_DIA: sun_el_media,
+    }
+
+
 def compute_metrics(site_id: str, rows: list[Row], step_h: float, start: datetime, end: datetime) -> dict:
     """Métricas de las muestras en [start, end). Una muestra cuenta `step_h` horas."""
     sample = [r for r in rows if start <= r[c.COL_UTC] < end]
@@ -193,7 +216,7 @@ def compute_metrics(site_id: str, rows: list[Row], step_h: float, start: datetim
     hours_sun, hours_earth = len(sun_up) * step_h, sum(1 for e in earth if e > 0) * step_h
     pct_sun = round(hours_sun / total * c.PCT_FULL_SCALE, c.ROUND_PCT)
     pct_earth = round(hours_earth / total * c.PCT_FULL_SCALE, c.ROUND_PCT)
-    return {
+    result = {
         c.COL_SITE_ID: site_id, c.COL_INICIO: fmt(start), c.COL_FIN: fmt(end),
         c.COL_HORAS_SOL: hours_sun, c.COL_PCT_SOL: pct_sun, c.COL_SOL_EL_MAX: round(max(sun), c.ROUND_DEG),
         c.COL_SOL_EL_MEDIA: round(sum(sun_up) / len(sun_up), c.ROUND_DEG) if sun_up else None,
@@ -201,6 +224,8 @@ def compute_metrics(site_id: str, rows: list[Row], step_h: float, start: datetim
         c.KEY_SEMAFORO: traffic_light(pct_sun, pct_earth), c.KEY_AVISOS: warnings_for(max(sun)),
         c.KEY_ORIGEN: c.ORIGEN_CALCULADO,
     }
+    result[c.KEY_INDICADORES] = astronaut_indicators(sample, step_h, result[c.COL_SOL_EL_MEDIA])
+    return result
 
 
 def _same(computed: Any, reference: Any, tol: float) -> bool:
