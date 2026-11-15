@@ -34,6 +34,11 @@ class Report(BaseModel):
     advertencias: list[Issue] = Field(default_factory=list, description="Avisos que no bloquean la carga.")
 
 
+class ErrorValidacionOut(BaseModel):
+    """Cuerpo de un archivo rechazado: el informe va dentro de `detail`."""
+    detail: Report
+
+
 class SaveResult(Report):
     guardado: bool = False
     copia_historial: str | None = None
