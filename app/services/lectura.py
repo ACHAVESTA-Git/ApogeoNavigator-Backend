@@ -192,9 +192,9 @@ def astronaut_indicators(sample: list[Row], step_h: float, sun_el_media: float |
     """Indicadores para astronautas sobre las muestras del rango: noche más larga (Sol ≤ 0), apagón de Tierra más
     largo (Tierra ≤ 0), ventana continua con Sol y Tierra a la vez, próxima puesta de cada cuerpo y elevación solar
     media en las horas de sol (la misma cifra que `sol_el_media_deg`, agrupada con el resto de indicadores). Las rachas se miden sobre la serie del rango; si tocan un borde, `trunca_*` lo avisa."""
-    sun_down = racha_mas_larga(sample, lambda r: r[c.COL_SOL_EL] <= 0, step_h)
-    earth_down = racha_mas_larga(sample, lambda r: r[c.COL_TIERRA_EL] <= 0, step_h)
-    both_up = racha_mas_larga(sample, lambda r: r[c.COL_SOL_EL] > 0 and r[c.COL_TIERRA_EL] > 0, step_h)
+    sun_down = racha_mas_larga(sample, lambda r: r[c.COL_SOL_EL] <= c.ELEV_VISIBLE_MIN_DEG, step_h)
+    earth_down = racha_mas_larga(sample, lambda r: r[c.COL_TIERRA_EL] <= c.ELEV_VISIBLE_MIN_DEG, step_h)
+    both_up = racha_mas_larga(sample, lambda r: r[c.COL_SOL_EL] > c.ELEV_VISIBLE_MIN_DEG and r[c.COL_TIERRA_EL] > c.ELEV_VISIBLE_MIN_DEG, step_h)
     first = sample[0][c.COL_UTC]
     sunset = _events(sample, 0, c.COL_SOL_EL, first)[c.KEY_PUESTA]
     earthset = _events(sample, 0, c.COL_TIERRA_EL, first)[c.KEY_PUESTA]
@@ -212,9 +212,9 @@ def compute_metrics(site_id: str, rows: list[Row], step_h: float, start: datetim
         raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_NO_ROWS_IN_RANGE)
     sun = [r[c.COL_SOL_EL] for r in sample]
     earth = [r[c.COL_TIERRA_EL] for r in sample]
-    sun_up = [e for e in sun if e > 0]
+    sun_up = [e for e in sun if e > c.ELEV_VISIBLE_MIN_DEG]
     total = len(sample) * step_h
-    hours_sun, hours_earth = len(sun_up) * step_h, sum(1 for e in earth if e > 0) * step_h
+    hours_sun, hours_earth = len(sun_up) * step_h, sum(1 for e in earth if e > c.ELEV_VISIBLE_MIN_DEG) * step_h
     pct_sun = round(hours_sun / total * c.PCT_FULL_SCALE, c.ROUND_PCT)
     pct_earth = round(hours_earth / total * c.PCT_FULL_SCALE, c.ROUND_PCT)
     result = {
@@ -272,10 +272,10 @@ def metrics(site_ids: list[str], desde: str | None, hasta: str | None) -> dict:
 # ---------------------------------------------------------------- puestas
 def _events(rows: list[Row], idx: int, key: str, moment: datetime) -> dict:
     """Próxima puesta (elevación >0 → ≤0) y salida (≤0 → >0) desde la fila `idx`."""
-    visible = rows[idx][key] > 0
+    visible = rows[idx][key] > c.ELEV_VISIBLE_MIN_DEG
     state, sunset, sunrise = visible, None, None
     for row in rows[idx + 1:]:
-        now = row[key] > 0
+        now = row[key] > c.ELEV_VISIBLE_MIN_DEG
         if now != state:
             if state:
                 sunset = sunset or row[c.COL_UTC]
