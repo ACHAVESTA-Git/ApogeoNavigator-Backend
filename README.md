@@ -7,7 +7,7 @@
 - **Live API (interactive docs):** https://apogeo-backend-rgtyw5oh5q-uc.a.run.app/docs
 - Video and challenge submission: links will be added here once published.
 - [Changelog](CHANGELOG.md)
-- [Quick start](#quick-start) · [API](#api) · [NASA data and sources](#nasa-data-and-sources) · [Integrity and security](#integrity-and-security) · [Limitations](#limitations) · [Tests](#tests) · [AI usage declaration](#ai-usage-declaration) · [License](#license) · [Resumen en español](#resumen-en-español)
+- [Quick start](#quick-start) · [API](#api) · [NASA data and sources](#nasa-data-and-sources) · [Integrity and security](#integrity-and-security) · [Limitations](#limitations) · [Tests](#tests) · [License](#license) · [Resumen en español](#resumen-en-español)
 
 ## Why it matters
 Near the lunar south pole the Sun skims the horizon and the Earth hovers around it, so a small change of place or date can leave a lander without power or without a direct link to Earth. The tools that hold the data are powerful but slow for comparing scenarios. This API answers those questions in one request. Two examples from the December 2026 data (ideal horizon, see [Limitations](#limitations)):
@@ -261,11 +261,6 @@ TEST_DATABASE_URL=postgresql+psycopg://user:pass@localhost:5432/apogeo_test pyte
 `tests/test_contrato_congelado.py` freezes the HTTP contract the frontend depends on (status codes, error texts and the shape of every JSON response, plus the OpenAPI operations) against `tests/contrato/snapshots.json`. A refactor must keep it green; if a contract change is deliberate, regenerate with `UPDATE_CONTRATO=1 pytest tests/test_contrato_congelado.py` and review the snapshot diff in the pull request.
 
 The second command runs the PostgreSQL-specific tests (immutable audit trigger, migrations, concurrency) against a throwaway database whose name must contain `test`; they are skipped otherwise.
-
-## AI usage declaration
-> **PENDING: to be written by the project owner.** The final declaration text, as required by the Space Apps guidelines, goes here and is mirrored in the challenge submission form.
->
-> _(placeholder: describe which AI tools were used, for what, and how the team reviewed the output)_
 
 ## Contributing
 See [CONTRIBUTING.md](CONTRIBUTING.md) (in Spanish): branch flow, commit conventions and pull requests.
