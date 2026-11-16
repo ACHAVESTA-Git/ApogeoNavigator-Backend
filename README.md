@@ -255,7 +255,7 @@ Everything is configured with environment variables; see [`.env.example`](.env.e
 
 ## Tests
 ```bash
-pytest                                  # 1,524 tests pass and 14 are skipped; no database, bucket or network needed
+pytest                                  # 1,701 tests pass and 14 are skipped; no database, bucket or network needed
 TEST_DATABASE_URL=postgresql+psycopg://user:pass@localhost:5432/apogeo_test pytest tests/test_postgres.py
 ```
 `tests/test_contrato_congelado.py` freezes the HTTP contract the frontend depends on (status codes, error texts and the shape of every JSON response, plus the OpenAPI operations) against `tests/contrato/snapshots.json`. A refactor must keep it green; if a contract change is deliberate, regenerate with `UPDATE_CONTRATO=1 pytest tests/test_contrato_congelado.py` and review the snapshot diff in the pull request.
@@ -278,5 +278,5 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) (in Spanish): branch flow, commit convent
 
 - **Arrancar:** `pip install -r requirements-dev.txt` y `DATA_DIR=data uvicorn app.main:app --port 8080`; documentación en `/docs`. Con Docker: `docker build -t apogeo-backend .` y `docker run --rm -p 8080:8080 apogeo-backend`.
 - **Limitaciones:** horizonte ideal (sin relieve), seis meses de datos, diez sitios, umbrales del semáforo propios del proyecto, el limitador de intentos de login cuenta por proceso.
-- **Pruebas:** `pytest` (1.524 pasan y 14 se omiten sin PostgreSQL). **Licencia:** MIT. La NASA no respalda este proyecto.
+- **Pruebas:** `pytest` (1.701 pasan y 14 se omiten sin PostgreSQL). **Licencia:** MIT. La NASA no respalda este proyecto.
 - Más documentación: `docs/datos/informe-fuentes.md` (en inglés, con el original en español) y, solo en español, `docs/bd/modelo-datos.md` y `CONTRIBUTING.md`.
