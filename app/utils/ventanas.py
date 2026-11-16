@@ -34,9 +34,9 @@ def evaluar_ventanas(utc: Sequence[datetime], sol_el: Sequence[float], tierra_el
     """Una fila por hora de llegada con ventana completa de `n` muestras (la estancia cabe en la serie).
 
     Columnas: idx, utc, horas_sol, horas_tierra, horas_sol_y_tierra, sol_al_llegar, tierra_al_llegar, racha_sin_tierra_h.
-    Una muestra cuenta `paso_h` horas. Elevación > 0 = visible."""
-    sol = np.asarray(sol_el, dtype=float) > 0
-    tierra = np.asarray(tierra_el, dtype=float) > 0
+    Una muestra cuenta `paso_h` horas. Elevación > ELEV_VISIBLE_MIN_DEG = visible."""
+    sol = np.asarray(sol_el, dtype=float) > c.ELEV_VISIBLE_MIN_DEG
+    tierra = np.asarray(tierra_el, dtype=float) > c.ELEV_VISIBLE_MIN_DEG
     base = pl.DataFrame({c.COL_UTC: list(utc), COL_N_SOL: sol, COL_N_TIERRA: tierra, COL_N_AMBOS: sol & tierra})
     base = base.with_row_index(COL_IDX).with_columns(
         _suma_hacia_delante(COL_N_SOL, n).alias(COL_N_SOL),
@@ -72,5 +72,5 @@ def mejores_no_solapadas(ordenadas: pl.DataFrame, n: int, k: int = c.VENTANAS_TO
 
 def mejor_por_dia(ordenadas: pl.DataFrame) -> list[dict]:
     """La mejor ventana de cada día UTC de llegada, en orden cronológico."""
-    con_dia = ordenadas.with_columns(pl.col(c.COL_UTC).dt.strftime("%Y-%m-%d").alias(c.KEY_DIA_UTC))
+    con_dia = ordenadas.with_columns(pl.col(c.COL_UTC).dt.strftime(c.DAY_FORMAT).alias(c.KEY_DIA_UTC))
     return con_dia.unique(subset=c.KEY_DIA_UTC, keep="first", maintain_order=True).sort(c.KEY_DIA_UTC).to_dicts()

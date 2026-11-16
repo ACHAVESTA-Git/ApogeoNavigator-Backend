@@ -1,4 +1,7 @@
 """Ventanas de alunizaje: para cada hora de llegada posible, cuánto Sol y Tierra hay durante la estancia."""
+import threading
+import time
+from collections import OrderedDict
 from datetime import datetime, timedelta
 
 from app.core import config as c
@@ -65,7 +68,51 @@ def _site(site_id: str, stay_h: int, desde: str | None, hasta: str | None) -> tu
     return result, best[:1]
 
 
+_cache: OrderedDict[tuple, tuple[float, dict]] = OrderedDict()
+_cache_lock = threading.Lock()
+
+
+def clear_cache() -> None:
+    with _cache_lock:
+        _cache.clear()
+
+
+def _data_stamp(site_ids: list[str]) -> tuple:
+    """Huella barata de los datos de los que depende el resultado: tamaño y mtime de las efemérides y del catálogo.
+    Si cambian (una carga nueva), la entrada de caché deja de valer."""
+    stamp = []
+    for name in (c.SITES_FILENAME, *(c.EFEMERIDES_FILENAME.format(site_id=s) for s in site_ids)):
+        try:
+            st = (c.get_data_dir() / name).stat()
+            stamp.append((name, st.st_mtime_ns, st.st_size))
+        except FileNotFoundError:
+            stamp.append((name, None, None))
+    return tuple(stamp)
+
+
 def landing_windows(site_ids: list[str], estancia_h: str | None, desde: str | None, hasta: str | None) -> dict:
+    """Con caché en memoria por (sitios, estancia, rango, datos) y TTL: pedir lo mismo no recalcula. Solo se guardan
+    respuestas correctas; un error se vuelve a calcular (y a lanzar) cada vez."""
+    unique = tuple(dict.fromkeys(site_ids))
+    if len(unique) > c.MAX_VENTANAS_SITIOS or not all(c.SITE_ID_RE.fullmatch(s) for s in unique):
+        return _landing_windows(list(unique), estancia_h, desde, hasta)       # lo rechaza o falla antes de tocar el disco; no se cachea
+    key = (unique, estancia_h, desde, hasta, _data_stamp(list(unique)))
+    now = time.monotonic()
+    with _cache_lock:
+        hit = _cache.get(key)
+        if hit and now - hit[0] < c.VENTANAS_CACHE_TTL_S:
+            _cache.move_to_end(key)
+            return hit[1]
+    result = _landing_windows(list(unique), estancia_h, desde, hasta)
+    with _cache_lock:
+        _cache[key] = (now, result)
+        _cache.move_to_end(key)
+        while len(_cache) > c.VENTANAS_CACHE_MAX_ENTRIES:
+            _cache.popitem(last=False)
+    return result
+
+
+def _landing_windows(site_ids: list[str], estancia_h: str | None, desde: str | None, hasta: str | None) -> dict:
     unique = list(dict.fromkeys(site_ids))
     if not unique:
         raise LecturaError(c.HTTP_UNPROCESSABLE, c.MSG_SITE_ID_REQUIRED)
@@ -81,5 +128,5 @@ def landing_windows(site_ids: list[str], estancia_h: str | None, desde: str | No
     if len(unique) > 1 and tops:
         # Mismo orden que dentro de un sitio; a igualdad total gana el sitio pedido antes.
         site_id, row = min(tops, key=lambda t: (-t[1][c.KEY_HORAS_SOL_Y_TIERRA], -t[1][c.COL_HORAS_SOL], t[1][c.COL_UTC]))
-        global_best = {c.COL_SITE_ID: site_id, "ventana": _window(row, stay_h)}
+        global_best = {c.COL_SITE_ID: site_id, c.KEY_VENTANA: _window(row, stay_h)}
     return {c.KEY_ESTANCIA: stay_h, c.KEY_RESULTADOS: results, c.KEY_MEJOR_GLOBAL: global_best}
