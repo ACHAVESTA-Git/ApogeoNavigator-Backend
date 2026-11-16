@@ -404,6 +404,12 @@ KEY_PCT_SOL_Y_TIERRA = "pct_sol_y_tierra"
 KEY_SOL_AL_LLEGAR = "sol_al_llegar"
 KEY_TIERRA_AL_LLEGAR = "tierra_al_llegar"
 KEY_RACHA_SIN_TIERRA = "racha_sin_tierra_h"
+KEY_VENTANA = "ventana"
+DAY_FORMAT = "%Y-%m-%d"
+DAYS_TO_NEXT_MONTH = 32                      # 32 días desde el día 1 caen siempre en el mes siguiente
+ELEV_VISIBLE_MIN_DEG = 0.0                   # un astro se ve si su elevación supera esto (horizonte ideal)
+VENTANAS_CACHE_TTL_S = 300                   # el cálculo de 5 sitios y 336 h es caro: se reutiliza este tiempo
+VENTANAS_CACHE_MAX_ENTRIES = 64
 # Indicadores para astronautas (campo aditivo de las métricas)
 KEY_INDICADORES = "indicadores_astronauta"
 KEY_NOCHE_LARGA = "noche_mas_larga"

@@ -116,7 +116,7 @@ def _months(rows: list[Row], start: datetime, end: datetime, step_h: float) -> l
     out, cursor = [], start
     last_exclusive = end + timedelta(hours=step_h)
     while cursor < last_exclusive:
-        nxt = (cursor.replace(day=1) + timedelta(days=32)).replace(day=1, hour=0, minute=0)
+        nxt = (cursor.replace(day=1) + timedelta(days=c.DAYS_TO_NEXT_MONTH)).replace(day=1, hour=0, minute=0)
         month_end = min(nxt, last_exclusive)
         metrics = lectura.compute_metrics("", rows, step_h, cursor, month_end)
         sem = metrics[c.KEY_SEMAFORO]
